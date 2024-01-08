@@ -1,19 +1,21 @@
 /* eslint-disable */
 
-import {
-    createContext
-} from 'react'
+import { Dimensions } from "react-native";
 
-type WindowContext = {
-    height: number
-    width: number
+
+type WindowDimensions = {
+    HEIGHT: number
+    WIDTH: number
 }
 
-const windowDimensions: WindowContext = {
-    height: 0,
-    width: 0
+const {height, width} = Dimensions.get('window');
+
+const windowDimensions: WindowDimensions = {
+
+    HEIGHT: height, 
+    WIDTH: width
+
 }
 
-const WindowDimensions = createContext(windowDimensions)
 
-export default WindowDimensions;
+export default windowDimensions;

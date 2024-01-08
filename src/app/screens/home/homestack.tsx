@@ -11,6 +11,9 @@ import HomeTab from './hometab_stack.tsx/hometab';
 import VocabSearch from './vocab_search';
 import AddVocab from './add_vocab';
 
+import { MaterialTopTabNavigationOptions } from '@react-navigation/material-top-tabs';
+import CoreStyles from '../../shared_styles/core_styles';
+
 
 const HomeStackNav = createMaterialTopTabNavigator();
 
@@ -28,33 +31,15 @@ const HomeStack: React.FC = ()=>{
     )
 }
 
-const BasicTabStyles = {
-    tabBarStyle:{
-        height:50,
-    },
-    tabBarLabelStyle:{
-        fontFamily: "Exo2-Black",
-        color: "blue",
-        padding:0,
-        margin: 0
-
-    },
-    tabBarContentContainerStyle:{
-        justifyContent: "flex-start",
-        backgroundColor: "powderblue",
-        padding: 0,
-        margin: 0,
-    },
+const BasicTabStyles: MaterialTopTabNavigationOptions = {
     tabBarGap: 5,
     tabBarBounces: true,
-    tabBarIndicatorStyle: {
-        backgroundColor: "blue",
-        borderRadius: 10
-    },
-    tabBarIndicatorContainerStyle: {
-        backgroundColor: "powderblue",
-        opacity:0.5
-    }
+
+    tabBarStyle: CoreStyles.homeTabBarStyle,
+    tabBarLabelStyle: CoreStyles.homeTabBarLabelStyle,
+    tabBarContentContainerStyle: CoreStyles.homeTabBarContentContainerStyle,
+    tabBarIndicatorStyle: CoreStyles.homeTabBarIndicatorStyle,
+    tabBarIndicatorContainerStyle: CoreStyles.homeTabBarIndicatorContainerStyle
 }
 
 export default HomeStack;

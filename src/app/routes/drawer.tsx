@@ -13,48 +13,52 @@ import {
     Text,
 } from 'react-native'
 
+import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
+import {default as OcticonIcon} from 'react-native-vector-icons/Octicons'
+
 
 import { getHeaderTitle } from '@react-navigation/elements';
+
 
 import HomeStack from '../screens/home/homestack';
 import Account from '../screens/account/account';
 import About from '../screens/about/about';
 import ManageProjectsStack from '../screens/manage_projects/manage_projects_stack';
-import { useContext } from 'react';
-import WindowDimensions from '../context/context';
 
+import { appColours } from '../shared_styles/core_styles';
+ import CoreStyles from '../shared_styles/core_styles';
+
+import PlayButton from '../shared/playButton';
+
+import MainHeader from '../shared/main_header';
 
 
 const MainDrawer = createDrawerNavigator();
 
-const AppMainDrawer: React.FC = () => {
+const AppMainDrawer: React.FC = props => {    
 
-    const {height} = useContext(WindowDimensions)
-
-    
     /* General styles for the draw list */
     const BasicDrawerConfig: DrawerNavigationOptions = {
 
-        drawerStyle:{
-            backgroundColor: '#c6cbef',
-            width: 200,
-            marginTop: ((height * 0.075) -30),
-            borderTopRightRadius: 10,
-            elevation: 1,
-            shadowColor: "black"
+        drawerStyle: CoreStyles.drawerStyle ,
 
-        },
-
-        header: ({route, options})=>{
-
-            const title = getHeaderTitle(options, route.name);
+        header: props=>{
 
             return(
-                <View style={{height: (height * 0.075)}}>
-                    <Text style={{color:"black"}}> {title}</Text>
-                </View>
+                <MainHeader {...props}/>
             )
         }
+    };
+
+    const BasicDrawerItemConfig: DrawerNavigationOptions = {
+
+        drawerLabelStyle: CoreStyles.drawerLabelStyle,
+        
+        drawerItemStyle: CoreStyles.drawerItemStyle,
+
+        drawerActiveBackgroundColor: appColours.darkGreen,
+
+        drawerInactiveBackgroundColor: "rgba(43, 255, 43, 0.3)"
     }
 
     return(
@@ -64,38 +68,98 @@ const AppMainDrawer: React.FC = () => {
             drawerContent={(props)=>{return(<VocabDrawerContent {...props}/>)}}
             screenOptions={BasicDrawerConfig}>
 
-                    <MainDrawer.Screen name="Home" component={HomeStack} options={BasicDrawerItemConfig}/>
-                    <MainDrawer.Screen name="About" component={About} options={BasicDrawerItemConfig}/>
-                    <MainDrawer.Screen name="Manage Projects" component={ManageProjectsStack} options={BasicDrawerItemConfig}/>
-                    <MainDrawer.Screen name="Account" component={Account} options={BasicDrawerItemConfig}/>
+                    <MainDrawer.Screen name="Home" component={HomeStack} options={{...BasicDrawerItemConfig, ...HomeSpecificConfig}}/>
+                    <MainDrawer.Screen name="About" component={About} options={{...BasicDrawerItemConfig, ...AboutSpecificConfig}}/>
+                    <MainDrawer.Screen name="Projects" component={ManageProjectsStack} options={{...BasicDrawerItemConfig, ...ProjectsSpecificConfig}}/>
+                    <MainDrawer.Screen name="Account" component={Account} options={{...BasicDrawerItemConfig, ...AccountSpecificConfig}}/>
                 
             </MainDrawer.Navigator>
     )
 };
 
-const BasicDrawerItemConfig: DrawerNavigationOptions = {
+/* Drawer item configuration */
 
-    drawerLabelStyle: {
-        fontFamily: "Exo2-Medium",
-        padding: 0,
-        color: "black",
-        fontSize: 16,
+const HomeSpecificConfig: DrawerNavigationOptions = {
+
+    drawerIcon: ({focused})=>{
+
+        const IconStyles = {
+            color: focused ? appColours.white : appColours.black,
+            marginRight: 0 ,
+            padding: 0
+        }
+
+        return(
+            <OcticonIcon name='home' size={focused ? 24 : 16} style={IconStyles}/>
+        )
+    }
+
+}
+const AboutSpecificConfig: DrawerNavigationOptions = {
+
+    drawerIcon: ({focused})=>{
+
+        const IconStyles = {
+            color: focused ? appColours.white : appColours.black,
+            marginRight: 0 ,
+            padding: 0
+        }
+
+        return(
+            <MaterialIcon name='info' size={focused ? 24 : 16} style={IconStyles}/>
+        )
     },
     
-    drawerItemStyle: {
-        flex: 1,
-        borderColor: "black",
-        borderWidth: 1
+}
+const ProjectsSpecificConfig: DrawerNavigationOptions = {
+
+    unmountOnBlur: true,
+    drawerIcon: ({focused})=>{
+
+        const IconStyles = {
+            color: focused ? appColours.white : appColours.black,
+            marginRight: 0 ,
+            padding: 0
+        }
+
+        return(
+            <MaterialIcon name='library-books' size={focused ? 24 : 16} style={IconStyles}/>
+        )
+    },
+    
+    
+}
+const AccountSpecificConfig: DrawerNavigationOptions = {
+
+    drawerIcon: ({focused, color})=>{
+
+        const IconStyles = {
+            color: focused ? appColours.white : appColours.black,
+            marginRight: 0 ,
+            padding: 0
+        }
+
+        return(
+            <MaterialIcon name='account-circle' size={focused ? 24 : 16} style={IconStyles}/>
+        )
     }
+    
 }
 
-const VocabDrawerContent = (props)=>{
+const VocabDrawerContent = props=>{
+
+    const navDestination = {
+        screen: "game",
+        screenParams: {
+            screen: "MyModal"
+        }
+    }
 
     return(
-    <View style={{flex: 1, justifyContent: "space-around"}}>
+    <View style={{flex: 1, justifyContent: "space-around", margin:2}}>
 
-        <View style={{ flex: 3, justifyContent: "center", alignItems:"center", elevation:1, shadowColor: "black" }}>
-            <Text style={{ fontSize: 26, fontFamily: "Exo2-Bold"}}>
+        <View style={{ flex: 3, justifyContent: "center", alignItems:"center" }}>
+            <Text style={CoreStyles.drawerTitle}>
                 Vocab Panda
             </Text>
         </View>
@@ -104,28 +168,8 @@ const VocabDrawerContent = (props)=>{
                 <DrawerItemList {...props} />
             </DrawerContentScrollView>
         </View>
-        <View style={{flex:1}}>
-            <DrawerItem 
-                    
-                    label="Test Yourself"
-                    onPress={()=>{
-                        /* Render game modal */
-                        console.log("Hello world");
-                        props.navigation.navigate('game', {screen: "MyModal"})
-                        
-                    }}
-
-                    style={{
-                        backgroundColor: "red",
-                        justifyContent: "center", 
-                        padding: 0,
-                        marginLeft: 10
-                    }}
-
-                    labelStyle={{
-                        fontFamily: "Exo2-BoldItalic"
-                    }}
-                    />
+        <View style={{flex:1.5, justifyContent:"center", alignItems:"center", backgroundColor:"grey"}}>
+            <PlayButton {...props} dest={navDestination}/>
         </View>
     </View>
     )

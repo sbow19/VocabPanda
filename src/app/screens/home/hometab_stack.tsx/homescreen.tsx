@@ -2,14 +2,24 @@
 
 import React from 'react';
 import {
-    View
+    View,
 } from 'react-native';
 
-const HomeScreen = ()=>{
+import CoreStyles from '../../../shared_styles/core_styles';
+import PlayButton from '../../../shared/playButton';
+
+const HomeScreen = props=>{
+
+    const navDestination = {
+        screen: "game",
+        screenParams: {
+            screen: "MyModal"
+        }
+    }
 
 return (
-    <View>
-        
+    <View style={[CoreStyles.defaultScreen, {justifyContent: "center", alignItems:"center"}]}>
+        <PlayButton {...props} dest={navDestination}/>
     </View>
 )
 }
