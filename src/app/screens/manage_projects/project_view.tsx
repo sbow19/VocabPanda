@@ -14,11 +14,14 @@ import PlayButton from '../../shared/playButton';
 const ProjectView: React.FC = (props)=>{
 
     React.useEffect(() => {
+
+        /* reset state on hardware back press*/
         const backAction = () => {
-          props.navigation.reset({
+          props.navigation.reset(({
             index:0,
-            routes: [{ name: 'choose project' }]
-          })
+            routes: [{ name: 'choose project' }],
+            key: null
+          }))
           return true;
         };
     

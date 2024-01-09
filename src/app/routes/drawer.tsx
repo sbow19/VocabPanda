@@ -1,10 +1,11 @@
 /* eslint-disable */
 
+import React from 'react'
+
 import { 
     createDrawerNavigator,
     DrawerContentScrollView,
     DrawerItemList,
-    DrawerItem,
     DrawerNavigationOptions
 } from '@react-navigation/drawer';
 
@@ -15,10 +16,6 @@ import {
 
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
 import {default as OcticonIcon} from 'react-native-vector-icons/Octicons'
-
-
-import { getHeaderTitle } from '@react-navigation/elements';
-
 
 import HomeStack from '../screens/home/homestack';
 import Account from '../screens/account/account';
@@ -59,7 +56,7 @@ const AppMainDrawer: React.FC = props => {
         drawerActiveBackgroundColor: appColours.darkGreen,
 
         drawerInactiveBackgroundColor: "rgba(43, 255, 43, 0.3)"
-    }
+    };
 
     return(
             <MainDrawer.Navigator 

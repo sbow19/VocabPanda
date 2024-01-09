@@ -11,7 +11,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 const MainAppContainer = createNativeStackNavigator()
 
 
-const VocabPandaApp: React.FC = () => { 
+const VocabPandaApp: React.FC = props => { 
 
 
 

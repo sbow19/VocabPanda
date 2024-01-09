@@ -55,13 +55,15 @@ const AppButton: React.FC = props=>{
                    activeOpacity={1}
                    onPressIn={()=>{
                        setPressState(true);
-                       setLongPressState(false)
+                       setLongPressState(false);
+                       try{props.setSwipeStatus(false)}catch(e){console.log(e)}
                    }}
                    onPressOut={()=>{
                        setPressState(false);
                        if(!longPressState){
                         props.navigation.navigate(navDestination.screen, navDestination.screenParams)
                        }
+                       try{props.setSwipeStatus(true)}catch(e){console.log(e)}
                    }}
                    onLongPress={()=>{setLongPressState(true)}}>
               

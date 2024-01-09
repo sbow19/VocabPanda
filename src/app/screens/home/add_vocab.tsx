@@ -1,10 +1,9 @@
 /* eslint-disable */
 
 
-import React, {useState} from 'react';
+import React, {useState, useContext} from 'react';
 import {
     View,
-    Button,
     Text
 } from 'react-native';
 import ProjectDropdown from '../../shared/projectDropdown';
@@ -14,6 +13,8 @@ import { destination } from '../../shared/appButton';
 import AppButton from '../../shared/appButton';
 
 import CoreStyles from '../../shared_styles/core_styles';
+
+import TabSwipeStatus from '../../context/swipe_toggle';
 
 
 
@@ -42,10 +43,27 @@ const AddVocab: React.FC = props=>{
             
     }}
 
+    const setSwipeStatus = useContext(TabSwipeStatus);
+
+
+
+    React.useEffect(()=>{
+
+        const unsubscribe = props.navigation.addListener("blur", (e)=>{
+
+            setCurrentSelection("");
+
+        })
+    
+        return unsubscribe
+
+    }, [props.navigation]
+)
+
     return(
-        <View style={{flex:1}}>
+        <View style={CoreStyles.defaultScreen}>
             <ProjectDropdown  mySelectState={mySelectState}/>
-            <AppButton {...props} dest={navDestination}>
+            <AppButton {...props} dest={navDestination} setSwipeStatus={setSwipeStatus}>
                 <Text style={CoreStyles.actionButtonText}>Select Project</Text>
             </AppButton>
 

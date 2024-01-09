@@ -1,15 +1,20 @@
 /* eslint-disable */
 
-import React from 'react';
+import React, { useContext } from 'react';
 import {
     View,
-    TextInput,
-    Text
+    Text,
+    KeyboardAvoidingView,
+    ScrollView
 } from 'react-native';
 import CoreStyles from '../../shared_styles/core_styles';
 import SearchButton from '../../shared/search_button';
 import { CustomButtonStyles } from '../../shared/appButton';
 import { appColours } from '../../shared_styles/core_styles';
+
+import TabSwipeStatus from '../../context/swipe_toggle';
+import VocabPandaTextInput from '../../shared/text_input';
+
 
 const VocabSearch: React.FC = props=>{
 
@@ -18,14 +23,25 @@ const VocabSearch: React.FC = props=>{
         backgroundColor: appColours.lightGreen
     }
 
-    return(
-        <View style={CoreStyles.defaultScreen}>
-            <SearchButton {...props} addedStyles={addedStyles}>
-                <Text style={[CoreStyles.actionButtonText,]}> Search </Text>
-            </SearchButton>
+    const setSwipeStatus = useContext(TabSwipeStatus)
 
-        </View>
+    return(
+        
+            <View style={[CoreStyles.defaultScreen, additionalStyles]}>
+                <KeyboardAvoidingView behavior='padding' style={[CoreStyles.defaultScreen, additionalStyles]}>
+                    <VocabPandaTextInput/>
+                    <SearchButton {...props} addedStyles={addedStyles} setSwipeStatus={setSwipeStatus} >
+                        <Text style={[CoreStyles.actionButtonText,]}> Search </Text>
+                    </SearchButton>
+                </KeyboardAvoidingView>
+            </View>
+
     )
+}
+
+const additionalStyles = {
+    justifyContent: "center",
+    alignItems: "center"
 }
 
 export default VocabSearch;

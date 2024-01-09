@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 import { StyleSheet } from "react-native";
-import windowDimensions from "../context/context";
+import windowDimensions from "../context/dimensions";
 
 
 export type CoreColours = {
@@ -34,18 +34,10 @@ const CoreStyles = StyleSheet.create({
         padding: 0, 
     },
 
-    playButton: {
-
-    },
-
     actionButtonText: {
         fontSize: 16,
         fontFamily: "Exo2-Bold",
         color: appColours.white
-    },
-
-    textCard: {
-
     },
 
     mainHeader: {

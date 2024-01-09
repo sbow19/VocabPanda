@@ -52,12 +52,14 @@ const SearchButton: React.FC = props=>{
                    onPressIn={()=>{
                        setPressState(true);
                        setLongPressState(false)
+                       try{props.setSwipeStatus(false)}catch(e){console.log(e)}
                    }}
                    onPressOut={()=>{
                        setPressState(false);
                        if(!longPressState){
                         console.log("Add database search func here")
                        }
+                       try{props.setSwipeStatus(true)}catch(e){console.log(e)}
                    }}
                    onLongPress={()=>{setLongPressState(true)}}>
               

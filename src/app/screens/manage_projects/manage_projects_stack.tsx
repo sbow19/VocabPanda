@@ -12,7 +12,18 @@ import ProjectView from './project_view';
 
 const ManageProjectsNav = createNativeStackNavigator();
 
-const ManageProjectsStack: React.FC = ()=>{
+const ManageProjectsStack: React.FC = props=>{
+
+     /* Listen to state change*/
+
+     React.useEffect(()=>{
+
+        const unsubscribe = props.navigation.addListener("state", e=>{
+            console.log(e.data.state.history)
+        })
+
+    }, [props.navigation])
+
 
     return (
 
@@ -24,5 +35,6 @@ const ManageProjectsStack: React.FC = ()=>{
         </View>
     )
 }
+
 
 export default ManageProjectsStack;

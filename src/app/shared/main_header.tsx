@@ -3,7 +3,6 @@
 import React, {useState} from 'react'
 import { 
     TouchableOpacity,
-    View
  } from 'react-native'
 
 import {Header} from '@react-navigation/elements';
@@ -15,7 +14,8 @@ import CoreStyles from '../shared_styles/core_styles';
 
 import {default as EntypoIcon} from 'react-native-vector-icons/Entypo'
 import { default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
-import Account from '../screens/account/account';
+
+import windowDimensions from '../context/dimensions';
 
 const MainHeader: React.FC = props=>{
 
@@ -55,19 +55,21 @@ const headerStyle= {
 const headerTitleStyles = {
  
     flex:1,
-    marginTop:7,
+    marginTop:10,
     fontFamily:"Exo2-Bold",
-    fontSize: 28
+    fontSize: 22,
+    width: (windowDimensions.WIDTH * 0.27),
+    paddingLeft:10
 
 }
 
 const headerLeftContainerStyle = {
     
+    
 }
 
 const DrawerOpen: React.FC = props=>{
 
-    const [pressState, setPressState] = useState(false)
 
     return(
 
@@ -90,8 +92,6 @@ const DrawerOpen: React.FC = props=>{
 }
 
 const AccountOpen: React.FC = props=>{
-
-    const [pressState, setPressState] = useState(false)
 
     return(
 
