@@ -1,25 +1,9 @@
 /* eslint-disable */
 
 import { StyleSheet } from "react-native";
-import windowDimensions from "../context/dimensions";
-
-
-export type CoreColours = {
-    black: "#3E3B3F"
-    white: "#F5F5F5"
-    lightGreen: "#46EC8B"
-    darkGreen: "#15CB61"
-    blue: "#99F5FF"
-};
-
-export const appColours: CoreColours = {
-    black: "#3E3B3F",
-    white: "#F5F5F5",
-    lightGreen: "#46EC8B",
-    darkGreen: "#15CB61",
-    blue: "#99F5FF"
-}
-
+import windowDimensions from "@context/dimensions";
+import appColours from "@styles/app_colours";
+import * as types from '@customTypes/types.d'
 
 const CoreStyles = StyleSheet.create({
     contentText: {
@@ -39,80 +23,138 @@ const CoreStyles = StyleSheet.create({
         fontFamily: "Exo2-Bold",
         color: appColours.white
     },
-
-    mainHeader: {
-
-        height: (windowDimensions.HEIGHT * 0.075),
-        backgroundColor: appColours.darkGreen,
-        alignItems: "center",
-        justifyContent: "center",
-        borderColor: appColours.black,
-        borderWidth: 5,
-
-    },
-
-    mainHeaderText: {
-
-        fontSize: 20,
-        color: appColours.black,
-        fontFamily: "Exo2-ExtraBold",
-        fontSize: 25
-
-    },
-
-    drawerStyle: {
-        backgroundColor: appColours.white,
-        width: 200,
-        borderTopRightRadius: 10,
-        marginTop: ((windowDimensions.HEIGHT * 0.075) -30)
-    },
-
-    drawerLabelStyle: {
-        fontFamily: "Exo2-Medium",
-        padding: 0,
-        color: "black",
-        fontSize: 18,
-        flexWrap: "wrap",
-    },
     
-    drawerItemStyle: {
-        flex: 1,
-        borderColor: "black",
-        borderWidth: 1,
+    mainHeaderStyles:
+    {
+        mainHeader: {
+            borderBottomColor: appColours.black,
+            borderBottomWidth: 2,
+            backgroundColor: appColours.darkGreen,
+        },
+
+        mainHeaderText: {
+            flex:1,
+            marginTop:10,
+            fontFamily:"Exo2-Bold",
+            fontSize: 22,
+            width: (windowDimensions.WIDTH * 0.27),
+            paddingLeft:10
+        },
+
+        accountOpenWrapperStyle: {
+
+            width:"50%",
+            height: "80%",
+            position: "relative",
+            right: 20,
+            justifyContent: "center",
+            alignItems: "center",
+            elevation: 1,
+            borderRadius: 3
+        },
+
+        drawerOpenWrapperStyle: {
+
+            width:"50%",
+            height: "80%",
+            position: "relative",
+            left: 20,
+            justifyContent: "center",
+            alignItems: "center",
+            elevation: 1,
+            borderRadius: 3
+        }
+
+
     },
 
-    homeTabBarStyle:{
-        height: (windowDimensions.HEIGHT * 0.075 - 5),
+    drawerStyles:{
+        drawerStyle: {
+            backgroundColor: appColours.white,
+            width: 200,
+            borderTopRightRadius: 10,
+            marginTop: ((windowDimensions.HEIGHT * 0.075) -30)
+        },
+        drawerLabelStyle: {
+            fontFamily: "Exo2-Medium",
+            padding: 0,
+            color: "black",
+            fontSize: 18,
+            flexWrap: "wrap",
+        },
+        drawerItemStyle: {
+            flex: 1,
+            borderColor: "black",
+            borderWidth: 1,
+        },
+        drawerTitle: {
+            fontSize: 26,
+            color: appColours.black,
+            fontFamily: "Exo2-ExtraBold"
+        }
     },
 
-    homeTabBarLabelStyle:{
-        fontFamily: "Exo2-Black",
-        color: appColours.black,
-        padding:0,
-        margin: 0,
-        fontSize: 12
+    homeTabNavBarStyles: {
+        homeTabBarStyle:{
+            height: (windowDimensions.HEIGHT * 0.075 - 5),
+        },
+        homeTabBarLabelStyle:{
+            fontFamily: "Exo2-Black",
+            color: appColours.black,
+            padding:0,
+            margin: 0,
+            fontSize: 11
+        },
+        homeTabBarLabelFocusedStyle:{
+            fontFamily: "Exo2-Black",
+            color: appColours.black,
+            padding:0,
+            margin: 0,
+            fontSize: 12,
+        },
+     
+        homeTabBarItemStyle:{
+            borderColor: appColours.blue,
+            borderWidth: 2,
+            justifyContent: "center",
+            backgroundColor: appColours.lightGreen,
+            padding: 0,
+            margin: 0,
+            
+        },
+        
+        homeTabBarIndicatorStyle: {
+            backgroundColor: appColours.black,
+            borderRadius: 10
+        },
+    },
 
-    },
-    homeTabBarContentContainerStyle:{
-        justifyContent: "flex-start",
-        backgroundColor: appColours.lightGreen,
-        padding: 0,
-        margin: 0,
-    },
-    
-    homeTabBarIndicatorStyle: {
-        backgroundColor: appColours.black,
-        borderRadius: 10
-    },
-    homeTabBarIndicatorContainerStyle: {
-        backgroundColor: "powderblue",
-        opacity:0.5
+    sliderStyle: {
+        width: (windowDimensions.WIDTH * 0.5),
+        height: (windowDimensions.HEIGHT * 0.05)
     },
 
-    drawerTitle: {
-        fontSize: 26,
-        color: appColours.black
-    },
+    dropDownStyles: {
+        dropdownContainerStyle: {
+            backgroundColor: appColours.white,
+            borderColor: appColours.black,
+            borderWidth: 2,
+            width: (windowDimensions.WIDTH * 0.8),
+            borderRadius: 10,
+            paddingLeft: 5,
+            elevation: 10,
+        },
+
+        buttonContainerStyle: {
+            backgroundColor: appColours.white,
+            borderRadius:10,
+            elevation: 10,
+            borderColor: appColours.black,
+            borderWidth: 2,
+            padding: 5,
+            width: (windowDimensions.WIDTH * 0.8)
+        }
+    }
     
 })
 

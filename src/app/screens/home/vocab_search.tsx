@@ -1,19 +1,20 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import React, { useContext } from 'react';
 import {
     View,
     Text,
     KeyboardAvoidingView,
-    ScrollView
+    ViewStyle
 } from 'react-native';
-import CoreStyles from '../../shared_styles/core_styles';
-import SearchButton from '../../shared/search_button';
-import { CustomButtonStyles } from '../../shared/appButton';
-import { appColours } from '../../shared_styles/core_styles';
+import CoreStyles from '@styles/core_styles';
+import SearchButton from '@shared/search_button';
+import appColours from '@styles/app_colours';
 
-import TabSwipeStatus from '../../context/swipe_toggle';
-import VocabPandaTextInput from '../../shared/text_input';
+import TabSwipeStatus from '@context/swipe_toggle';
+import VocabPandaTextInput from '@shared/text_input';
 
 
 const VocabSearch: React.FC = props=>{
@@ -39,7 +40,7 @@ const VocabSearch: React.FC = props=>{
     )
 }
 
-const additionalStyles = {
+const additionalStyles: ViewStyle = {
     justifyContent: "center",
     alignItems: "center"
 }

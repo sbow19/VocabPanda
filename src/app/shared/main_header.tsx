@@ -1,35 +1,31 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import React, {useState} from 'react'
 import { 
     TouchableOpacity,
  } from 'react-native'
 
 import {Header} from '@react-navigation/elements';
-import { appColours } from '../shared_styles/core_styles';
+import appColours from '@styles/app_colours';
+import CoreStyles from 'app/shared_styles/core_styles';
 
-console.log(appColours)
-import CoreStyles from '../shared_styles/core_styles';
 
 
 import {default as EntypoIcon} from 'react-native-vector-icons/Entypo'
 import { default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
-
-import windowDimensions from '../context/dimensions';
 
 const MainHeader: React.FC = props=>{
 
     const headerTitle = props.route.name
 
     return(
-
-  
             <Header
                 title={headerTitle}
-                headerStyle={headerStyle}
-                headerTitleStyle={headerTitleStyles}
+                headerStyle={CoreStyles.mainHeaderStyles.mainHeader}
+                headerTitleStyle={CoreStyles.mainHeaderStyles.mainHeaderText}
                 headerTitleAlign="center"
-                headerLeftContainerStyle={headerLeftContainerStyle}
                 headerLeft={()=>{
                     return(
                         <DrawerOpen {...props}/>
@@ -41,45 +37,18 @@ const MainHeader: React.FC = props=>{
                     )
                 }}
             
-            />
-                
+            />         
     )
 }
 
-const headerStyle= {
-    borderBottomColor: appColours.black,
-    borderBottomWidth: 2,
-    backgroundColor: appColours.darkGreen,
-}
-
-const headerTitleStyles = {
- 
-    flex:1,
-    marginTop:10,
-    fontFamily:"Exo2-Bold",
-    fontSize: 22,
-    width: (windowDimensions.WIDTH * 0.27),
-    paddingLeft:10
-
-}
-
-const headerLeftContainerStyle = {
-    
-    
-}
-
 const DrawerOpen: React.FC = props=>{
-
-
     return(
-
-
             <TouchableOpacity onPress={()=>{
 
                 props.navigation.openDrawer()
 
             }}
-            style={drawerOpenWrapperStyle}>
+            style={CoreStyles.mainHeaderStyles.drawerOpenWrapperStyle}>
 
                 <EntypoIcon 
                     name="menu" 
@@ -102,7 +71,7 @@ const AccountOpen: React.FC = props=>{
 
             }}
             
-            style={AccountOpenWrapperStyle}>
+            style={CoreStyles.mainHeaderStyles.accountOpenWrapperStyle}>
                 <MaterialIcon 
                     name="account-circle" 
                     color={appColours.black}
@@ -111,30 +80,6 @@ const AccountOpen: React.FC = props=>{
             </TouchableOpacity>
 
     )
-}
-
-const drawerOpenWrapperStyle = {
-
-    width:"50%",
-    height: "80%",
-    position: "relative",
-    left: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 1,
-    borderRadius: 3
-}
-
-const AccountOpenWrapperStyle = {
-
-    width:"50%",
-    height: "80%",
-    position: "relative",
-    right: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 1,
-    borderRadius: 3
 }
 
 export default MainHeader;

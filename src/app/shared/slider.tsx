@@ -1,10 +1,12 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d';
+
 import React, {useState} from "react";
 import Slider from "@react-native-community/slider";
-import windowDimensions from "../context/dimensions";
-import { appColours } from "../shared_styles/core_styles";
-import CoreStyles from "../shared_styles/core_styles";
+import windowDimensions from "@context/dimensions";
+import appColours from "@styles/app_colours";
+import CoreStyles from "@styles/core_styles";
 import {
     View,
     Text
@@ -24,7 +26,7 @@ const AppSlider:React.FC = props=>{
                     onValueChange={val=>{setSliderValue(val)}}
                     step={1}
                     tapToSeek={true}
-                    style={sliderStyle}
+                    style={CoreStyles.sliderStyle}
                     minimumTrackTintColor={appColours.lightGreen}
                     thumbTintColor={appColours.darkGreen}
                     maximumTrackTintColor={appColours.black}
@@ -35,11 +37,5 @@ const AppSlider:React.FC = props=>{
     )
 };
 
-const sliderStyle ={
-
-    width: (windowDimensions.WIDTH *0.5),
-    height: (windowDimensions.HEIGHT *0.05)
-
-}
 
 export default AppSlider;

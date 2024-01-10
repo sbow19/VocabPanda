@@ -1,5 +1,7 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d';
+
 import {
     StyleProp,
     TextInput,
@@ -8,8 +10,8 @@ import {
 
 import { useState } from 'react'
 
-import windowDimensions from '../context/dimensions';
-import { appColours } from '../shared_styles/core_styles';
+import windowDimensions from '@context/dimensions';
+import appColours from '@styles/app_colours';
 
 const VocabPandaTextInput: React.FC = props =>{
 

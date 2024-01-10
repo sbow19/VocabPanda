@@ -1,20 +1,22 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import React from 'react';
 import {
     View,
+    ViewStyle,
     Text,
     ScrollView
 } from 'react-native';
 
-import CoreStyles, {appColours} from '../../shared_styles/core_styles';
-
-import ContentCard from '../../shared/content_card';
+import CoreStyles from '@styles/core_styles';
+import ContentCard from '@shared/content_card';
 
 const About: React.FC = ()=>{
 
     return (
-        <View style={{...CoreStyles.defaultScreen, ...additionalStyles}}>
+        <View style={{...CoreStyles.defaultScreen, ...additionalSceneStyles}}>
             <ScrollView>
             <View style={{marginTop: 10}}>
                 <ContentCard cardStylings={cardStylings}>
@@ -42,13 +44,13 @@ const About: React.FC = ()=>{
     )
 }
 
-const cardStylings = {
+const cardStylings:types.CustomCardStyles = {
     width: 300,
     height: 300,
 
 };
 
-const additionalStyles = {
+const additionalSceneStyles: ViewStyle = {
     alignItems: "center",
     marginTop: 10
 };

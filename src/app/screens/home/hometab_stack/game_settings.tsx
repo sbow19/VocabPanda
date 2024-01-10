@@ -1,15 +1,17 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import React from 'react';
 import {
     View,
+    ViewStyle
 } from 'react-native';
-import { appColours } from '../../../shared_styles/core_styles';
-import CoreStyles from '../../../shared_styles/core_styles';
-import AppSwitch from '../../../shared/switch';
-import AppSlider from '../../../shared/slider';
+import CoreStyles from '@styles/core_styles';
+import AppSwitch from '@shared/switch';
+import AppSlider from '@shared/slider';
 
-const GameSettings = ({navigation})=>{
+const GameSettings: React.FC = ({navigation})=>{
 
 return (
     <View style={[CoreStyles.defaultScreen, additionalStyles]}>
@@ -20,7 +22,7 @@ return (
 )
 }
 
-const additionalStyles = {
+const additionalStyles: ViewStyle = {
     justifyContent: "center",
     alignItems: "center"
 }

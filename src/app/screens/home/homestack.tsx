@@ -1,5 +1,7 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import React, {useState} from 'react';
 import {
     Dimensions,
@@ -7,23 +9,21 @@ import {
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
-import HomeTab from './hometab_stack.tsx/homebottomtab';
-import VocabSearch from './vocab_search';
-import AddVocab from './add_vocab';
+import HomeTab from '@screens/home/hometab_stack/homebottomtab'
+import VocabSearch from '@screens/home/vocab_search';
+import AddVocab from '@screens/home/add_vocab';
 
 import { MaterialTopTabNavigationOptions } from '@react-navigation/material-top-tabs';
-import CoreStyles from '../../shared_styles/core_styles';
+import CoreStyles from '@styles/core_styles';
 
-import TabSwipeStatus from '../../context/swipe_toggle';
+import TabSwipeStatus from '@context/swipe_toggle';
 
 
 const HomeStackNav = createMaterialTopTabNavigator();
 
 const HomeStack: React.FC = props=>{
 
-    const [swipeStatus, setSwipeStatus] = useState(true);
-
-   
+    const [swipeStatus, setSwipeStatus] = useState(true);   
 
     return (
 
@@ -32,7 +32,7 @@ const HomeStack: React.FC = props=>{
                 <HomeStackNav.Navigator 
                     initialRouteName="game" 
                     initialLayout={{width: Dimensions.get('window').width}} 
-                    screenOptions={{...BasicTabStyles, swipeEnabled:swipeStatus}}
+                    screenOptions={{...DefaultTabStyles, swipeEnabled:swipeStatus}}
                 >
                     <HomeStackNav.Screen name="play" component={HomeTab}/>
                     <HomeStackNav.Screen name="vocab search" component={VocabSearch}/>
@@ -43,14 +43,13 @@ const HomeStack: React.FC = props=>{
     )
 }
 
-const BasicTabStyles: MaterialTopTabNavigationOptions = {
+const DefaultTabStyles: MaterialTopTabNavigationOptions = {
     tabBarGap: 5,
     tabBarBounces: true,
-    tabBarStyle: CoreStyles.homeTabBarStyle,
-    tabBarLabelStyle: CoreStyles.homeTabBarLabelStyle,
-    tabBarContentContainerStyle: CoreStyles.homeTabBarContentContainerStyle,
-    tabBarIndicatorStyle: CoreStyles.homeTabBarIndicatorStyle,
-    tabBarIndicatorContainerStyle: CoreStyles.homeTabBarIndicatorContainerStyle,
+    tabBarStyle: CoreStyles.homeTabNavBarStyles.homeTabBarStyle,
+    tabBarLabelStyle: CoreStyles.homeTabNavBarStyles.homeTabBarLabelStyle,
+    tabBarIndicatorStyle: CoreStyles.homeTabNavBarStyles.homeTabBarIndicatorStyle,
+    tabBarItemStyle: CoreStyles.homeTabNavBarStyles.homeTabBarItemStyle,
 };
 
 export default HomeStack;

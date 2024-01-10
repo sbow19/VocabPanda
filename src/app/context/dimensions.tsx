@@ -1,16 +1,12 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import { Dimensions } from "react-native";
-
-
-type WindowDimensions = {
-    HEIGHT: number
-    WIDTH: number
-}
 
 const {height, width} = Dimensions.get('window');
 
-const windowDimensions: WindowDimensions = {
+const windowDimensions: types.WindowDimensions = {
 
     HEIGHT: height, 
     WIDTH: width

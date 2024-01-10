@@ -1,15 +1,17 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import React from 'react';
-import HomeScreen from './homescreen';
-import GameSettings from './gamesettings';
+import HomeScreen from '@screens/home/hometab_stack/homescreen';
+import GameSettings from '@screens/home/hometab_stack/game_settings';
 
 import {BottomTabNavigationOptions, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
 import {default as MaterialCommunityIcon} from 'react-native-vector-icons/MaterialCommunityIcons'
-import { appColours } from '../../../shared_styles/core_styles';
-import windowDimensions from '../../../context/dimensions';
+import appColours from '@styles/app_colours';
+import windowDimensions from '@context/dimensions';
 
 
 const BottomTab = createBottomTabNavigator();

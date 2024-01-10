@@ -1,5 +1,8 @@
 /* eslint-disable */
 
+
+import * as types from '@customTypes/types.d'
+
 import React, {useState} from 'react';
 
 import { 
@@ -7,7 +10,9 @@ import {
     Text
 } from 'react-native';
 
-import CoreStyles, { shadowSettings, appColours } from '../shared_styles/core_styles';
+import appColours from 'app/shared_styles/app_colours';
+
+import CoreStyles, { shadowSettings } from '@styles/core_styles';
 
 import { Shadow } from 'react-native-shadow-2';
 

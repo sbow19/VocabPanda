@@ -1,6 +1,12 @@
 /* eslint-disable */
 
-import React from 'react'
+import * as types from '@customTypes/types.d';
+
+
+import appColours from '@styles/app_colours';
+import CoreStyles from '@styles/core_styles';
+
+import React from 'react';
 
 import { 
     createDrawerNavigator,
@@ -12,32 +18,28 @@ import {
 import {
     View,
     Text,
+    Image,
 } from 'react-native'
 
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
 import {default as OcticonIcon} from 'react-native-vector-icons/Octicons'
 
-import HomeStack from '../screens/home/homestack';
-import Account from '../screens/account/account';
-import About from '../screens/about/about';
-import ManageProjectsStack from '../screens/manage_projects/manage_projects_stack';
-
-import { appColours } from '../shared_styles/core_styles';
- import CoreStyles from '../shared_styles/core_styles';
-
-import PlayButton from '../shared/playButton';
-
-import MainHeader from '../shared/main_header';
+import HomeStack from '@screens/home/homestack';
+import Account from '@screens/account/account';
+import About from '@screens/about/about';
+import ManageProjectsStack from '@screens/manage_projects/manage_projects_stack';
+import PlayButton from '@shared/play_button';
+import MainHeader from '@shared/main_header';
 
 
 const MainDrawer = createDrawerNavigator();
 
-const AppMainDrawer: React.FC = props => {    
+const AppMainDrawer: React.FC = props => {  
 
     /* General styles for the draw list */
     const BasicDrawerConfig: DrawerNavigationOptions = {
 
-        drawerStyle: CoreStyles.drawerStyle ,
+        drawerStyle: CoreStyles.drawerStyles.drawerStyle ,
 
         header: props=>{
 
@@ -49,9 +51,9 @@ const AppMainDrawer: React.FC = props => {
 
     const BasicDrawerItemConfig: DrawerNavigationOptions = {
 
-        drawerLabelStyle: CoreStyles.drawerLabelStyle,
+        drawerLabelStyle: CoreStyles.drawerStyles.drawerLabelStyle,
         
-        drawerItemStyle: CoreStyles.drawerItemStyle,
+        drawerItemStyle: CoreStyles.drawerStyles.drawerItemStyle,
 
         drawerActiveBackgroundColor: appColours.darkGreen,
 
@@ -156,7 +158,8 @@ const VocabDrawerContent = props=>{
     <View style={{flex: 1, justifyContent: "space-around", margin:2}}>
 
         <View style={{ flex: 3, justifyContent: "center", alignItems:"center" }}>
-            <Text style={CoreStyles.drawerTitle}>
+            <Image source={require("../../assets/icons/AppIcons/android/mipmap-xhdpi/ic_launcher.png")}/>
+            <Text style={CoreStyles.drawerStyles.drawerTitle}>
                 Vocab Panda
             </Text>
         </View>

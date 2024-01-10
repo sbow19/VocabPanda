@@ -1,21 +1,16 @@
 /*  eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import {
-    View 
+    View, ViewStyle 
 } from 'react-native'
 
-import { appColours } from '../shared_styles/core_styles';
+import appColours from '@styles/app_colours';
 
 import { Shadow } from 'react-native-shadow-2';
-import { shadowSettings } from '../shared_styles/core_styles';
+import { shadowSettings } from '@styles/core_styles';
 
-
-type CustomCardStyles = {
-    height?: number
-    width?: number
-    backgroundColor?: string
-    borderRadius?: number
-};
 
 const ContentCard:React.FC = props=>{
 
@@ -41,7 +36,7 @@ const ContentCard:React.FC = props=>{
     )
 }
 
-const defaultCardStylings = {
+const defaultCardStylings: ViewStyle = {
 
     backgroundColor: "rgba(217, 254, 217, 1)",
     opacity: 1,

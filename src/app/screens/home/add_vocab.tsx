@@ -1,23 +1,16 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
 
 import React, {useState, useContext} from 'react';
 import {
     View,
     Text
 } from 'react-native';
-import ProjectDropdown from '../../shared/projectDropdown';
-
-import { destination } from '../../shared/appButton';
-
-import AppButton from '../../shared/appButton';
-
-import CoreStyles from '../../shared_styles/core_styles';
-
-import TabSwipeStatus from '../../context/swipe_toggle';
-
-
-
+import ProjectDropdown from '@shared/project_dropdown';
+import AppButton from '@shared/app_button';
+import CoreStyles from '@styles/core_styles';
+import TabSwipeStatus from '@context/swipe_toggle';
 
 const AddVocab: React.FC = props=>{
 
@@ -33,7 +26,7 @@ const AddVocab: React.FC = props=>{
     
     const mySelectState = [currentSelection, handleUserSelection];
 
-    const navDestination: destination = {
+    const navDestination: types.destination = {
         screen: "Projects",
         screenParams: {
             screen:"project view",    
@@ -44,8 +37,6 @@ const AddVocab: React.FC = props=>{
     }}
 
     const setSwipeStatus = useContext(TabSwipeStatus);
-
-
 
     React.useEffect(()=>{
 

@@ -6,9 +6,9 @@ import {
     View,
     Text
 } from 'react-native';
-import ProjectDropdown from '../../shared/projectDropdown';
-import AppButton from '../../shared/appButton';
-import CoreStyles from '../../shared_styles/core_styles';
+import ProjectDropdown from '@shared/project_dropdown';
+import AppButton from '@shared/app_button';
+import CoreStyles from '@styles/core_styles';
 
 const ChooseProject: React.FC = props=>{
 

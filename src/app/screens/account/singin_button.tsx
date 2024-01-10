@@ -1,25 +1,22 @@
 /* eslint-disable */
-
-import App from "../../../../App";
-import AppButton from "../../shared/appButton";
-import { CustomButtonStyles } from "../../shared/appButton";
-import { appColours } from "../../shared_styles/core_styles";
-import { destination } from "../../shared/appButton";
+import * as types from '@customTypes/types.d'
+import AppButton from "@shared/app_button";
+import appColours from "@styles/app_colours";
 import {
     Text
 } from 'react-native';
-import CoreStyles from "../../shared_styles/core_styles";
+import CoreStyles from "@styles/core_styles";
 
 
 const SignInButton: React.FC = props=>{
 
-    const addedStyles: CustomButtonStyles = {
+    const addedStyles: types.CustomButtonStyles = {
         height: 40,
         width: 80,
         backgroundColor: appColours.blue
     };
 
-    const navDestination: destination = {
+    const navDestination: types.destination = {
         screen: "game",
         screenParams:{
             params: {

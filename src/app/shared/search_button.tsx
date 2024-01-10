@@ -1,29 +1,19 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d';
+
 import React, {useState} from 'react';
 
 import { 
     TouchableOpacity
 } from 'react-native';
 
-import { shadowSettings, appColours } from '../shared_styles/core_styles';
+import appColours from '@styles/app_colours';
+
+import { shadowSettings } from '@styles/core_styles';
 
 import { Shadow } from 'react-native-shadow-2';
 
-export type destination = {
-    screen: string
-    screenParams?: {
-        screen?: string
-        params?: Object
-    }
-}
-
-export type CustomButtonStyles = {
-
-    height?: number
-    width?: number
-    backgroundColor?: string
-}
 
 const SearchButton: React.FC = props=>{
 

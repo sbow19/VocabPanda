@@ -5,11 +5,9 @@ import React from 'react';
 import {
     View,
     Text,
-    Button,
     BackHandler,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import PlayButton from '../../shared/playButton';
+import PlayButton from '@shared/play_button';
 
 const ProjectView: React.FC = (props)=>{
 

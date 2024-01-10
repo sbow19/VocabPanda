@@ -1,7 +1,8 @@
 /* eslint-disable */
 
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import VocabGame from "./vocabgame";
+import VocabGame from "@game/vocabgame"
+import * as types from '@customTypes/types.d'
 
 const VocabPandaModalStack = createNativeStackNavigator();
 

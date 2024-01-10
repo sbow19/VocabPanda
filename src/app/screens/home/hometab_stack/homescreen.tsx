@@ -1,20 +1,21 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import React, {useContext} from 'react';
 import {
     View,
 } from 'react-native';
+import CoreStyles from '@styles/core_styles';
+import PlayButton from '@shared/play_button';
+import ContentCard from '@shared/content_card';
 
-import CoreStyles from '../../../shared_styles/core_styles';
-import PlayButton from '../../../shared/playButton';
-import ContentCard from '../../../shared/content_card';
+import TabSwipeStatus from '@context/swipe_toggle';
+import VocabPandaTextInput from '@shared/text_input';
 
-import TabSwipeStatus from '../../../context/swipe_toggle';
-import VocabPandaTextInput from '../../../shared/text_input';
+const HomeScreen = (props: Object) =>{
 
-const HomeScreen = props=>{
-
-    const navDestination = {
+    const navDestination: types.destination = {
         screen: "game",
         screenParams: {
             screen: "MyModal"
@@ -37,7 +38,7 @@ return (
 )
 }
 
-const cardStylings = {
+const cardStylings: types.CustomCardStyles = {
     height: 200,
     width:200,
 }

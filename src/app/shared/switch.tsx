@@ -1,12 +1,10 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d';
+
 import React, {useState} from 'react'
-
-import { appColours } from '../shared_styles/core_styles';
-
 import { Switch } from 'react-native-switch';
-
-
+import appColours from '@styles/app_colours';
 
 const AppSwitch:React.FC = props =>{
 

@@ -1,5 +1,6 @@
 /* eslint-disable */
 
+
 import React from 'react';
 import { NavigationContainer} from '@react-navigation/native'
 import AppMainDrawer from './routes/drawer';

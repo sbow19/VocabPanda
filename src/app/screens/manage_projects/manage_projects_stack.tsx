@@ -7,33 +7,31 @@ import {
 } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import ChooseProject from './choose_project';
-import ProjectView from './project_view';
+import ChooseProject from '@screens/manage_projects/choose_project';
+import ProjectView from '@screens/manage_projects/project_view';
+
+import appColours from '@styles/app_colours';
 
 const ManageProjectsNav = createNativeStackNavigator();
 
 const ManageProjectsStack: React.FC = props=>{
 
-     /* Listen to state change*/
-
-     React.useEffect(()=>{
-
-        const unsubscribe = props.navigation.addListener("state", e=>{
-            console.log(e.data.state.history)
-        })
-
-    }, [props.navigation])
-
-
     return (
 
         <View style={{ flex:1 }}>
-            <ManageProjectsNav.Navigator>
+            <ManageProjectsNav.Navigator screenOptions={addedStyles}>
                 <ManageProjectsNav.Screen name='choose project' component={ChooseProject}/>
                 <ManageProjectsNav.Screen name='project view' component={ProjectView}/>
             </ManageProjectsNav.Navigator>
         </View>
     )
+}
+
+const addedStyles = {
+    headerStyle: {
+        backgroundColor: appColours.lightGreen
+    },
+    headerTitleAlign:"center"
 }
 
 

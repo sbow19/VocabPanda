@@ -1,9 +1,11 @@
 /* eslint-disable */
 
+import * as types from '@customTypes/types.d'
+
 import React, {useState} from 'react'
 import SelectDropdown from 'react-native-select-dropdown';
-import { appColours } from '../shared_styles/core_styles';
-import windowDimensions from '../context/dimensions';
+import appColours from '@styles/app_colours';
+import CoreStyles from '@styles/core_styles';
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
 
 const ProjectDropdown: React.FC = props=>{
@@ -12,11 +14,12 @@ const ProjectDropdown: React.FC = props=>{
 
     const [dropdownOpen, setDropDownState] = useState(false)
 
-    const data: ProjectList  = ["first project", "second project", "third project", "fourth project", "fifth project"];
+    const data: types.ProjectList  = ["first project", "second project", "third project", "fourth project", "fifth project"];
 
-    /* In order to narrow down the searches in the dropdown menu, we need to do some string matching*/
 
     const [currentSelection, handleUserSelection] = props.mySelectState
+
+    /* In order to narrow down the searches in the dropdown menu, we need to do some string matching*/
 
     const [currentSearchMatches, setCurrentSearchMatches] = useState(data)
 
@@ -54,8 +57,8 @@ const ProjectDropdown: React.FC = props=>{
             currentInputHandler(search);
         }}
         defaultButtonText="Choose Project"
-        buttonStyle={buttonContainerStyle}
-        dropdownStyle={dropdownContainerStyle}
+        buttonStyle={CoreStyles.dropDownStyles.buttonContainerStyle}
+        dropdownStyle={CoreStyles.dropDownStyles.dropdownContainerStyle}
         dropdownOverlayColor='rgba(0,0,0,0)'
         showsVerticalScrollIndicator={true}
         search={true}
@@ -73,30 +76,6 @@ const ProjectDropdown: React.FC = props=>{
             />
     )
 }
-
-
-type ProjectList = Array<ListItem|null>
-type ListItem = string;
-
-const dropdownContainerStyle = {
-    backgroundColor: appColours.white,
-    borderRadius:10,
-    height: 250,
-    elevation: 10,
-    borderColor: appColours.black,
-    borderWidth: 2,
-    padding: 5
-};
-
-const buttonContainerStyle = {
-    backgroundColor: appColours.white,
-    borderColor: appColours.black,
-    borderWidth: 2,
-    width: (windowDimensions.WIDTH * 0.8),
-    borderRadius: 10,
-    paddingLeft: 5,
-    elevation: 10,
-};
 
 
 export default ProjectDropdown
