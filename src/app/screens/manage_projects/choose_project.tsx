@@ -1,41 +1,45 @@
 /* eslint-disable */
 
-
+import * as types from '@customTypes/types.d'
 import React, {useState} from 'react';
 import {
     View,
     Text
 } from 'react-native';
-import ProjectDropdown from '@shared/project_dropdown';
+import Dropdown from 'app/shared/dropdown';
 import AppButton from '@shared/app_button';
 import CoreStyles from '@styles/core_styles';
 
-const ChooseProject: React.FC = props=>{
+const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
     /* define database response object */
     /* database loaded on first load and stored in cache */
-    const [currentSelection, setCurrentSelection] = useState("");
 
-    const handleUserSelection: (selection: string)=>void = (selection)=>{
+    const data: types.ProjectList = ["First proj", "vocab", "Spain"];
 
-        setCurrentSelection(selection);
+    const [currentProjectSelection, setCurrentProjectSelection] = useState("");
 
-    };
 
-    const mySelectState = [currentSelection, handleUserSelection];
+    const nav = ()=>{
 
-    const navDestination: destination = {
-        screen: "project view",
-        screenParams: {
+        /* Set up alert here */
+
+        props.navigation.navigate("project view", {
+
             screen: "project view",
-            project: currentSelection
+            project: currentProjectSelection
             
-    }}
+        })
+    }
 
     return(
         <View>
-            <ProjectDropdown mySelectState={mySelectState}/>
-            <AppButton {...props} dest={navDestination}>
+            <Dropdown 
+                data={data} 
+                defaultButtonText='Choose Project'
+                setSelection={setCurrentProjectSelection}
+            />
+            <AppButton {...props} onPress={nav}>
                 <Text style={CoreStyles.actionButtonText}>Select Project</Text>
             </AppButton>
         </View>

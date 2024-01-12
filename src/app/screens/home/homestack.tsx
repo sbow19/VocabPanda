@@ -11,7 +11,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 
 import HomeTab from '@screens/home/hometab_stack/homebottomtab'
 import VocabSearch from '@screens/home/vocab_search';
-import AddVocab from '@screens/home/add_vocab';
+import TranslateVocab from '@screens/home/translate';
 
 import { MaterialTopTabNavigationOptions } from '@react-navigation/material-top-tabs';
 import CoreStyles from '@styles/core_styles';
@@ -28,7 +28,6 @@ const HomeStack: React.FC = props=>{
     return (
 
         <TabSwipeStatus.Provider value={setSwipeStatus}>
-            <View style={{ flex:1 }}>
                 <HomeStackNav.Navigator 
                     initialRouteName="game" 
                     initialLayout={{width: Dimensions.get('window').width}} 
@@ -36,9 +35,8 @@ const HomeStack: React.FC = props=>{
                 >
                     <HomeStackNav.Screen name="play" component={HomeTab}/>
                     <HomeStackNav.Screen name="vocab search" component={VocabSearch}/>
-                    <HomeStackNav.Screen name="add vocab" component={AddVocab}/>
+                    <HomeStackNav.Screen name="translate" component={TranslateVocab}/>
                 </HomeStackNav.Navigator>
-            </View>
         </TabSwipeStatus.Provider>
     )
 }

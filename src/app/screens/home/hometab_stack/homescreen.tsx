@@ -5,42 +5,73 @@ import * as types from '@customTypes/types.d'
 import React, {useContext} from 'react';
 import {
     View,
+    Text,
+    ViewStyle
 } from 'react-native';
 import CoreStyles from '@styles/core_styles';
-import PlayButton from '@shared/play_button';
+import AppButton from 'app/shared/app_button';
 import ContentCard from '@shared/content_card';
 
+import ScreenTemplate from '@shared/homescreen_template';
+
 import TabSwipeStatus from '@context/swipe_toggle';
-import VocabPandaTextInput from '@shared/text_input';
+import windowDimensions from 'app/context/dimensions';
+import appColours from 'app/shared_styles/app_colours';
 
 const HomeScreen = (props: Object) =>{
 
-    const navDestination: types.destination = {
-        screen: "game",
-        screenParams: {
+    const setSwipeStatus = useContext(TabSwipeStatus);
+
+    const nav = ()=>{
+
+        props.navigation.navigate("game", {
+
             screen: "MyModal"
-        }
+            
+        })
     }
-
-    const setSwipeStatus = useContext(TabSwipeStatus)
-
-
+    
 
 return (
    
+    
         <View style={[CoreStyles.defaultScreen, {justifyContent: "center", alignItems:"center"}]}>
-             <ContentCard {...props} cardStylings={cardStylings}>
-                <VocabPandaTextInput/>
-                <PlayButton {...props} dest={navDestination} setSwipeStatus={setSwipeStatus}/>
-            </ContentCard>
-        </View>
+            <ScreenTemplate screenTitle="Welcome back, John">
+                <ContentCard cardStylings={customCardStylings}>
+                    <View>
+                        <Text></Text>
+                    </View>
+                </ContentCard>
 
+                <View style={buttonContainerStyle}>
+                    <AppButton {...props} onPress={nav}>
+                        <Text>Play</Text>
+                    </AppButton>
+                </View>
+            </ScreenTemplate>
+        </View>
 )
 }
 
-const cardStylings: types.CustomCardStyles = {
-    height: 200,
-    width:200,
+const customCardStylings: types.CustomButtonStyles = {
+
+    width: (windowDimensions.WIDTH *  0.9),
+    height: (windowDimensions.HEIGHT * 0.45)
+
+};
+
+const buttonContainerStyle: ViewStyle = {
+
+    width: (windowDimensions.WIDTH *  0.9),
+    height: (windowDimensions.HEIGHT *  0.10),
+    marginTop: 10,
+    flexDirection: "row",
+    backgroundColor: appColours.white,
+    justifyContent: "space-evenly",
+    alignItems: "center"
+
+
+
 }
 
 export default HomeScreen;

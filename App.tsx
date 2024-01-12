@@ -11,7 +11,8 @@ import VocabPandaApp from './src/app/app';
 function App () {
 
   return(
-    <VocabPandaApp/>
+      <VocabPandaApp/>
+
   )
 };
 

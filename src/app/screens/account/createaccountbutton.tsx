@@ -18,17 +18,14 @@ const CreateAccountButton: React.FC = props=>{
         backgroundColor: appColours.darkGreen
     };
 
-    const navDestination: types.destination = {
-        screen: "game",
-        screenParams:{
-            params: {
-                hello: "hello"
-            }
-        }
+
+    const nav = ()=>{
+
+        props.navigation.navigate("game")
     }
 
     return (
-        <AppButton {...props} dest={navDestination} addedStyles={addedStyles}>
+        <AppButton {...props} onPress={nav} customStyles={addedStyles}>
 
             <Text style={[CoreStyles.actionButtonText, {color: appColours.white, flexWrap:"wrap"}]}> Create account</Text>
 

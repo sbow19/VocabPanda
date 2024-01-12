@@ -11,15 +11,53 @@ import {
 import appColours from '@styles/app_colours';
 import { shadowSettings } from '@styles/core_styles';
 import { Shadow } from 'react-native-shadow-2';
+import TabSwipeStatus from 'app/context/swipe_toggle';
 
-const AppButton: React.FC = props=>{
+function parseProps(props: types.CustomButtonStylesProp){
+
+    const customProps: types.CustomButtonStylesProp = {
+        customStyles: {},
+        onPress: ()=>{},
+        setSwipeStatus: ()=>{}
+
+    }
+
+    try{
+        customProps.customStyles = props.customStyles
+
+    }catch(e){
+        console.log(e)
+    }
+
+    try{
+        customProps.onPress = props.onPress
+
+    }catch(e){
+        console.log(e)
+
+    }
+
+    try{
+        customProps.setSwipeStatus
+
+    }catch(e){
+        console.log(e)
+    }
+
+    return customProps
+}
+
+const AppButton: React.FC<types.CustomButtonStylesProp> = props =>{
 
     const [pressState, setPressState] = useState(false);
     const [longPressState, setLongPressState] = useState(false)
 
-    const navDestination = props?.dest
+    const setSwipeStatus = React.useContext(TabSwipeStatus);
 
-    const addedStyles = props?.addedStyles
+
+    const customProps:types.CustomButtonStylesProp = parseProps(props);
+
+    console.log(customProps)
 
     return(
 
@@ -36,19 +74,24 @@ const AppButton: React.FC = props=>{
                    borderWidth: 2,
                    justifyContent: "center",
                    alignItems:"center"
-                   }, addedStyles]}
+                   }, customProps.customStyles]}
                    activeOpacity={1}
+                   onPress={
+                    ()=>{
+                        if(!longPressState){customProps.onPress()}
+                    }
+                    }   
                    onPressIn={()=>{
+                    console.log("hello")
+
                        setPressState(true);
                        setLongPressState(false);
-                       try{props.setSwipeStatus(false)}catch(e){console.log(e)}
+                       setSwipeStatus(false)
                    }}
                    onPressOut={()=>{
+                    console.log("bye")
                        setPressState(false);
-                       if(!longPressState){
-                        props.navigation.navigate(navDestination.screen, navDestination.screenParams)
-                       }
-                       try{props.setSwipeStatus(true)}catch(e){console.log(e)}
+                       setSwipeStatus(true);
                    }}
                    onLongPress={()=>{setLongPressState(true)}}>
               

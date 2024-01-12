@@ -28,7 +28,7 @@ import HomeStack from '@screens/home/homestack';
 import Account from '@screens/account/account';
 import About from '@screens/about/about';
 import ManageProjectsStack from '@screens/manage_projects/manage_projects_stack';
-import PlayButton from '@shared/play_button';
+import AppButton from 'app/shared/app_button';
 import MainHeader from '@shared/main_header';
 
 
@@ -147,11 +147,13 @@ const AccountSpecificConfig: DrawerNavigationOptions = {
 
 const VocabDrawerContent = props=>{
 
-    const navDestination = {
-        screen: "game",
-        screenParams: {
+    const nav = ()=>{
+
+        props.navigation.navigate("game", {
+
             screen: "MyModal"
-        }
+            
+        })
     }
 
     return(
@@ -169,7 +171,9 @@ const VocabDrawerContent = props=>{
             </DrawerContentScrollView>
         </View>
         <View style={{flex:1.5, justifyContent:"center", alignItems:"center", backgroundColor:"grey"}}>
-            <PlayButton {...props} dest={navDestination}/>
+            <AppButton {...props} onPress={nav}>
+                <Text>Play</Text>
+            </AppButton>
         </View>
     </View>
     )

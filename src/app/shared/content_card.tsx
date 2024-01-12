@@ -12,7 +12,7 @@ import { Shadow } from 'react-native-shadow-2';
 import { shadowSettings } from '@styles/core_styles';
 
 
-const ContentCard:React.FC = props=>{
+const ContentCard:React.FC<types.CustomContentCardProp> = props=>{
 
     const {cardStylings} = props 
 

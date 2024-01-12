@@ -13,9 +13,36 @@ import { useState } from 'react'
 import windowDimensions from '@context/dimensions';
 import appColours from '@styles/app_colours';
 
-const VocabPandaTextInput: React.FC = props =>{
+const VocabPandaTextInput: React.FC<types.CustomInputProp> = props =>{
 
     const [active, setActive] = useState(false);
+
+    // TODO - Move custom prop handler to separate function
+
+    let textInputStyle: Object = {};
+
+    try {
+        textInputStyle = props.inputStyle
+    } catch (e){
+        console.log(e)
+    }
+
+    let numberOfLines = 1;
+
+    try {
+        numberOfLines = props.numberOfLines
+    } catch (e){
+        console.log(e)
+    }
+
+
+    let editableValue = true;
+
+    try{
+        editableValue = props.editable
+    } catch (e){
+        console.log(e)
+    }
 
 
     return(<>
@@ -23,9 +50,11 @@ const VocabPandaTextInput: React.FC = props =>{
     <TextInput
         style={[additionalStyles, 
             {
-                backgroundColor: !active ? appColours.white : "rgba(217, 254, 217, 1)",
+                backgroundColor: appColours.white ,
                 borderColor: !active ? appColours.black : appColours.blue
-            }
+            },
+            textInputStyle,
+
         ]}
         onFocus={()=>{
             console.log("Hello ")
@@ -34,6 +63,9 @@ const VocabPandaTextInput: React.FC = props =>{
         onBlur={()=>{
             setActive(false);
         }}
+        multiline={true}
+        numberOfLines={numberOfLines}
+        editable={editableValue}
 
     />
     

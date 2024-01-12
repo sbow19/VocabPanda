@@ -12,6 +12,13 @@ const CoreStyles = StyleSheet.create({
         lineHeight: 28
     },
 
+    contentTitleText: {
+        color: appColours.black,
+        fontFamily: "Exo2-Black",
+        fontSize: 24
+
+    },
+
     defaultScreen: {
         flex: 1,
         backgroundColor: appColours.white,
@@ -152,7 +159,21 @@ const CoreStyles = StyleSheet.create({
             borderColor: appColours.black,
             borderWidth: 2,
             padding: 5,
-            width: (windowDimensions.WIDTH * 0.8)
+            width: (windowDimensions.WIDTH * 0.8),
+        },
+
+        buttonTextStyle: {
+
+            fontSize: 14,
+            fontFamily: "Exo2-Regular",
+            color: appColours.black
+
+        },
+
+        rowTextStyle: {
+            fontSize: 14,
+            fontFamily: "Exo2-Regular",
+            color: appColours.black
         }
     }
     
@@ -175,8 +196,5 @@ export const shadowSettings = {
     distance: 2,
     endColor: appColours.blue
 }
-
-
-
 
 export default CoreStyles;

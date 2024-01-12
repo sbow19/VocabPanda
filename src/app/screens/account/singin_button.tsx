@@ -16,17 +16,14 @@ const SignInButton: React.FC = props=>{
         backgroundColor: appColours.blue
     };
 
-    const navDestination: types.destination = {
-        screen: "game",
-        screenParams:{
-            params: {
-                hello: "hello"
-            }
-        }
+    const nav = ()=>{
+
+        props.navigation.navigate("game")
     }
 
+
     return (
-        <AppButton {...props} dest={navDestination} addedStyles={addedStyles}>
+        <AppButton {...props} onPress={nav} customStyles={addedStyles}>
 
             <Text style={[CoreStyles.actionButtonText, {color: appColours.black}]}> Sign in</Text>
 

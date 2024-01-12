@@ -7,7 +7,7 @@ import {
     Text,
     BackHandler,
 } from 'react-native';
-import PlayButton from '@shared/play_button';
+import AppButton from 'app/shared/app_button';
 
 const ProjectView: React.FC = (props)=>{
 
@@ -31,14 +31,15 @@ const ProjectView: React.FC = (props)=>{
         return () => backHandler.remove();
     }, []);
 
-    console.log(props.route)
     const project = props.route.params.project;
 
-    const navDestination = {
-        screen: "game",
-        screenParams: {
+    const nav = ()=>{
+
+        props.navigation.navigate("game", {
+
             screen: "MyModal"
-        }
+            
+        })
     }
     
 
@@ -50,7 +51,9 @@ const ProjectView: React.FC = (props)=>{
             <Text style={{fontSize:100, color:"black"}}>
                 {project}
             </Text>
-            <PlayButton {...props} dest={navDestination}/>
+            <AppButton {...props} onPress={nav}>
+                <Text>Add to project</Text>
+            </AppButton>
         </View>
     )
 }
