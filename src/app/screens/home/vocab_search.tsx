@@ -31,7 +31,7 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
     return(
         
-            <View style={[CoreStyles.defaultScreen, additionalStyles]}>
+            <View style={[CoreStyles.defaultScreen, additionalStyles, {height: windowDimensions.HEIGHT}]}>
                 <ScreenTemplate screenTitle="Search Your Vocabulary!">
 
                     <ContentCard cardStylings={searchCardStyles}>
@@ -79,7 +79,7 @@ const customTextInputStyle: ViewStyle = {
 const searchCardStyles: types.CustomCardStyles = {
 
     width: windowDimensions.WIDTH * 0.9,
-    height: windowDimensions.HEIGHT * 0.25,
+    height: windowDimensions.HEIGHT * 0.27,
     marginBottom: 20,
     alignItems: "center"
 
@@ -88,7 +88,7 @@ const searchCardStyles: types.CustomCardStyles = {
 const dropdownCardStyles: types.CustomCardStyles = {
 
     width: windowDimensions.WIDTH * 0.9,
-    height: windowDimensions.HEIGHT * 0.25,
+    height: windowDimensions.HEIGHT * 0.27,
     alignItems: "center"
 
 }

@@ -17,16 +17,12 @@ import windowDimensions from 'app/context/dimensions';
 
 import ContentCard from '@shared/content_card'
 
-const ScreenTemplate: React.FC = props =>{
+const ScreenTemplate: React.FC<types.HomescreenTemplate> = props =>{
 
     let ScreenTitle: string = "";
 
-    try{
+    if(props.screenTitle){
         ScreenTitle = props.screenTitle
-
-    }catch(e){
-        console.log(e);
-        console.log("No screen title submitted")
     }
 
     return(
@@ -44,7 +40,9 @@ const ScreenTemplate: React.FC = props =>{
                 </View>
 
                 <View
-                    style={bottomViewContainerStyle}
+                    style={[
+                        bottomViewContainerStyle]
+                    }
                 >
                     {props.children}
                 </View>

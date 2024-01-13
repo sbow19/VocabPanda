@@ -38,6 +38,8 @@ const bottomTabScreenOptions:BottomTabNavigationOptions = {
         backgroundColor: appColours.white,
         borderColor: appColours.black,
         borderWidth: 1,
+        marginBottom: 10
+
 
 
     },
@@ -65,7 +67,8 @@ const bottomTabHomeScreenOptions:BottomTabNavigationOptions = {
     tabBarItemStyle: {
         margin: 2,
         borderBottomLeftRadius: 30,
-        borderTopLeftRadius: 30
+        borderTopLeftRadius: 30,
+        height: 50
     },
 
 }
@@ -89,7 +92,8 @@ const bottomTabGameSettingsScreenOptions:BottomTabNavigationOptions = {
     tabBarItemStyle: {
         margin: 2,
         borderBottomRightRadius: 30,
-        borderTopRightRadius: 30
+        borderTopRightRadius: 30,
+        height: 50
     },
 }
 

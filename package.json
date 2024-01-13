@@ -30,6 +30,7 @@
     "react-native-screens": "^3.29.0",
     "react-native-select-dropdown": "^3.4.0",
     "react-native-shadow-2": "^7.0.8",
+    "react-native-splash-screen": "^3.3.0",
     "react-native-sqlite-storage": "^6.0.1",
     "react-native-svg": "^14.1.0",
     "react-native-switch": "^1.5.1",

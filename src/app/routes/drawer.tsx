@@ -19,6 +19,7 @@ import {
     View,
     Text,
     Image,
+    StatusBar,
 } from 'react-native'
 
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
@@ -30,6 +31,7 @@ import About from '@screens/about/about';
 import ManageProjectsStack from '@screens/manage_projects/manage_projects_stack';
 import AppButton from 'app/shared/app_button';
 import MainHeader from '@shared/main_header';
+import { darkColors } from '@rneui/base';
 
 
 const MainDrawer = createDrawerNavigator();
@@ -57,20 +59,24 @@ const AppMainDrawer: React.FC = props => {
 
         drawerActiveBackgroundColor: appColours.darkGreen,
 
-        drawerInactiveBackgroundColor: "rgba(43, 255, 43, 0.3)"
+        drawerInactiveBackgroundColor: "rgba(43, 255, 43, 0.3)",
+
+        overlayColor: "(rgba0,0,0,0)"
     };
 
     return(
             <MainDrawer.Navigator 
-            initialRouteName="Home" 
-            backBehavior='initialRoute' 
-            drawerContent={(props)=>{return(<VocabDrawerContent {...props}/>)}}
-            screenOptions={BasicDrawerConfig}>
+                initialRouteName="Home" 
+                backBehavior='initialRoute' 
+                drawerContent={(props)=>{return(<VocabDrawerContent {...props}/>)}}
+                screenOptions={BasicDrawerConfig}
+                
+            >
 
                     <MainDrawer.Screen name="Home" component={HomeStack} options={{...BasicDrawerItemConfig, ...HomeSpecificConfig}}/>
-                    <MainDrawer.Screen name="About" component={About} options={{...BasicDrawerItemConfig, ...AboutSpecificConfig}}/>
                     <MainDrawer.Screen name="Projects" component={ManageProjectsStack} options={{...BasicDrawerItemConfig, ...ProjectsSpecificConfig}}/>
                     <MainDrawer.Screen name="Account" component={Account} options={{...BasicDrawerItemConfig, ...AccountSpecificConfig}}/>
+                    <MainDrawer.Screen name="About" component={About} options={{...BasicDrawerItemConfig, ...AboutSpecificConfig}}/>
                 
             </MainDrawer.Navigator>
     )
@@ -141,7 +147,8 @@ const AccountSpecificConfig: DrawerNavigationOptions = {
         return(
             <MaterialIcon name='account-circle' size={focused ? 24 : 16} style={IconStyles}/>
         )
-    }
+    },
+    
     
 }
 
@@ -157,6 +164,8 @@ const VocabDrawerContent = props=>{
     }
 
     return(
+        <>
+        <StatusBar backgroundColor={appColours.darkGreen} barStyle="dark-content" />
     <View style={{flex: 1, justifyContent: "space-around", margin:2}}>
 
         <View style={{ flex: 3, justifyContent: "center", alignItems:"center" }}>
@@ -176,6 +185,7 @@ const VocabDrawerContent = props=>{
             </AppButton>
         </View>
     </View>
+    </>
     )
 }
 

@@ -55,6 +55,13 @@ export type CustomDropDownProps = {
     defaultButtonText: string
 }
 
+export type CustomDropDown = {
+    buttonContainerStyle?: ViewStyle,
+    dropdownContainerStyle?: ViewStyle,
+    rowTextStyle?:TextStyle,
+    buttonTextStyle?: TextStyle
+}
+
 export type CustomCardStyles = {
     height?: number
     width?: number
@@ -69,6 +76,17 @@ export type CustomInputProp = {
     numberOfLines?: number
     editable?:  boolean
 
+}
+
+export type HomescreenTemplate = {
+
+    screenTitle: string
+    children: React.ReactNode
+
+}
+
+export type CustomAdBannerProps = {
+    customStyles?: ViewStyle
 }
 
 export type ProjectList = Array<ListItem|null>;

@@ -17,13 +17,14 @@ const ManageProjectsNav = createNativeStackNavigator();
 const ManageProjectsStack: React.FC = props=>{
 
     return (
-
-        <View style={{ flex:1 }}>
             <ManageProjectsNav.Navigator screenOptions={addedStyles}>
-                <ManageProjectsNav.Screen name='choose project' component={ChooseProject}/>
-                <ManageProjectsNav.Screen name='project view' component={ProjectView}/>
+                <ManageProjectsNav.Screen name='choose project' component={ChooseProject} options={{
+                    headerShown: false
+                }}/>
+                <ManageProjectsNav.Screen name='project view' component={ProjectView} options={{
+                    headerShown: false
+                }}/>
             </ManageProjectsNav.Navigator>
-        </View>
     )
 }
 

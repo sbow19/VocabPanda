@@ -80,7 +80,11 @@ const CoreStyles = StyleSheet.create({
             backgroundColor: appColours.white,
             width: 200,
             borderTopRightRadius: 10,
-            marginTop: ((windowDimensions.HEIGHT * 0.075) -30)
+            marginTop: ((windowDimensions.HEIGHT * 0.075) -30),
+            height: windowDimensions.HEIGHT* 0.965,
+            borderColor: appColours.black,
+            borderWidth: 1.5
+            
         },
         drawerLabelStyle: {
             fontFamily: "Exo2-Medium",

@@ -49,8 +49,7 @@ const TranslateVocab: React.FC = props=>{
 
         <View style={CoreStyles.defaultScreen}>
             <ScreenTemplate screenTitle="Translate">
-                
-                
+   
                 <ContentCard cardStylings={inputCardStylings}>
                     <View style={headerWrapper}>
                         <View style={titleWrapper}>

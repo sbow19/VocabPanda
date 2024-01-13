@@ -57,7 +57,6 @@ const AppButton: React.FC<types.CustomButtonStylesProp> = props =>{
 
     const customProps:types.CustomButtonStylesProp = parseProps(props);
 
-    console.log(customProps)
 
     return(
 

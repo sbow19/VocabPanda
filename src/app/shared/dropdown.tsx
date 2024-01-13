@@ -111,7 +111,7 @@ const Dropdown: React.FC<types.CustomDropDownProps> = props=>{
             }
             dropdownStyle={
                 [
-                    CoreStyles.dropDownStyles.dropdownContainerStyle,
+                CoreStyles.dropDownStyles.dropdownContainerStyle,
                 customProps.customStyles.dropdownContainerStyle
                 ]
             }

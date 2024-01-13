@@ -2,6 +2,8 @@
 
 import * as types from '@customTypes/types.d'
 
+import AdBanner from 'app/shared/ad_banner';
+
 import React, {useContext} from 'react';
 import {
     View,
@@ -20,8 +22,6 @@ import appColours from 'app/shared_styles/app_colours';
 
 const HomeScreen = (props: Object) =>{
 
-    const setSwipeStatus = useContext(TabSwipeStatus);
-
     const nav = ()=>{
 
         props.navigation.navigate("game", {
@@ -33,6 +33,7 @@ const HomeScreen = (props: Object) =>{
     
 
 return (
+    
    
     
         <View style={[CoreStyles.defaultScreen, {justifyContent: "center", alignItems:"center"}]}>
@@ -49,7 +50,9 @@ return (
                     </AppButton>
                 </View>
             </ScreenTemplate>
+           
         </View>
+
 )
 }
 

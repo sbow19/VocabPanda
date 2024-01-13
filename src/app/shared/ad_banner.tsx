@@ -11,10 +11,19 @@ import {
 
 
 
-const AdBanner = ()=>{
+const AdBanner: React.FC<types.CustomAdBannerProps> = props=>{
+
+    let customStyles = {}
+
+    if(props.customStyles){
+        customStyles = props.customStyles
+
+    }
 
     return(
-        <View style={adBannerStyles}>
+        <View style={
+            [adBannerStyles,
+            customStyles]}>
             <Text>
 
                 Ad banner placeholder
@@ -28,7 +37,8 @@ const AdBanner = ()=>{
 const adBannerStyles: ViewStyle = {
     height: 50,
     width: (windowDimensions.WIDTH),
-    backgroundColor: appColours.black
+    backgroundColor: appColours.black,
+    position: "relative",
 }
 
 export default AdBanner;
