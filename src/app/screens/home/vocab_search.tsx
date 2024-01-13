@@ -36,7 +36,7 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
                     <ContentCard cardStylings={searchCardStyles}>
                         <View  style={{justifyContent:"center", flex:1} }>
-                            <VocabPandaTextInput inputStyle={customTextInputStyle}/>
+                            <VocabPandaTextInput style={customTextInputStyle}/>
                         </View>
                         <View style={{justifyContent:"center", flex:1} }>
                             <AppButton onPress={()=>{console.log("hello world")}}>

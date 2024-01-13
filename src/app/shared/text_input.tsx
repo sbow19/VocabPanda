@@ -5,6 +5,7 @@ import * as types from '@customTypes/types.d';
 import {
     StyleProp,
     TextInput,
+    TextInputProps,
     TextStyle
 } from 'react-native';
 
@@ -13,36 +14,84 @@ import { useState } from 'react'
 import windowDimensions from '@context/dimensions';
 import appColours from '@styles/app_colours';
 
-const VocabPandaTextInput: React.FC<types.CustomInputProp> = props =>{
+
+function parseProps (props:TextInputProps){
+
+
+    let customProps: TextInputProps = {
+        numberOfLines: 1,
+        editable: true,
+        blurOnSubmit: true,
+        style: {},
+        inputMode: "text",
+        keyboardType: "default",
+        maxLength: 24,
+        multiline: true,
+        secureTextEntry: false,
+        placeholder: "Input",
+        placeholderTextColor: appColours.black
+    }
+
+    if(props.style) {
+        customProps.style = props.style
+    } 
+
+    if(props.numberOfLines) {
+        customProps.numberOfLines = props.numberOfLines
+    } 
+
+    if(props.editable) {
+        customProps.editable = props.editable
+    } 
+
+    if(props.blurOnSubmit) {
+        customProps.blurOnSubmit = props.blurOnSubmit
+    } 
+
+    if(props.inputMode) {
+        customProps.inputMode = props.inputMode
+    } 
+
+    if(props.keyboardType) {
+
+        console.log(props.keyboardType)
+        customProps.keyboardType = props.keyboardType
+    } 
+
+    if(props.maxLength) {
+        customProps.maxLength = props.maxLength
+    } 
+
+    if(props.multiline == true || props.multiline == false) {
+        customProps.multiline = props.multiline
+    } 
+
+    if(props.secureTextEntry) {
+        customProps.secureTextEntry = props.secureTextEntry
+    } 
+
+    if(props.placeholder) {
+        customProps.placeholder = props.placeholder
+    } 
+
+    if(props.placeholderTextColor) {
+        customProps.placeholderTextColor = props.placeholderTextColor
+    } 
+
+
+    return customProps
+    
+}
+
+const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
 
     const [active, setActive] = useState(false);
 
     // TODO - Move custom prop handler to separate function
 
-    let textInputStyle: Object = {};
+    const customProps: TextInputProps = parseProps(props);
 
-    try {
-        textInputStyle = props.inputStyle
-    } catch (e){
-        console.log(e)
-    }
-
-    let numberOfLines = 1;
-
-    try {
-        numberOfLines = props.numberOfLines
-    } catch (e){
-        console.log(e)
-    }
-
-
-    let editableValue = true;
-
-    try{
-        editableValue = props.editable
-    } catch (e){
-        console.log(e)
-    }
+    console.log(customProps)
 
 
     return(<>
@@ -53,7 +102,7 @@ const VocabPandaTextInput: React.FC<types.CustomInputProp> = props =>{
                 backgroundColor: appColours.white ,
                 borderColor: !active ? appColours.black : appColours.blue
             },
-            textInputStyle,
+            customProps.style,
 
         ]}
         onFocus={()=>{
@@ -63,10 +112,16 @@ const VocabPandaTextInput: React.FC<types.CustomInputProp> = props =>{
         onBlur={()=>{
             setActive(false);
         }}
-        multiline={true}
-        numberOfLines={numberOfLines}
-        editable={editableValue}
-
+        multiline={customProps.multiline}
+        numberOfLines={customProps.numberOfLines}
+        editable={customProps.editable}
+        blurOnSubmit={customProps.blurOnSubmit}
+        inputMode={customProps.inputMode}
+        keyboardType={customProps.keyboardType}
+        maxLength={customProps.maxLength}
+        secureTextEntry={customProps.secureTextEntry}
+        placeholder={customProps.placeholder}
+        placeholderTextColor={customProps.placeholderTextColor}
     />
     
     </>)

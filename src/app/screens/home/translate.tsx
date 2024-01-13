@@ -109,9 +109,32 @@ const TranslateVocab: React.FC = props=>{
                 isVisible={overlayVisible}
                 overlayStyle={overlayStyle}
             >
-                <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
-                    <Text>Press me</Text>
-                </AppButton>
+                <ContentCard
+                    cardStylings={cardStyle}
+                >
+                    
+                </ContentCard>
+
+                <ContentCard
+                    cardStylings={cardStyle}
+                
+                >
+                    
+                </ContentCard>
+
+
+                <View style={{flexDirection:"row", justifyContent: "space-evenly"}}>
+
+                    <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
+                            <Text style={CoreStyles.actionButtonText}>Close</Text>
+                    </AppButton>
+
+                    <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
+                            <Text style={CoreStyles.actionButtonText}>Add</Text>
+                    </AppButton>
+
+                </View>
+               
             
             </Overlay>
 
@@ -120,13 +143,21 @@ const TranslateVocab: React.FC = props=>{
     )
 }
 
+const cardStyle: types.CustomCardStyles = {
+
+    width: windowDimensions.WIDTH * 0.75
+
+
+}
+
 const overlayStyle: ViewStyle = {
-    height: windowDimensions.HEIGHT * 0.4,
-    width: windowDimensions.WIDTH * 0.8,
+    height: windowDimensions.HEIGHT * 0.45,
+    width: windowDimensions.WIDTH * 0.85,
     backgroundColor: appColours.white,
     borderRadius: 10,
     borderColor: appColours.black,
-    borderWidth: 2
+    borderWidth: 2,
+    justifyContent: "space-evenly"
 }
 
 const buttonWrapperStyle: ViewStyle = {
@@ -204,13 +235,7 @@ const dropdownStyle = {
         backgroundColor: appColours.white,
 
     },
-    rowTextStyle: {
 
-    },
-
-    buttonTextStyle: {
-
-    }
 }
 
 

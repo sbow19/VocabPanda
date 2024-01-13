@@ -23,6 +23,7 @@ const CoreStyles = StyleSheet.create({
         flex: 1,
         backgroundColor: appColours.white,
         padding: 0, 
+        width: "100%"
     },
 
     actionButtonText: {

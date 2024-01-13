@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 import { Dispatch, SetStateAction } from "react";
-import { TextStyle } from "react-native";
+import { TextStyle, TextInputProps } from "react-native";
 
 import { ViewStyle } from "react-native";
 
@@ -63,20 +63,13 @@ export type CustomDropDown = {
 }
 
 export type CustomCardStyles = {
-    height?: number
-    width?: number
+    height?: number | string
+    width?: number | string
     backgroundColor?: string
     borderRadius?: number
     alignItems?: "center"| "flex-start" | "flex-end"
 };
 
-export type CustomInputProp = {
-
-    inputStyle?: ViewStyle
-    numberOfLines?: number
-    editable?:  boolean
-
-}
 
 export type HomescreenTemplate = {
 
@@ -84,6 +77,7 @@ export type HomescreenTemplate = {
     children: React.ReactNode
 
 }
+
 
 export type CustomAdBannerProps = {
     customStyles?: ViewStyle

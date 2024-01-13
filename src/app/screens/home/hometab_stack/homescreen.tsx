@@ -46,7 +46,7 @@ return (
 
                 <View style={buttonContainerStyle}>
                     <AppButton {...props} onPress={nav}>
-                        <Text>Play</Text>
+                        <Text style={CoreStyles.actionButtonText}>Play</Text>
                     </AppButton>
                 </View>
             </ScreenTemplate>
