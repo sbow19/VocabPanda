@@ -4,18 +4,22 @@ import * as types from '@customTypes/types.d'
 import React, {useState} from 'react';
 import {
     View,
-    Text
+    Text,
+    ViewStyle,
+    TouchableOpacity
 } from 'react-native';
 import Dropdown from 'app/shared/dropdown';
 import AppButton from '@shared/app_button';
 import CoreStyles from '@styles/core_styles';
 import ScreenTemplate from '@shared/homescreen_template';
-import { Screen } from 'react-native-screens';
 import ContentCard from 'app/shared/content_card';
 import AdBanner from 'app/shared/ad_banner';
 import windowDimensions from 'app/context/dimensions';
 import { Overlay } from '@rneui/base'
 import appColours from 'app/shared_styles/app_colours';
+import VocabPandaTextInput from 'app/shared/text_input';
+
+
 
 const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
@@ -100,14 +104,121 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                 isVisible={overlayVisible}
                 overlayStyle={overlayStyle}
             >
-                <AppButton onPress={overlayNav}>
-                    <Text>Close</Text>
-                </AppButton>
-
-            </Overlay>
             
+
+                    <ContentCard
+                        cardStylings={addProjectCardStyles}
+                    
+                    >
+                        <View
+                        
+                        >
+                            <View>
+                                <Text
+                                     style={CoreStyles.contentText}
+                                >Project name</Text>
+                            </View>
+                            <View>
+                                <VocabPandaTextInput
+                                    defaultValue='Type...'
+                                    style={{
+                                        width: windowDimensions.WIDTH * 0.54
+                                    }}
+
+                                
+                                />
+                            </View>
+
+                        </View>
+
+                        <View
+                            
+                        >
+                            <View
+                            >
+                                <Text
+                                     style={CoreStyles.contentText}
+
+                                >Default target language</Text>
+                            </View>
+                            <View>
+                            <Dropdown
+                                    defaultButtonText='Target lang'
+                                    data={["Spanish", "English", "Portuguese"]}
+                                
+                                
+                                />
+                            </View>
+                            
+                        </View>
+
+                        <View
+                            
+                        >
+                            <View 
+                
+                            >
+                                <Text
+                                    style={CoreStyles.contentText}
+                                >Default output language</Text>
+                            </View>
+                            <View>
+                                <Dropdown
+                                    defaultButtonText='Output lang'
+                                    data={["Spanish", "English", "Portuguese"]}
+                                    custom={dropdownStyles}
+                                
+                                />
+                            </View>
+                            
+                        </View>
+
+
+
+                    </ContentCard>
+
+
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            flex: 1,
+                            justifyContent: "center"
+                        }}
+                    
+                    >
+                        <AppButton 
+                            onPress={overlayNav}
+                            customStyles={backButton}
+                        >
+                            <Text
+                                style={[
+                                    CoreStyles.actionButtonText,
+                                    {color: appColours.black}
+                                ]}
+                            >Close</Text>
+                        </AppButton>
+
+                        <AppButton 
+                            onPress={overlayNav}
+                        >
+                            <Text
+                                style={[
+                                    CoreStyles.actionButtonText,
+                                ]}
+                            >Add</Text>
+                        </AppButton>
+
+
+                        
+                    </View>
+            </Overlay>
         </View>
     )
+}
+
+const dropdownStyles:types.CustomDropDown = {
+
+
 }
 
 const topCardCustomStylings: types.CustomCardStyles ={
@@ -122,7 +233,7 @@ const topCardCustomStylings: types.CustomCardStyles ={
 const bottomCardCustomStylings: types.CustomCardStyles ={
 
     width: windowDimensions.WIDTH * 0.9,
-    height: windowDimensions.HEIGHT * 0.3,
+    height: windowDimensions.HEIGHT * 0.32,
     alignItems: "center"
 
 }
@@ -155,12 +266,23 @@ const customStylesDropdown: types.CustomDropDown = {
 }
 
 const overlayStyle: ViewStyle = {
-    height: windowDimensions.HEIGHT * 0.6,
-    width: windowDimensions.WIDTH * 0.9,
+    height: windowDimensions.HEIGHT * 0.44,
+    width: windowDimensions.WIDTH * 0.92,
     backgroundColor: appColours.white,
     borderRadius: 10,
     borderColor: appColours.black,
     borderWidth: 2
+}
+
+const backButton: types.CustomButtonStyles ={
+   backgroundColor: appColours.white
+}
+
+const addProjectCardStyles: types.CustomCardStyles ={
+
+    height: windowDimensions.HEIGHT * 0.32,
+    width: windowDimensions.WIDTH * 0.85,
+    marginBottom: 10
 }
 
 

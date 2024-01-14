@@ -35,6 +35,7 @@
     "react-native-svg": "^14.1.0",
     "react-native-switch": "^1.5.1",
     "react-native-tab-view": "^3.5.2",
+    "react-native-table-component": "^1.2.2",
     "react-native-vector-icons": "^10.0.3"
   },
   "devDependencies": {

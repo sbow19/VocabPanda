@@ -81,14 +81,11 @@ const AppButton: React.FC<types.CustomButtonStylesProp> = props =>{
                     }
                     }   
                    onPressIn={()=>{
-                    console.log("hello")
-
                        setPressState(true);
                        setLongPressState(false);
                        setSwipeStatus(false)
                    }}
                    onPressOut={()=>{
-                    console.log("bye")
                        setPressState(false);
                        setSwipeStatus(true);
                    }}
