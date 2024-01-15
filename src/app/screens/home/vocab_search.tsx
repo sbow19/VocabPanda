@@ -28,6 +28,11 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
     const [currentProjectSelection, setCurrentProjectSelection] = React.useState("");
 
+    const resultsNav = ()=>{
+
+        props.navigation.navigate("results")
+    }
+
 
     return(
         
@@ -39,7 +44,9 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
                             <VocabPandaTextInput style={customTextInputStyle}/>
                         </View>
                         <View style={{justifyContent:"center", flex:1} }>
-                            <AppButton onPress={()=>{console.log("hello world")}}>
+                            <AppButton 
+                                onPress={resultsNav}
+                            >
                                 <Text style={CoreStyles.actionButtonText}> Search </Text>
                             </AppButton>
                         </View>
@@ -56,7 +63,9 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
                             />
                         </View>
                         <View style={{justifyContent:"center", flex:1} }>
-                            <AppButton onPress={()=>{console.log("hello world")}}>
+                            <AppButton
+                                onPress={resultsNav}
+                            >
                                 <Text style={CoreStyles.actionButtonText}> Search </Text>
                             </AppButton>
                         </View>

@@ -31,7 +31,6 @@ import About from '@screens/about/about';
 import ManageProjectsStack from '@screens/manage_projects/manage_projects_stack';
 import AppButton from 'app/shared/app_button';
 import MainHeader from '@shared/main_header';
-import { darkColors } from '@rneui/base';
 
 
 const MainDrawer = createDrawerNavigator();
@@ -156,11 +155,7 @@ const VocabDrawerContent = props=>{
 
     const nav = ()=>{
 
-        props.navigation.navigate("game", {
-
-            screen: "MyModal"
-            
-        })
+        props.navigation.navigate("game")
     }
 
     return(

@@ -18,6 +18,8 @@ import appColours from '@styles/app_colours';
 function parseProps (props:TextInputProps){
 
 
+
+
     let customProps: TextInputProps = {
         numberOfLines: 1,
         editable: true,
@@ -40,11 +42,11 @@ function parseProps (props:TextInputProps){
         customProps.numberOfLines = props.numberOfLines
     } 
 
-    if(props.editable) {
+    if(props.editable == true || props.editable == false) {
         customProps.editable = props.editable
     } 
 
-    if(props.blurOnSubmit) {
+    if(props.blurOnSubmit == true || props.blurOnSubmit == false) {
         customProps.blurOnSubmit = props.blurOnSubmit
     } 
 
@@ -54,7 +56,6 @@ function parseProps (props:TextInputProps){
 
     if(props.keyboardType) {
 
-        console.log(props.keyboardType)
         customProps.keyboardType = props.keyboardType
     } 
 
@@ -66,7 +67,7 @@ function parseProps (props:TextInputProps){
         customProps.multiline = props.multiline
     } 
 
-    if(props.secureTextEntry) {
+    if(props.secureTextEntry == true || props.secureTextEntry == false) {
         customProps.secureTextEntry = props.secureTextEntry
     } 
 
@@ -90,9 +91,6 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
     // TODO - Move custom prop handler to separate function
 
     const customProps: TextInputProps = parseProps(props);
-
-    console.log(customProps)
-
 
     return(<>
 

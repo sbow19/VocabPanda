@@ -13,22 +13,23 @@ import {
 import CoreStyles from '@styles/core_styles';
 import AppButton from 'app/shared/app_button';
 import ContentCard from '@shared/content_card';
+import LastActivity from 'app/context/last_activity';
+
+import DefaultContent from './table/default_content';
+import ActivityContent from './table/activity_content';
 
 import ScreenTemplate from '@shared/homescreen_template';
 
-import TabSwipeStatus from '@context/swipe_toggle';
 import windowDimensions from 'app/context/dimensions';
 import appColours from 'app/shared_styles/app_colours';
 
 const HomeScreen = (props: Object) =>{
 
+    const [lastActivityData] = useContext(LastActivity)
+
     const nav = ()=>{
 
-        props.navigation.navigate("game", {
-
-            screen: "MyModal"
-            
-        })
+        props.navigation.navigate("game")
     }
     
 
@@ -39,9 +40,7 @@ return (
         <View style={[CoreStyles.defaultScreen, {justifyContent: "center", alignItems:"center"}]}>
             <ScreenTemplate screenTitle="Welcome back, John">
                 <ContentCard cardStylings={customCardStylings}>
-                    <View>
-                        <Text></Text>
-                    </View>
+                    {lastActivityData.lastActivity == false ? <DefaultContent/> : <ActivityContent/>}
                 </ContentCard>
 
                 <View style={buttonContainerStyle}>

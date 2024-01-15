@@ -67,7 +67,12 @@ const TranslateVocab: React.FC = props=>{
                         </View>
                     </View>
                     <View style={textInputWrapper}>
-                        <VocabPandaTextInput inputStyle={customInputStyle} numberOfLines={4} editable={true}/>
+                        <VocabPandaTextInput 
+                            style={customInputStyle} 
+                            numberOfLines={4} 
+                            editable={true}
+                            maxLength={50}
+                        />
                     </View>
             
                 </ContentCard >
@@ -90,7 +95,13 @@ const TranslateVocab: React.FC = props=>{
                         </View>
                     </View>
                     <View style={textInputWrapper}>
-                        <VocabPandaTextInput inputStyle={customOutputStyle} numberOfLines={4} editable={false}/>
+                        <VocabPandaTextInput 
+                            style={customOutputStyle} 
+                            numberOfLines={4} 
+                            editable={false}
+                            placeholder='Output'
+                            maxLength={100}
+                        />
                     </View>
                 
                 </ContentCard>
@@ -180,7 +191,8 @@ const outputCardStylings: types.CustomCardStyles = {
 const customInputStyle:TextStyle = {
     width: "90%",
     height: (windowDimensions.HEIGHT * 0.1),
-    fontSize:20
+    fontSize:18,
+    lineHeight: 20
 };
 
 const customOutputStyle:TextStyle = {

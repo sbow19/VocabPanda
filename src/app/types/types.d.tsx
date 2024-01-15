@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-import { Dispatch, SetStateAction } from "react";
+import React, { Dispatch, SetStateAction } from "react";
 import { TextStyle, TextInputProps } from "react-native";
 
 import { ViewStyle } from "react-native";
@@ -24,7 +24,7 @@ export type destination = {
 
 export type CustomContentCardProp = {
     cardStylings: CustomCardStyles 
-    children?: React.ReactNode
+    children?: React.ReactNode | React.FC
 }
 
 export type CustomButtonStylesProp = {

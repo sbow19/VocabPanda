@@ -21,7 +21,7 @@ import { Overlay } from '@rneui/base';
 
 import ResultTable from "./table_template"
 
-const ProjectView: React.FC = (props)=>{
+const ProjectView: React.FC = props=>{
 
     /* Overlay state */
 
@@ -57,21 +57,14 @@ const ProjectView: React.FC = (props)=>{
 
     const nav = ()=>{
 
-        props.navigation.navigate("game", {
-
-            screen: "MyModal"
-            
-        })
+        props.navigation.navigate("game")
     }
-
-
+    
     const deleteWarning = ()=>{
-
         Alert.alert(
             "Warning",
             `Are you sure you want to permanently delete ${project}?`,
             [
-                
                 {
                     text: "Back",
                     onPress: ()=>{
@@ -125,6 +118,7 @@ const ProjectView: React.FC = (props)=>{
                             key: null
                             })
                         )}}
+                        
                         customStyles={backButton}
                     >
                         <Text style={
@@ -153,12 +147,9 @@ const ProjectView: React.FC = (props)=>{
                     >
                         <Text style={CoreStyles.actionButtonText}>Play</Text>
                     </AppButton>
-
-
                 </View>
-
-                
             </ScreenTemplate>
+
             <AdBanner/>
 
             <Overlay
