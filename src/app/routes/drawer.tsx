@@ -25,10 +25,10 @@ import {
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
 import {default as OcticonIcon} from 'react-native-vector-icons/Octicons'
 
-import HomeStack from '@screens/home/homestack';
+import HomeStack from 'app/routes/homestack';
 import Account from '@screens/account/account';
 import About from '@screens/about/about';
-import ManageProjectsStack from '@screens/manage_projects/manage_projects_stack';
+import ManageProjectsStack from 'app/routes/manage_projects_stack';
 import AppButton from 'app/shared/app_button';
 import MainHeader from '@shared/main_header';
 
@@ -176,7 +176,10 @@ const VocabDrawerContent = props=>{
         </View>
         <View style={{flex:1.5, justifyContent:"center", alignItems:"center", backgroundColor:"grey"}}>
             <AppButton {...props} onPress={nav}>
-                <Text>Play</Text>
+                <Text
+                    style={CoreStyles.actionButtonText}
+                
+                >Play</Text>
             </AppButton>
         </View>
     </View>

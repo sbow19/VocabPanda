@@ -8,8 +8,6 @@ import {
     Text, 
     TextStyle,
     ViewStyle,
-    Pressable,
-    Dimensions
 } from 'react-native';
 import Dropdown from 'app/shared/dropdown';
 import AppButton from '@shared/app_button';
@@ -24,6 +22,7 @@ import appColours from 'app/shared_styles/app_colours';
 
 
 import { Overlay } from '@rneui/base';
+import { showMessage } from 'react-native-flash-message';
 
 const TranslateVocab: React.FC = props=>{
     
@@ -36,6 +35,7 @@ const TranslateVocab: React.FC = props=>{
 
     const [outputLangSelection, setOutputLangSelection] = useState("");
 
+    const [projectSelection, setProjectSelection] = useState("")
 
     /* overlay */
     const [overlayVisible, setOverlayVisible] = useState(false)
@@ -107,7 +107,8 @@ const TranslateVocab: React.FC = props=>{
                 </ContentCard>
 
                 <View style={[CoreStyles.defaultScreen, buttonWrapperStyle]}>                
-                        <AppButton customStyles={{width:120}} onPress={nav}>
+                        <AppButton 
+                            customStyles={{width:120}} onPress={nav}>
                     
                             <Text style={CoreStyles.actionButtonText}>Add to project</Text>
                                                  
@@ -120,17 +121,38 @@ const TranslateVocab: React.FC = props=>{
                 isVisible={overlayVisible}
                 overlayStyle={overlayStyle}
             >
-                <ContentCard
-                    cardStylings={cardStyle}
-                >
-                    
-                </ContentCard>
 
                 <ContentCard
                     cardStylings={cardStyle}
                 
                 >
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            flex: 1,
+                            width: "100%",
+                            justifyContent: "space-evenly",
+                            alignItems: "center"
+                        }}
                     
+                    >
+                        <View>
+                            <Text
+                                style={ CoreStyles.contentText}
+
+                            
+                            >Select Project</Text>
+                        </View>
+                        <View>
+                            <Dropdown
+                                data={languages}
+                                defaultButtonText='Select Project'
+                                customStyles={dropdownStyle}
+                                setSelection={setProjectSelection}
+                            />
+                        </View>
+
+                    </View>
                 </ContentCard>
 
 
@@ -140,7 +162,21 @@ const TranslateVocab: React.FC = props=>{
                             <Text style={CoreStyles.actionButtonText}>Close</Text>
                     </AppButton>
 
-                    <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
+                    <AppButton 
+                        onPress={()=>{
+                            setOverlayVisible(!overlayVisible)
+
+                            /* Async function to attempt to update database
+                                - if failed, have reason displayed to user
+                            
+                            */
+                            showMessage({
+                                message: "Update failed",
+                                type:"warning",
+
+                            })
+                        
+                        }}>
                             <Text style={CoreStyles.actionButtonText}>Add</Text>
                     </AppButton>
 
@@ -162,7 +198,7 @@ const cardStyle: types.CustomCardStyles = {
 }
 
 const overlayStyle: ViewStyle = {
-    height: windowDimensions.HEIGHT * 0.45,
+    height: windowDimensions.HEIGHT * 0.30,
     width: windowDimensions.WIDTH * 0.85,
     backgroundColor: appColours.white,
     borderRadius: 10,

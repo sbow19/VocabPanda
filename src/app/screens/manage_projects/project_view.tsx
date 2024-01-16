@@ -19,15 +19,13 @@ import windowDimensions from 'app/context/dimensions';
 import appColours from 'app/shared_styles/app_colours';
 import { Overlay } from '@rneui/base';
 
-import ResultTable from "./table_template"
+import ResultTable from "./project_table_template"
 
 const ProjectView: React.FC = props=>{
 
-    /* Overlay state */
+    /* Options Overlay state */
 
     const [optionsVisible, setOptionsVisible] = React.useState(false)
-
-    /* */
 
     React.useEffect(() => {
 
@@ -92,7 +90,6 @@ const ProjectView: React.FC = props=>{
     
 
     /* TODO - call code to get project information in*/
-    /* TODO - render */
 
     return(
         <View style={CoreStyles.defaultScreen}>
@@ -163,7 +160,7 @@ const ProjectView: React.FC = props=>{
 
                     <AppButton
                         onPress={()=>{deleteWarning()}}
-                        customStyles={{backgroundColor:"red"}}
+                        customStyles={CoreStyles.deleteButtonColor}
                     >
                         <Text 
                             style={CoreStyles.actionButtonText}

@@ -1,16 +1,26 @@
 /* eslint-disable */
 import { Table, TableWrapper, Row, Rows, Col, Cols, Cell } from 'react-native-table-component';
 import { ScrollView, View, Text, ViewStyle, TouchableOpacity } from 'react-native';
-import { StyleSheet } from 'react-native';
 import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
+
+import OptionsOverlayContext from 'app/context/options_context';
+import React, { useContext } from 'react';
+
+import FullTextContext from 'app/context/view_full_text_context';
 
 import {default as SimpleIcon} from 'react-native-vector-icons/SimpleLineIcons'
 
 const RowTemplate: React.FC = props=>{
 
-    const options =  props=>{
+    const optionsObject = useContext(OptionsOverlayContext)
+
+    const fullTextOverlayObject = useContext(FullTextContext)
+
+    console.log
+
+    const options =  ()=>{
 
         return(
             <TouchableOpacity
@@ -22,6 +32,11 @@ const RowTemplate: React.FC = props=>{
                     alignItems: "center",
                     justifyContent: "center"
                 }}
+
+                onPress={()=>{
+                    optionsObject.setOptionsOverlayVisible(!optionsObject.visible)
+                }}
+                
             >
                 <SimpleIcon name="options-vertical" size={24} color={appColours.white}/>
             </TouchableOpacity>
@@ -29,7 +44,7 @@ const RowTemplate: React.FC = props=>{
 
     }
 
-    const targetLang =  props=>{
+    const targetLang =  ()=>{
 
         return(
             <TouchableOpacity
@@ -39,7 +54,9 @@ const RowTemplate: React.FC = props=>{
                     backgroundColor: "rgba(217, 254, 217, 1)",
                     borderRadius: 10
                 }}
-                onPress={()=>console.log("hello")}
+                onPress={()=>{
+                    fullTextOverlayObject.setFullTextVisible(!fullTextOverlayObject.visible)
+                }}
             >
                 <View
                     style={{height: "100%", width: "100%", padding: 3}}
@@ -68,7 +85,7 @@ const RowTemplate: React.FC = props=>{
         )
     }
 
-    const outputLang =  props=>{
+    const outputLang =  ()=>{
 
         return(
             <TouchableOpacity
@@ -78,7 +95,9 @@ const RowTemplate: React.FC = props=>{
                     backgroundColor: "rgba(217, 254, 217, 1)",
                     borderRadius: 10
                 }}
-                onPress={()=>console.log("hello")}
+                onPress={()=>{
+                    fullTextOverlayObject.setFullTextVisible(!fullTextOverlayObject.visible)
+                }}
             >
                 <View
                     style={{height: "100%", width: "100%", padding: 3}}
@@ -106,32 +125,34 @@ const RowTemplate: React.FC = props=>{
         )
     }
 
-    return(
+    return(<>
 
-                <TableWrapper
+                    <TableWrapper
                         style={wrapperStyle}    
                     >
 
                         <Cell
                             style={targLangCellStyle}
-                            data={targetLang(props)}
+                            data={targetLang()}
                             textStyle={CoreStyles.contentText}
                         />
 
                         <Cell
                             style={outputLangCellStyle}
-                            data={outputLang(props)}
+                            data={outputLang()}
                             textStyle={CoreStyles.contentText}
                             
                         />
 
                         <Cell
                             style={buttonCellStyle}
-                            data={options(props)}
+                            data={options()}
                             textStyle={CoreStyles.contentText}          
                         />
 
                     </TableWrapper>
+            
+            </>
     )
 }
 

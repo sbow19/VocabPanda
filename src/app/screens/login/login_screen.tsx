@@ -3,7 +3,7 @@
 import CoreStyles from "app/shared_styles/core_styles"
 import appColours from "app/shared_styles/app_colours"
 import * as types from '@customTypes/types.d'
-import SignInTemplate from "./signupscreen_template"
+import SignInTemplate from "./components/signupscreen_template"
 import VocabPandaTextInput from "app/shared/text_input"
 import AppButton from "app/shared/app_button"
 import { 
@@ -16,13 +16,16 @@ import {
  } from "react-native"
  import windowDimensions from "app/context/dimensions"
  import React from 'react'
-import { TouchableWithoutFeedback } from "react-native"
+
+ import LoggedInStatus from "app/context/loggedIn"
  
 
 
 const LoginScreen: React.FC = props=>{
 
     const[forgotTextColor, setForgotTextColor] = React.useState(appColours.black)
+
+    const [isLoggedIn, setIsLoggedIn] = React.useContext(LoggedInStatus);
 
     return(
         <TouchableOpacity
@@ -77,13 +80,32 @@ const LoginScreen: React.FC = props=>{
                    
 
                     <View
-                        style={[inputWrapperStyles, {justifyContent: "flex-end"}]}
+                        style={
+                            [
+                                inputWrapperStyles, 
+                                {
+                                    alignItems: "center",
+                                    flexDirection: "row",
+                                    justifyContent: "space-evenly",
+                                    width: windowDimensions.WIDTH * 0.9
+                                }
+                            ]
+                        }
                     >
                         <AppButton
                             customStyles={{backgroundColor:appColours.darkGreen}}
                             onPress={()=>{props.navigation.pop()}}
                         >
                             <Text style={CoreStyles.actionButtonText}>Go back</Text>
+                        </AppButton>
+
+                        <AppButton
+                            customStyles={{backgroundColor:appColours.darkGreen}}
+                            onPress={()=>{
+                                setIsLoggedIn(true)
+                            }}
+                        >
+                            <Text style={CoreStyles.actionButtonText}>Sign In</Text>
                         </AppButton>
                     </View>
             

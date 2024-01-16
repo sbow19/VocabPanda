@@ -4,10 +4,9 @@ import {
     View,
     Text
 } from 'react-native'
-
+import React from 'react'
 import * as types from '@customTypes/types.d'
 import CoreStyles from 'app/shared_styles/core_styles';
-import appColours from 'app/shared_styles/app_colours';
 import ContentCard from 'app/shared/content_card';
 import windowDimensions from 'app/context/dimensions';
 import SearchResultTable from './results_table';
@@ -18,8 +17,10 @@ const SearchResults: React.FC = props=>{
 
     const gameNav = ()=>{
 
-        props.navigation.pop()
-        props.navigation.navigate("game")
+        props.navigation.navigate("game", {
+            screen: "game home",
+            params: "search results"
+        })
     }
 
     return(
@@ -71,13 +72,12 @@ const SearchResults: React.FC = props=>{
                         onPress={()=>{
                             props.navigation.pop()
                         }}
-                        customStyles={backButton}
+                        customStyles={CoreStyles.backButtonColor}
                     >
                         <Text style={
                             [
                             
-                                CoreStyles.actionButtonText,
-                                {color: appColours.black}
+                                CoreStyles.backButtonText
                             ]
                         }
                         >Go Back
@@ -94,7 +94,7 @@ const SearchResults: React.FC = props=>{
                     </AppButton>
 
                     <AppButton
-                        customStyles={playButton}     
+                        customStyles={CoreStyles.playButtonColor}     
                         onPress={()=>gameNav()}
                     >
                         <Text style={CoreStyles.actionButtonText}>Play</Text>
@@ -102,6 +102,7 @@ const SearchResults: React.FC = props=>{
             </View>
             
         </View>
+
         <AdBanner/>
         </>
     )
@@ -113,14 +114,6 @@ const customCardStylesHeader: types.CustomCardStyles = {
     height: windowDimensions.HEIGHT * 0.1,
     alignItems: "center"
 
-}
-
-const backButton: types.CustomButtonStyles = {
-    backgroundColor: appColours.white
-}
-
-const playButton: types.CustomButtonStyles = {
-    backgroundColor: appColours.darkGreen,
 }
 
 export default SearchResults;

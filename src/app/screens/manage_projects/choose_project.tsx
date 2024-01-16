@@ -56,15 +56,13 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
             flex:1
         }}>
             <ScreenTemplate
-                screenTitle="Choose Project"
+                screenTitle="Manage Projects"
             >
                 <ContentCard
                     cardStylings={topCardCustomStylings}
                 >
                     <View style={{flex:1, justifyContent: "space-evenly", alignItems:"center"}}>
-                        <View>
-                            <Text style={CoreStyles.contentTitleText}>Select Project</Text>
-                        </View>
+                    
                         <View>
                             <Dropdown 
                                 data={data} 

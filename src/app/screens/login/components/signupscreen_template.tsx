@@ -10,7 +10,6 @@ import{
 } from 'react-native'
 import CoreStyles from 'app/shared_styles/core_styles';
 import appColours from 'app/shared_styles/app_colours';
-import AppButton from 'app/shared/app_button';
 import * as types from '@customTypes/types.d'
 
 const SignInTemplate: React.FC<types> = props=>{
@@ -29,7 +28,7 @@ const SignInTemplate: React.FC<types> = props=>{
             <View
                 style={topContainerStyle}
             >
-                 <Image source={require("../../../assets/icons/AppIcons/android/mipmap-xxhdpi/ic_launcher.png")}/>
+                 <Image source={require("../../../../assets/icons/AppIcons/android/mipmap-xxhdpi/ic_launcher.png")}/>
                  <Text style={CoreStyles.drawerStyles.drawerTitle}> Vocab Panda </Text>
 
             </View>

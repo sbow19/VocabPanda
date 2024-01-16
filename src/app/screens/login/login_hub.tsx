@@ -3,7 +3,7 @@
 import CoreStyles from "app/shared_styles/core_styles"
 import appColours from "app/shared_styles/app_colours"
 import * as types from '@customTypes/types.d'
-import SignInTemplate from "./signupscreen_template"
+import SignInTemplate from "./components/signupscreen_template"
 import { 
     StatusBar,
     View,

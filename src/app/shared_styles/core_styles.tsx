@@ -31,6 +31,27 @@ const CoreStyles = StyleSheet.create({
         fontFamily: "Exo2-Bold",
         color: appColours.white
     },
+
+    playButtonColor: {
+        backgroundColor: appColours.darkGreen
+    },
+
+    backButtonText: {
+        fontSize: 16,
+        fontFamily: "Exo2-Bold",
+        color: appColours.black
+    },
+
+    backButtonColor: {
+
+        backgroundColor: appColours.white
+
+    },
+
+    deleteButtonColor: {
+
+        backgroundColor: "red"
+    },
     
     mainHeaderStyles:
     {
@@ -180,26 +201,34 @@ const CoreStyles = StyleSheet.create({
             fontFamily: "Exo2-Regular",
             color: appColours.black
         }
+    },
+
+    defaultOverlayStyles:{
+        height: windowDimensions.HEIGHT * 0.45,
+        width: windowDimensions.WIDTH * 0.85,
+        backgroundColor: appColours.white,
+        borderRadius: 10,
+        borderColor: appColours.black,
+        borderWidth: 2,
+        justifyContent: "space-evenly"
+    },
+
+    defaultCardStyles: {
+
+        backgroundColor: appColours.paleGreen,
+        opacity: 1,
+        height: 100,
+        width: 100,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: appColours.black,
+        justifyContent: "center",
+        paddingLeft: 5
+    
     }
     
 })
 
-export const shadowSettings = {
-    sides: {
-        "start":false,
-        "end":true, 
-        "top":false, 
-        "bottom": true
-    },
-    corners: {
-        "topStart":false, 
-        "topEnd":true, 
-        "bottomStart":true, 
-        "bottomEnd": true
-    },
-    offset: [2,3],
-    distance: 2,
-    endColor: appColours.blue
-}
+
 
 export default CoreStyles;

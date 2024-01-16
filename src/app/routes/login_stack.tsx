@@ -1,9 +1,9 @@
 /* eslint-disable */
 
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import LoginHub from "./login_hub";
-import LoginScreen from "./login_screen";
-import CreateAccount from "./create_account";
+import LoginHub from "../screens/login/login_hub";
+import LoginScreen from "../screens/login/login_screen";
+import CreateAccount from "../screens/login/create_account";
 
 const LoginStackNavigator = createNativeStackNavigator()
 

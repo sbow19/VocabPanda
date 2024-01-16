@@ -13,7 +13,7 @@ import {
 
 const AppSlider:React.FC = props=>{
 
-    const [sliderValue, setSliderValue] = useState(5)
+    const [sliderValue, setSliderValue] = useState(10)
 
     /* values on change will update Asyncstorage, only after 1 second after last change */
 
@@ -29,7 +29,7 @@ const AppSlider:React.FC = props=>{
                 
                
                 <Slider
-                    maximumValue={10}
+                    maximumValue={20}
                     minimumValue={5}
                     onValueChange={val=>{setSliderValue(val)}}
                     step={1}

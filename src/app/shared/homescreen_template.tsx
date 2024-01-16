@@ -66,8 +66,6 @@ const bottomViewContainerStyle: ViewStyle = {
     height: (windowDimensions.HEIGHT * 0.7),
     width: windowDimensions.WIDTH,
     backgroundColor: appColours.white,
-    // borderColor: "black",
-    // borderWidth: 2,
     paddingLeft: 10,
     paddingRight:10,
     alignItems: "center"

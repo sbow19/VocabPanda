@@ -13,6 +13,7 @@ import { useState } from 'react'
 
 import windowDimensions from '@context/dimensions';
 import appColours from '@styles/app_colours';
+import React from 'react'
 
 
 function parseProps (props:TextInputProps){
@@ -31,7 +32,10 @@ function parseProps (props:TextInputProps){
         multiline: true,
         secureTextEntry: false,
         placeholder: "Input",
-        placeholderTextColor: appColours.black
+        placeholderTextColor: appColours.black,
+        autoFocus: false,
+        onSubmit: ()=>{},
+        returnKeyType: "default"
     }
 
     if(props.style) {
@@ -44,6 +48,10 @@ function parseProps (props:TextInputProps){
 
     if(props.editable == true || props.editable == false) {
         customProps.editable = props.editable
+    } 
+
+    if(props.autoFocus == true || props.autoFocus == false) {
+        customProps.autoFocus = props.autoFocus
     } 
 
     if(props.blurOnSubmit == true || props.blurOnSubmit == false) {
@@ -79,6 +87,15 @@ function parseProps (props:TextInputProps){
         customProps.placeholderTextColor = props.placeholderTextColor
     } 
 
+    if(props.onSubmit) {
+        customProps.onSubmit = props.onSubmit
+    } 
+
+    if(props.returnKeyType) {
+        customProps.returnKeyType = props.returnKeyType
+    } 
+
+
 
     return customProps
     
@@ -88,6 +105,7 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
 
     const [active, setActive] = useState(false);
 
+
     // TODO - Move custom prop handler to separate function
 
     const customProps: TextInputProps = parseProps(props);
@@ -95,6 +113,7 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
     return(<>
 
     <TextInput
+        autoFocus={customProps.autoFocus}
         style={[additionalStyles, 
             {
                 backgroundColor: appColours.white ,
@@ -104,7 +123,6 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
 
         ]}
         onFocus={()=>{
-            console.log("Hello ")
             setActive(true);
         }}
         onBlur={()=>{
@@ -120,6 +138,11 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
         secureTextEntry={customProps.secureTextEntry}
         placeholder={customProps.placeholder}
         placeholderTextColor={customProps.placeholderTextColor}
+        onSubmitEditing={e=>{
+            customProps.onSubmit()
+        }}
+        returnKeyType={customProps.returnKeyType}
+        
     />
     
     </>)

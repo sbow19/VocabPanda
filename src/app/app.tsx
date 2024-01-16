@@ -4,7 +4,7 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer} from '@react-navigation/native'
 import AppMainDrawer from '@routes/drawer';
-import VocabGame from './game/vocabgame';
+import GameStack from './game/gamestack';
 import SearchResults from '@screens/home/hometab_stack/search_results/search_results';
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -14,10 +14,10 @@ import LoadingStatus from './context/loading';
 import LastActivity, {lastActivityObject} from './context/last_activity';
 
 import LoadingScreen from '@screens/login/loading_screen';
-import LoginStack from '@screens/login/login_stack';
-import { 
-    StatusBar 
-} from 'react-native';
+import LoginStack from 'app/routes/login_stack';
+
+import FlashMessage from 'react-native-flash-message';
+import CoreStyles from './shared_styles/core_styles';
 
 
 const MainAppContainer = createNativeStackNavigator()
@@ -34,6 +34,8 @@ const VocabPandaApp: React.FC = props => {
     const [lastActivityData, setLastActivityData] = React.useState(lastActivityObject)
 
     const lastActivitySet = [lastActivityData, setLastActivityData]
+
+    
 
     React.useEffect(()=>{
 
@@ -99,13 +101,25 @@ const VocabPandaApp: React.FC = props => {
 
 const MainApp: React.FC = props=>{
 
-    return(
+    const myRef = React.useRef("mine")
+
+    return(<>
 
                 <MainAppContainer.Navigator screenOptions={{headerShown:false}}>
                     <MainAppContainer.Screen name="main" component={AppMainDrawer}/>
-                    <MainAppContainer.Screen name="game" component={VocabGame} options={{presentation: "modal"}}/>
+                    <MainAppContainer.Screen name="game" component={GameStack} options={{presentation: "modal"}}/>
                     <MainAppContainer.Screen name="results" component={SearchResults}  options={{presentation: "modal"}}/>
                 </MainAppContainer.Navigator>
+
+                <FlashMessage 
+                    position="center"
+                    ref={myRef}
+                    animationDuration={100}
+                    duration={900}
+                    titleStyle={CoreStyles.contentText}
+                />
+
+            </>
            
     )
 }

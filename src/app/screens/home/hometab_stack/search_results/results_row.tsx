@@ -4,9 +4,14 @@ import { ScrollView, View, Text, ViewStyle, TouchableOpacity } from 'react-nativ
 import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
-
+import FullTextContext from 'app/context/view_full_text_context';
+import React from 'react';
 
 const ResultsRowTemplate: React.FC = props=>{
+
+    /* Full text view context */
+
+    const fullTextOverlayObject = React.useContext(FullTextContext)
 
     const projectNav = ()=>{
 
@@ -70,7 +75,9 @@ const ResultsRowTemplate: React.FC = props=>{
                     backgroundColor: "rgba(217, 254, 217, 1)",
                     borderRadius: 10
                 }}
-                onPress={()=>console.log("hello")}
+                onPress={()=>{
+                    fullTextOverlayObject.setFullTextVisible(!fullTextOverlayObject.visible)
+                }}
             >
                 <View
                     style={{height: "100%", width: "100%", padding: 3}}
@@ -109,7 +116,9 @@ const ResultsRowTemplate: React.FC = props=>{
                     backgroundColor: "rgba(217, 254, 217, 1)",
                     borderRadius: 10
                 }}
-                onPress={()=>console.log("hello")}
+                onPress={()=>{
+                    fullTextOverlayObject.setFullTextVisible(!fullTextOverlayObject.visible)
+                }}
             >
                 <View
                     style={{height: "100%", width: "100%", padding: 3}}

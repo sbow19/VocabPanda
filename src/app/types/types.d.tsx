@@ -10,7 +10,9 @@ export type CoreColours = {
     white: "#F5F5F5"
     lightGreen: "#46EC8B"
     darkGreen: "#15CB61"
-    blue: "#99F5FF"
+    blue: "#99F5FF",
+    red: string,
+    paleGreen: string
 };
 
 export type destination = {

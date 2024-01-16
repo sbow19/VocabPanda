@@ -6,7 +6,7 @@ import {
     Text
  } from "react-native";
 import React, {useContext} from "react";
-import HomeTable from "./table_template_home";
+import HomeTable from "../table/table_template_home";
 import * as types from "@customTypes/types.d"
 
 

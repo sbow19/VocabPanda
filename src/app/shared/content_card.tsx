@@ -7,9 +7,10 @@ import {
 } from 'react-native'
 
 import appColours from '@styles/app_colours';
+import CoreStyles from '@styles/core_styles';
 
 import { Shadow } from 'react-native-shadow-2';
-import { shadowSettings } from '@styles/core_styles';
+import shadowSettings from 'app/shared_styles/shadow_settings';
 
 
 const ContentCard:React.FC<types.CustomContentCardProp> = props=>{
@@ -27,7 +28,10 @@ const ContentCard:React.FC<types.CustomContentCardProp> = props=>{
     >
         <View 
 
-            style={[defaultCardStylings, cardStylings]}
+            style={[
+                CoreStyles.defaultCardStyles, 
+                cardStylings
+            ]}
         
         >
             {props.children}
@@ -36,19 +40,6 @@ const ContentCard:React.FC<types.CustomContentCardProp> = props=>{
     )
 }
 
-const defaultCardStylings: ViewStyle = {
-
-    backgroundColor: "rgba(217, 254, 217, 1)",
-    opacity: 1,
-    height: 100,
-    width: 100,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: appColours.black,
-    justifyContent: "center",
-    paddingLeft: 5
-
-}
 
 
 export default ContentCard;

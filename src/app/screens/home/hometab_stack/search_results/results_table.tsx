@@ -5,11 +5,24 @@ import { ScrollView, View, Text, ViewStyle, TouchableOpacity } from 'react-nativ
 import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
+import React from 'react'
 
 import ResultsRowTemplate from './results_row';
 
+import FullTextView from 'app/shared/view_full_text';
+import FullTextContext from 'app/context/view_full_text_context';
+
 
 const SearchResultTable = props => {
+
+    /* View full text overlay state */
+
+    const [fullTextVisible, setFullTextVisible] = React.useState(false);
+
+    const fullTextOverlayObject = {
+        visible: fullTextVisible,
+        setFullTextVisible: setFullTextVisible
+    }
 
     return (
 
@@ -54,6 +67,7 @@ const SearchResultTable = props => {
             </Table>
         </View>
 
+        <FullTextContext.Provider value={fullTextOverlayObject}>
         <View
             style={
                 [
@@ -63,12 +77,34 @@ const SearchResultTable = props => {
             <ScrollView>
                 <View onStartShouldSetResponder={()=>true}>
                     <Table>
-                        {/* Results displayed here in rows */}
-                        <ResultsRowTemplate {...props}/>
+                        {/* Results displayed here in rows; support pagination of up to 20, 100 per proj */}
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
+                        <ResultsRowTemplate/>
                     </Table>
                 </View>
             </ScrollView>
+
+            <FullTextView/>
         </View>
+        </FullTextContext.Provider>
     </View>
     )
 }

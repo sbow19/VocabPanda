@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 
 import appColours from '@styles/app_colours';
-import { shadowSettings } from '@styles/core_styles';
+import shadowSettings from 'app/shared_styles/shadow_settings';
 import { Shadow } from 'react-native-shadow-2';
 import TabSwipeStatus from 'app/context/swipe_toggle';
 

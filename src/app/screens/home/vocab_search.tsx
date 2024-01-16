@@ -40,10 +40,26 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
                 <ScreenTemplate screenTitle="Search Your Vocabulary!">
 
                     <ContentCard cardStylings={searchCardStyles}>
+
                         <View  style={{justifyContent:"center", flex:1} }>
-                            <VocabPandaTextInput style={customTextInputStyle}/>
+                            <Text
+                            style={[
+                                CoreStyles.contentTitleText,
+                                {fontSize: 20}
+                            ]}>
+                                Search by matches...
+                            </Text>
                         </View>
-                        <View style={{justifyContent:"center", flex:1} }>
+
+
+                        <View  style={{justifyContent:"center", flex:1.1} }>
+                            <VocabPandaTextInput 
+                            
+                                style={customTextInputStyle}
+                                placeholder='Type...'
+                            />
+                        </View>
+                        <View style={{justifyContent:"center", flex:1.2} }>
                             <AppButton 
                                 onPress={resultsNav}
                             >
@@ -56,13 +72,26 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
                     <ContentCard cardStylings={dropdownCardStyles}>
 
                         <View  style={{justifyContent:"center", flex:1} }>
+                            <Text
+                                style={[
+                                    CoreStyles.contentTitleText,
+                                    {fontSize: 20}
+                                ]}
+                            >
+                                ...or by Project
+
+                            </Text>
+                        </View>
+
+                        <View  style={{justifyContent:"center", flex:1.1} }>
                             <Dropdown
                                 data={data}
                                 defaultButtonText="Choose Project"
                                 setSelection={setCurrentProjectSelection}
                             />
                         </View>
-                        <View style={{justifyContent:"center", flex:1} }>
+
+                        <View style={{justifyContent:"center", flex:1.2} }>
                             <AppButton
                                 onPress={resultsNav}
                             >
