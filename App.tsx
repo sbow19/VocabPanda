@@ -14,7 +14,7 @@ import LoadingStatus from 'app/context/loading';
 
 function App () {
 
-  const [isLoggedIn, setIsLoggedIn] = React.useState(true);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
   const loggedInState = [isLoggedIn, setIsLoggedIn]

@@ -5,26 +5,38 @@ import * as types from '@customTypes/types.d';
 import React, {useState} from 'react'
 import { Switch } from 'react-native-switch';
 import appColours from '@styles/app_colours';
+import DefaultGameSettingsContext from 'app/context/default_game_settings_context';
+import CurrentUserContext from 'app/context/current_user';
+
 
 const AppSwitch:React.FC = props =>{
 
-    const [switchState, setSwitchState] = useState(false)
+    const [gameSettings, setGameSettingsHandler] = React.useContext(DefaultGameSettingsContext)
+
+    const [myLocalSetting, setMyLocalSetting] = React.useState(false)
+
+    React.useEffect(()=>{
+
+        setMyLocalSetting(gameSettings.timerOn)
+
+    }, [])
+
 
     return(
     
     <>
         <Switch
-            value={switchState}
+            value={props.setsDefault != true ? myLocalSetting : gameSettings.timerOn}
             onValueChange={
                 (val)=>{
-                    setSwitchState(val)
-                    try{
 
-                        /* Added logic here on switch, perhaps use context */
-
-                    }catch(e){
-
+                    if(props.setsDefault == true){
+                        setGameSettingsHandler(val, "", props.setsDefault)
+                        setMyLocalSetting(!myLocalSetting)
+                    } else {
+                        setMyLocalSetting(!myLocalSetting)
                     }
+                    
                 }
             }
             circleActiveColor={appColours.darkGreen}

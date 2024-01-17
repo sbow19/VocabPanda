@@ -12,6 +12,13 @@ const CoreStyles = StyleSheet.create({
         lineHeight: 28
     },
 
+    errorText:{
+        fontSize: 14,
+            fontFamily: "Exo2-Regular",
+            color: appColours.black
+
+    },
+
     contentTitleText: {
         color: appColours.black,
         fontFamily: "Exo2-Black",

@@ -22,9 +22,12 @@ import ScreenTemplate from '@shared/homescreen_template';
 
 import windowDimensions from 'app/context/dimensions';
 import appColours from 'app/shared_styles/app_colours';
+import CurrentUserContext from 'app/context/current_user';
 
 
 const HomeScreen = (props: Object) =>{
+
+    const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
 
     const [lastActivityData] = useContext(LastActivity)
 
@@ -66,7 +69,7 @@ return (
 
                     </TouchableOpacity>
                 </View>
-            <ScreenTemplate screenTitle="Welcome back, John">
+            <ScreenTemplate screenTitle={`Welcome back, ${currentUser}`}>
                 <ContentCard cardStylings={customCardStylings}>
 
                     {/*

@@ -8,9 +8,13 @@ import {
 import React, {useContext} from "react";
 import HomeTable from "../table/table_template_home";
 import * as types from "@customTypes/types.d"
+import CurrentUserContext from "app/context/current_user";
+
 
 
 const ActivityContent: React.FC = props=>{
+
+    const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
 
     
     return(
@@ -37,7 +41,7 @@ const ActivityContent: React.FC = props=>{
                         {lineHeight: 20}
                     ]}
                 > 
-                    You've been busy! Here is a summary of your activity since you last logged in
+                    You've been busy {currentUser}! Here is a summary of your activity since you last logged in
                 </Text>
             </View>
 

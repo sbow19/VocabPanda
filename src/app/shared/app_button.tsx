@@ -18,7 +18,6 @@ function parseProps(props: types.CustomButtonStylesProp){
     const customProps: types.CustomButtonStylesProp = {
         customStyles: {},
         onPress: ()=>{},
-        setSwipeStatus: ()=>{}
 
     }
 
@@ -37,12 +36,7 @@ function parseProps(props: types.CustomButtonStylesProp){
 
     }
 
-    try{
-        customProps.setSwipeStatus
 
-    }catch(e){
-        console.log(e)
-    }
 
     return customProps
 }

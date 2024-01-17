@@ -93,3 +93,13 @@ export type WindowDimensions = {
     HEIGHT: number
     WIDTH: number
 }
+
+export type users = {
+
+    user: userDetails
+}
+
+export type userDetails = {
+    email: string
+    
+}

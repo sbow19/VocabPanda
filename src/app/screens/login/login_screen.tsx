@@ -18,6 +18,11 @@ import {
  import React from 'react'
 
  import LoggedInStatus from "app/context/loggedIn"
+ import { Formik } from "formik"
+import AppLoginDetails from "app/storage/user_profile_details"
+import { showMessage } from "react-native-flash-message"
+
+import CurrentUserContext from "app/context/current_user"
  
 
 
@@ -27,6 +32,8 @@ const LoginScreen: React.FC = props=>{
 
     const [isLoggedIn, setIsLoggedIn] = React.useContext(LoggedInStatus);
 
+    const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
+
     return(
         <TouchableOpacity
             onPress={()=>Keyboard.dismiss()}
@@ -34,34 +41,83 @@ const LoginScreen: React.FC = props=>{
             activeOpacity={1}
         >
             <SignInTemplate>
-                
+            
+                <Formik
 
-                    <View
-                        style={inputWrapperStyles}
-                    >
-                        <VocabPandaTextInput
-                            multiline={false}
-                            placeholder="Enter email or username..."
-                            placeholderTextColor="grey"
-                            inputMode="email"
-                            keyboardType="email-address"
-                        
-                        />
-                    </View>
+                    initialValues={{user: "", password: ""}}
+                    onSubmit={async(values, actions)=>{
 
-                    <View
-                        style={inputWrapperStyles}
-                        
-                    >
-                        <VocabPandaTextInput
-                            secureTextEntry={true}
-                            multiline={false}
-                            placeholder="Enter password..."
-                            placeholderTextColor="grey"
-                        />
-                    </View>
+                        try{
+                            let resultObject = await AppLoginDetails.signIn(
+                                values.user,
+                                values.password
+                            )
 
-                   
+                            if(resultObject.loginSuccess){
+
+                                showMessage({
+                                    message: "Success",
+                                    type: "success"
+                                })
+
+                                
+                                setCurrentUser(resultObject.userName)
+                                setIsLoggedIn(true)
+                                
+
+                            } else if (!resultObject.loginSuccess){
+
+                                showMessage({
+                                    message: "Login failed",
+                                    type: "warning"
+                                })
+                            }
+
+
+                        }catch(e){
+                            console.log(e)
+                        }
+
+                        actions.resetForm()
+
+                    }}
+            
+                >
+                    {({handleChange, handleReset, handleSubmit, values})=>(
+
+
+                    <>
+
+                        <View
+                            style={inputWrapperStyles}
+                        >
+                            <VocabPandaTextInput
+                                multiline={false}
+                                placeholder="Enter email or username..."
+                                placeholderTextColor="grey"
+                                inputMode="email"
+                                keyboardType="email-address"
+                                value={values.user}
+                                onChangeText={handleChange("user")}
+                            />
+
+                        </View>
+
+                        <View
+                            style={inputWrapperStyles}
+                            
+                        >
+                            <VocabPandaTextInput
+                                secureTextEntry={true}
+                                multiline={false}
+                                placeholder="Enter password..."
+                                placeholderTextColor="grey"
+                                value={values.password}
+                                onChangeText={handleChange("password")}
+                            />
+
+                        </View>
+
                         <View
                             style={[inputWrapperStyles, {justifyContent:"flex-end"}]}
                             onStartShouldSetResponder={()=>true}
@@ -94,7 +150,10 @@ const LoginScreen: React.FC = props=>{
                     >
                         <AppButton
                             customStyles={{backgroundColor:appColours.darkGreen}}
-                            onPress={()=>{props.navigation.pop()}}
+                            onPress={()=>{
+                                props.navigation.pop()
+                                handleReset()
+                            }}
                         >
                             <Text style={CoreStyles.actionButtonText}>Go back</Text>
                         </AppButton>
@@ -102,12 +161,20 @@ const LoginScreen: React.FC = props=>{
                         <AppButton
                             customStyles={{backgroundColor:appColours.darkGreen}}
                             onPress={()=>{
-                                setIsLoggedIn(true)
+                                handleSubmit()
                             }}
                         >
                             <Text style={CoreStyles.actionButtonText}>Sign In</Text>
                         </AppButton>
                     </View>
+                </>
+
+                    )}
+                    
+                </Formik>
+
+                   
+                      
             
             </SignInTemplate>
         </TouchableOpacity>

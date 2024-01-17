@@ -35,7 +35,9 @@ function parseProps (props:TextInputProps){
         placeholderTextColor: appColours.black,
         autoFocus: false,
         onSubmit: ()=>{},
-        returnKeyType: "default"
+        returnKeyType: "default",
+        value: "",
+        onChangeText: ()=>{}
     }
 
     if(props.style) {
@@ -95,6 +97,14 @@ function parseProps (props:TextInputProps){
         customProps.returnKeyType = props.returnKeyType
     } 
 
+    if(props.value) {
+        customProps.value = props.value
+    } 
+
+    if(props.onChangeText){
+        customProps.onChangeText = props.onChangeText
+    }
+
 
 
     return customProps
@@ -128,6 +138,7 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
         onBlur={()=>{
             setActive(false);
         }}
+        onChangeText={customProps.onChangeText}
         multiline={customProps.multiline}
         numberOfLines={customProps.numberOfLines}
         editable={customProps.editable}
@@ -142,6 +153,7 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
             customProps.onSubmit()
         }}
         returnKeyType={customProps.returnKeyType}
+        value={customProps.value}
         
     />
     

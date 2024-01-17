@@ -3,7 +3,7 @@
 import { createContext } from "react";
 
 export const lastActivityObject = {
-    lastActivity: false,
+    lastActivity: true,
     lastActivityData: {
         projects: [],
         noOfAdditions: []

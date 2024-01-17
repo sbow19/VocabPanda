@@ -16,10 +16,11 @@ import ScreenTemplate from '@shared/homescreen_template';
 import ContentCard from '@shared/content_card';
 
 import windowDimensions from '@context/dimensions';
-import App from 'App';
-import appColours from 'app/shared_styles/app_colours';
+
+import {default as Settings} from 'app/storage/game_settings_storage';
 
 const GameSettings: React.FC = ({navigation})=>{
+
 
 return (
     <View style={[CoreStyles.defaultScreen, additionalStyles]}>
@@ -31,7 +32,11 @@ return (
                     </View>
                     <View style={contentCellStyle}>
                         
-                        <AppSwitch/>
+                        <AppSwitch
+
+                            setsDefault={true}
+                        
+                        />
                     </View>
                 </View>
                 <View style={turnsSliderRowStyle}>
@@ -39,7 +44,11 @@ return (
                         <Text style={[CoreStyles.contentText, {fontSize: 20}]}>Number of Turns</Text>
                     </View>
                     <View style={[contentCellStyle, {paddingTop:70}]}>
-                        <AppSlider/>
+                        <AppSlider
+
+                        setsDefault={true}
+                        
+                        />
                     </View>
                 </View>
             </ContentCard>

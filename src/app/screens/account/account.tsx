@@ -2,7 +2,7 @@
 
 import * as types from '@customTypes/types.d'
 
-import React from 'react';
+import React, { useContext } from 'react';
 import {
     ScrollView,
     View,
@@ -17,8 +17,30 @@ import AppButton from 'app/shared/app_button';
 import AppOverlay from 'app/shared/app_overlay';
 import LoggedInStatus from 'app/context/loggedIn';
 import VocabPandaTextInput from 'app/shared/text_input';
+import { Formik } from 'formik';
 
+import CurrentUserContext from 'app/context/current_user';
 
+import * as yup from 'yup'
+import AppLoginDetails from 'app/storage/user_profile_details';
+import { showMessage } from 'react-native-flash-message';
+
+const changePasswordSchema = yup.object({
+    password: yup.string()
+    .required()
+    .min(8, "Password must have at least 8 characters")
+    .max(24, "Password can have no more than 24 characters")
+    .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*\/\\])/,
+        "Must contain one uppercase, one lowercase, one number and one special character"
+      ),
+
+rePassword: yup.string()
+    .required()
+    .min(8)
+    .max(16)
+    .oneOf([yup.ref('password')], 'Passwords must match')
+})
 
 const Account: React.FC = props=>{
 
@@ -34,6 +56,10 @@ const Account: React.FC = props=>{
 
     /* Password overlay visible state */
     const [deleteAccountOverlay, setDeleteAccountOverlay] = React.useState(false)
+
+    /* current user context */
+
+    const [currentUser, setCurrentUser] = useContext(CurrentUserContext)
 
 
     /* Triggers on sign out */
@@ -52,6 +78,7 @@ const Account: React.FC = props=>{
                     onPress: ()=>{
                         /* trigger sign out procedure */
                         setIsLoggedIn(false)
+                        setCurrentUser("")
                     }
                 }
 
@@ -112,7 +139,7 @@ const Account: React.FC = props=>{
                 >
                     <View>
                         <Text style={CoreStyles.contentText}> 
-                            You are currently using the free version of Vocab Panda. For unlimited flashcard turns and more vocab storage, you an upgrade to premium for £3.49!
+                            You are currently using the free version of Vocab Panda. For unlimited flashcard turns and more vocab storage, you can upgrade to premium for £3.49!
                         </Text>
                     </View>
                     <View>
@@ -147,44 +174,100 @@ const Account: React.FC = props=>{
 
                 <AppOverlay
                     isVisible={passwordOverlay}
+                    style={{
+                        height: windowDimensions.HEIGHT*0.54
+                    }}
                 >
-                    <ContentCard
-                     cardStylings={overlayCardStyle}
+                    <Formik
+                        initialValues={{password: "", rePassword: ""}}
+                        validationSchema={changePasswordSchema}
+                        onSubmit={async (values, actions)=>{
+                            
+                            /* Call change password function in default settings class */
+                            
+                            let result = await AppLoginDetails.changePassword(values.password, currentUser)
+
+                            showMessage({
+                                message: result,
+                                type: "info"
+                            })
+
+                            setPasswordOverlay(false)
+                        }}
                     >
-                        <VocabPandaTextInput
-                            secureTextEntry={true}
-                            multiline={false}
-                            placeholder="Enter password..."
-                            placeholderTextColor="grey"
 
-                        />
-                        <VocabPandaTextInput
-                            secureTextEntry={true}
-                            multiline={false}
-                            placeholder="Re-enter password..."
-                            placeholderTextColor="grey"
-                        />
+                        {({handleSubmit, values, handleChange, handleReset, errors})=>(
 
-                    </ContentCard>
+                        <>
+                            <ContentCard
+                            cardStylings={overlayCardStyle}
+                            >
+                                <View
+                                    style={topPasswordContainer}
+                                >
+                                    <VocabPandaTextInput
+                                        secureTextEntry={true}
+                                        multiline={false}
+                                        placeholder="Enter password..."
+                                        placeholderTextColor="grey"
+                                        value={values.password}
+                                        onChangeText={handleChange("password")}
 
-                    <View style={{flex:1, flexDirection: "row", justifyContent: "space-evenly"}}>
-                        <AppButton
-                            customStyles={CoreStyles.backButtonColor}
-                            onPress={()=>setPasswordOverlay(false)}
-                        >
-                            <Text style={CoreStyles.backButtonText}>
-                                Close
-                            </Text>
+                                    />
+                                     <Text
+                                        style={CoreStyles.errorText}
+                                     >
+                                        {values.password !== "" ? errors.password : ""}
+                                    </Text>
+                                </View>
+                                <View
+                                     style={bottomPasswordContainer}
+                                >
+                                    <VocabPandaTextInput
+                                        secureTextEntry={true}
+                                        multiline={false}
+                                        placeholder="Re-enter password..."
+                                        placeholderTextColor="grey"
+                                        value={values.rePassword}
+                                        onChangeText={handleChange("rePassword")}
+                                    />
+                                    <Text
+                                        style={CoreStyles.errorText}
+                                    >
+                                        {values.rePassword !== "" ? errors.rePassword : ""}
+                                    </Text>
+                                </View>
 
-                        </AppButton>
+                            </ContentCard>
 
-                        <AppButton>
-                            <Text style={CoreStyles.actionButtonText}>
-                                Set
-                            </Text>
-                        </AppButton>
+                            <View style={{flex:1, flexDirection: "row", justifyContent: "space-evenly"}}>
+                                <AppButton
+                                    customStyles={CoreStyles.backButtonColor}
+                                    onPress={()=>{
+                                        setPasswordOverlay(false)
+                                    }}
+                                >
+                                    <Text style={CoreStyles.backButtonText}>
+                                        Close
+                                    </Text>
 
-                    </View>
+                                </AppButton>
+
+                            <AppButton
+                                onPress={()=>{
+                                    handleSubmit()}}
+                            >
+                                <Text style={CoreStyles.actionButtonText}>
+                                    Set
+                                </Text>
+                            </AppButton>
+
+                            </View>
+                        </>
+
+                        )}
+                    
+                    </Formik>
                 </AppOverlay>
 
 
@@ -193,6 +276,11 @@ const Account: React.FC = props=>{
 
                 <AppOverlay
                     isVisible={deleteAccountOverlay}
+                    style={
+                        {
+                            height: 100
+                        }
+                    }
                 >
 
                 <ContentCard
@@ -248,6 +336,17 @@ const Account: React.FC = props=>{
     )
 }
 
+const topPasswordContainer = {
+    flex:  1,
+    justifyContent: "flex-start",
+    marginTop: 10
+}
+
+const bottomPasswordContainer = {
+    flex:  1,
+    justifyContent: "flex-start"
+}
+
 const signInCardStyle = {
 
     height: windowDimensions.HEIGHT*0.15,
@@ -285,8 +384,8 @@ const overlayCardStyle: ViewStyle = {
 
     marginBottom: 20,
     width: windowDimensions.WIDTH * 0.75,
-    height: windowDimensions.HEIGHT * 0.3,
-    justifyContent: "space-evenly"
+    height: windowDimensions.HEIGHT * 0.4,
+    justifyContent: "flex-start"
 
 }
 
