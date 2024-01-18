@@ -93,6 +93,7 @@ const ProjectView: React.FC = props=>{
 
     return(
         <View style={CoreStyles.defaultScreen}>
+
             <ScreenTemplate
                 screenTitle={project}
             >

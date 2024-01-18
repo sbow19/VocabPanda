@@ -19,14 +19,15 @@ import { Overlay } from '@rneui/base'
 import appColours from 'app/shared_styles/app_colours';
 import VocabPandaTextInput from 'app/shared/text_input';
 
+import { Formik } from 'formik';
+import * as yup from 'yup'
+
+import { languagesList } from 'app/shared/languages_list';
+import UpgradeBanner from 'app/shared/upgrade_banner';
+
 
 
 const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
-
-    /* define database response object */
-    /* database loaded on first load and stored in cache */
-
-    const data: types.ProjectList = ["First proj", "vocab", "Spain"];
 
     const [currentProjectSelection, setCurrentProjectSelection] = useState("");
 
@@ -55,6 +56,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
         <View style={{
             flex:1
         }}>
+            <UpgradeBanner/>
             <ScreenTemplate
                 screenTitle="Manage Projects"
             >
@@ -65,7 +67,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                     
                         <View>
                             <Dropdown 
-                                data={data} 
+                                data={languagesList()} 
                                 defaultButtonText='Choose Project'
                                 setSelection={setCurrentProjectSelection}
                                 customStyles={customStylesDropdown}
@@ -98,118 +100,131 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
             </ScreenTemplate>
             <AdBanner/>
 
-            <Overlay
-                isVisible={overlayVisible}
-                overlayStyle={overlayStyle}
+            <Formik
+                initialValues={{projectName: ""}}
+                onSubmit={(values, actions)=>{
+
+                    actions.resetForm()
+                    overlayNav()
+                }}
+                validationSchema={projectNameScheme}
             >
-            
 
-                    <ContentCard
-                        cardStylings={addProjectCardStyles}
-                    
+                {({values, handleChange, handleSubmit})=>(
+                <>
+                
+                    <Overlay
+                    isVisible={overlayVisible}
+                    overlayStyle={overlayStyle}
                     >
-                        <View
+            
+                        <ContentCard
+                            cardStylings={addProjectCardStyles}
                         
-                        >
-                            <View>
-                                <Text
-                                     style={CoreStyles.contentText}
-                                >Project name</Text>
-                            </View>
-                            <View>
-                                <VocabPandaTextInput
-                                    defaultValue='Type...'
-                                    style={{
-                                        width: windowDimensions.WIDTH * 0.54
-                                    }}
-
-                                
-                                />
-                            </View>
-
-                        </View>
-
-                        <View
-                            
                         >
                             <View
-                            >
-                                <Text
-                                     style={CoreStyles.contentText}
-
-                                >Default target language</Text>
-                            </View>
-                            <View>
-                            <Dropdown
-                                    defaultButtonText='Target lang'
-                                    data={["Spanish", "English", "Portuguese"]}
-                                
-                                
-                                />
-                            </View>
                             
-                        </View>
+                            >
+                                <View>
+                                    <Text
+                                        style={CoreStyles.contentText}
+                                    >Project name</Text>
+                                </View>
+                                <View>
+                                    <VocabPandaTextInput
+                                        defaultValue='Type...'
+                                        style={{
+                                            width: windowDimensions.WIDTH * 0.54
+                                        }}
+                                        value={values.projectName}
+                                        onChangeText={handleChange('projectName')}
+                                    />
+                                </View>
+
+                            </View>
+
+                            <View
+                                
+                            >
+                                <View
+                                >
+                                    <Text
+                                        style={CoreStyles.contentText}
+
+                                    >Default target language</Text>
+                                </View>
+                                <View>
+                                <Dropdown
+                                        defaultButtonText='Target lang'
+                                        data={languagesList()}
+                                    
+                                    
+                                    />
+                                </View>
+                                
+                            </View>
+
+                            <View
+                                
+                            >
+                                <View 
+                    
+                                >
+                                    <Text
+                                        style={CoreStyles.contentText}
+                                    >Default output language</Text>
+                                </View>
+                                <View>
+                                    <Dropdown
+                                        defaultButtonText='Output lang'
+                                        data={languagesList()}
+                                        custom={dropdownStyles}
+                                    
+                                    />
+                                </View>
+                                
+                            </View>
+                        </ContentCard>
 
                         <View
-                            
+                            style={{
+                                flexDirection: "row",
+                                flex: 1,
+                                justifyContent: "center"
+                            }}
+                        
                         >
-                            <View 
-                
+                            <AppButton 
+                                onPress={overlayNav}
+                                customStyles={backButton}
                             >
                                 <Text
-                                    style={CoreStyles.contentText}
-                                >Default output language</Text>
-                            </View>
-                            <View>
-                                <Dropdown
-                                    defaultButtonText='Output lang'
-                                    data={["Spanish", "English", "Portuguese"]}
-                                    custom={dropdownStyles}
-                                
-                                />
-                            </View>
-                            
+                                    style={[
+                                        CoreStyles.actionButtonText,
+                                        {color: appColours.black}
+                                    ]}
+                                >Close</Text>
+                            </AppButton>
+
+                            <AppButton 
+                                onPress={handleSubmit}
+                            >
+                                <Text
+                                    style={[
+                                        CoreStyles.actionButtonText,
+                                    ]}
+                                >Add</Text>
+                            </AppButton>
                         </View>
+                </Overlay>
 
+                
+                
+                
+                </>)}
 
-
-                    </ContentCard>
-
-
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            flex: 1,
-                            justifyContent: "center"
-                        }}
-                    
-                    >
-                        <AppButton 
-                            onPress={overlayNav}
-                            customStyles={backButton}
-                        >
-                            <Text
-                                style={[
-                                    CoreStyles.actionButtonText,
-                                    {color: appColours.black}
-                                ]}
-                            >Close</Text>
-                        </AppButton>
-
-                        <AppButton 
-                            onPress={overlayNav}
-                        >
-                            <Text
-                                style={[
-                                    CoreStyles.actionButtonText,
-                                ]}
-                            >Add</Text>
-                        </AppButton>
-
-
-                        
-                    </View>
-            </Overlay>
+           
+            </Formik>
         </View>
     )
 }
@@ -282,6 +297,13 @@ const addProjectCardStyles: types.CustomCardStyles ={
     width: windowDimensions.WIDTH * 0.85,
     marginBottom: 10
 }
+
+const  projectNameScheme = yup.object({
+
+    projectName: yup.string()
+        .max(12)
+        .min(4)
+})
 
 
 export default ChooseProject;

@@ -5,6 +5,8 @@
  * @format
  */
 /* eslint-disable */
+
+import SQLite from 'react-native-sqlite-storage'
 import 'react-native-gesture-handler';
 import VocabPandaApp from './src/app/app';
 
@@ -13,6 +15,8 @@ import React from 'react'
 import LoadingStatus from 'app/context/loading';
 
 function App () {
+
+  SQLite.enablePromise(true)
 
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);

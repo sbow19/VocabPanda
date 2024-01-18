@@ -7,6 +7,7 @@ import {
     View,
     Text,
     ViewStyle,
+    TouchableOpacity
 } from 'react-native';
 import CoreStyles from '@styles/core_styles';
 import appColours from '@styles/app_colours';
@@ -20,6 +21,10 @@ import ContentCard from '@shared/content_card'
 import AdBanner from '@shared/ad_banner';
 import windowDimensions from 'app/context/dimensions';
 import AppButton from 'app/shared/app_button';
+
+import { Formik } from 'formik';
+import * as yup from 'yup'
+import UpgradeBanner from 'app/shared/upgrade_banner';
 
 
 const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
@@ -37,6 +42,10 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
     return(
         
             <View style={[CoreStyles.defaultScreen, additionalStyles, {height: windowDimensions.HEIGHT}]}>
+
+                {/* Render depending on upgrade status */}
+                <UpgradeBanner/>
+
                 <ScreenTemplate screenTitle="Search Your Vocabulary!">
 
                     <ContentCard cardStylings={searchCardStyles}>
@@ -51,21 +60,46 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
                             </Text>
                         </View>
 
+                            <Formik
+                                initialValues={{input: ""}}
+                                onSubmit={(values, actions)=>{
 
-                        <View  style={{justifyContent:"center", flex:1.1} }>
-                            <VocabPandaTextInput 
-                            
-                                style={customTextInputStyle}
-                                placeholder='Type...'
-                            />
-                        </View>
-                        <View style={{justifyContent:"center", flex:1.2} }>
-                            <AppButton 
-                                onPress={resultsNav}
+                                    resultsNav()
+                                    console.log(values.input)
+                                    actions.resetForm()
+
+                                }}
+                                validationSchema={searchInputSchema}
                             >
-                                <Text style={CoreStyles.actionButtonText}> Search </Text>
-                            </AppButton>
-                        </View>
+
+                                {({values, handleChange, handleSubmit})=>(
+
+                                    <>
+                                        <View  style={{justifyContent:"center", flex:1.1} }>
+
+                                            <VocabPandaTextInput 
+                                                                        
+                                            style={customTextInputStyle}
+                                            placeholder='Type...'
+                                            value={values.input}
+                                            onChangeText={handleChange('input')}
+                                            />
+
+                                        </View>
+
+                                        <View style={{justifyContent:"center", flex:1.2} }>
+                                            <AppButton 
+                                                onPress={handleSubmit}
+                                            >
+                                                <Text style={CoreStyles.actionButtonText}> Search </Text>
+                                            </AppButton>
+                                        </View>
+
+                                    </>
+                                )}
+
+                            </Formik>
+
 
                     </ContentCard>
 
@@ -135,5 +169,10 @@ const additionalStyles: ViewStyle = {
     justifyContent: "center",
     alignItems: "center"
 }
+
+const searchInputSchema = yup.object({
+    input: yup.string()
+        .max(24)
+})
 
 export default VocabSearch;

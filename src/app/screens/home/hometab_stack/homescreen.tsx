@@ -23,6 +23,7 @@ import ScreenTemplate from '@shared/homescreen_template';
 import windowDimensions from 'app/context/dimensions';
 import appColours from 'app/shared_styles/app_colours';
 import CurrentUserContext from 'app/context/current_user';
+import UpgradeBanner from 'app/shared/upgrade_banner';
 
 
 const HomeScreen = (props: Object) =>{
@@ -43,32 +44,10 @@ const HomeScreen = (props: Object) =>{
 
 return (
         <View style={[CoreStyles.defaultScreen, {justifyContent: "flex-end", alignItems:"center"}]}>
-             <View
-                    style={{
-                        width: windowDimensions.WIDTH,
-                        height: windowDimensions.HEIGHT*0.04,
-                        backgroundColor: "orange",
-                        position: "relative",
-                        zIndex:1
-                        
-                    }}
-                >
-                    
-                    {/* Render turns left if not premium version */}
-                    <TouchableOpacity
-                        style={{
-                            width: windowDimensions.WIDTH,
-                            height: windowDimensions.HEIGHT*0.04,
-                            alignItems: "center"
-                        }}
-                    >
-                        <Text
-                             style={CoreStyles.contentText}
-                        > Upgrade to premium for full content!</Text>
 
+            {/* Render based on upgrade status */}
+            <UpgradeBanner/>
 
-                    </TouchableOpacity>
-                </View>
             <ScreenTemplate screenTitle={`Welcome back, ${currentUser}`}>
                 <ContentCard cardStylings={customCardStylings}>
 

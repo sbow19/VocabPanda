@@ -18,10 +18,15 @@ import { CustomCardStyles } from '@customTypes/types.d';
 import VocabPandaTextInput from 'app/shared/text_input';
 import AdBanner from 'app/shared/ad_banner';
 import React from 'react';
+import { Formik } from 'formik';
 
 const VocabGame: React.FC = props=>{
 
+    /* Timer state */
 
+    /* Points state */
+
+    /* No of turns state */
 
     return(
         <>
@@ -76,7 +81,7 @@ const VocabGame: React.FC = props=>{
 
                 </ContentCard>
 
-{/* These are remounted on next slide, some  animatino to transition */}
+{/* These are remounted on next slide, some animation to transition */}
                 <ContentCard
                     cardStylings={outputTextCard}
                 >
@@ -96,19 +101,40 @@ const VocabGame: React.FC = props=>{
                     <View
                         style= {cardContentWrapper}
                     >
-                    <VocabPandaTextInput
-                    
-                            numberOfLines={4}
-                            maxLength={100}
-                            style={{
-                                height: windowDimensions.HEIGHT*0.12,
-                                width: windowDimensions.WIDTH*0.8,
-                                fontSize: 16,
-                            }}  
+                        <Formik
+                            initialValues={{input: ""}}
+                            onSubmit={(values, actions)=>{
 
-                            autoFocus={true}
-                            editable={true}
-                    />
+                                /* Compare to answer, trigger animation, etc  */
+                                console.log(values)
+                                actions.resetForm()
+
+                            }}
+                        >
+                            {({values, handleChange, handleSubmit})=>(
+      
+                                <VocabPandaTextInput
+                                        numberOfLines={4}
+                                        maxLength={100}
+                                        style={{
+                                            height: windowDimensions.HEIGHT*0.12,
+                                            width: windowDimensions.WIDTH*0.8,
+                                            fontSize: 16,
+                                        }}  
+
+                                        autoFocus={true}
+                                        editable={true}
+                                        value={values.input}
+                                        onChangeText={handleChange("input")}
+                                        placeholder=''
+                                        onSubmit={handleSubmit}
+                                        
+                                />
+
+
+                            )}
+                         </Formik>
+                   
                     </View>
                 
                 </ContentCard>

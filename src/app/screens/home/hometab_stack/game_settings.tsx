@@ -17,13 +17,17 @@ import ContentCard from '@shared/content_card';
 
 import windowDimensions from '@context/dimensions';
 
-import {default as Settings} from 'app/storage/game_settings_storage';
+import UpgradeBanner from 'app/shared/upgrade_banner';
 
 const GameSettings: React.FC = ({navigation})=>{
 
 
 return (
     <View style={[CoreStyles.defaultScreen, additionalStyles]}>
+
+        {/* render depending on upgrade status */}
+
+        <UpgradeBanner/>
         <ScreenTemplate screenTitle="Set Default Game Settings">
             <ContentCard cardStylings={customCardStylings}>
                 <View style={timeGamesSwitchRowStyle}>

@@ -1,6 +1,7 @@
 /* eslint-disable */
 
 import EncryptedStorage from "react-native-encrypted-storage";
+import GameSettings from "./game_settings_storage";
 
 class AppLoginDetails {
 
@@ -239,6 +240,70 @@ class AppLoginDetails {
 
 
     
+    }
+
+    static deleteAccount = async (username: string, password: string) =>{
+
+        return new Promise(async (resolve)=>{
+
+            let resultObject = {
+                username: username, 
+                deletionSuccessful: false,
+                message: ""
+            }
+            try{
+    
+                /* delete user profile */
+                let usersDetailsRaw = await EncryptedStorage.getItem('users')
+    
+                let usersDetails = JSON.parse(usersDetailsRaw)
+
+                if(usersDetails[username].password === password){
+                    /* Check if inputted password matches password in database */
+
+                    delete usersDetails[username]
+
+                }else{
+
+                    /* Else resolve promise here with password match error */
+
+                    resultObject.message = "Passwords do not match"
+                    resolve(resultObject)
+                }
+    
+                let newUsersDetails = JSON.stringify(usersDetails);
+    
+        
+                /* delete saved user settings */
+    
+                let results = await GameSettings.deleteUserSettings(username);
+
+                if(results.settingsDeletionSuccessful == true){
+
+                    /* Only set encrypted storage if game settings deletion passes */
+                    await EncryptedStorage.setItem('users', newUsersDetails)
+                    resultObject.deletionSuccessful = true
+                    resolve(resultObject)
+
+                } else if (results.settingsDeletionSuccessful == false){
+
+                    resultObject.message = "Account deletion failed"
+
+                    resolve(resultObject)
+                }
+    
+            }catch(e){
+    
+                resultObject.message = "Account deletion failed"
+                resolve(resultObject)
+    
+            }
+
+
+
+        })
+
+       
     }
        
 }

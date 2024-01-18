@@ -21,9 +21,10 @@ import { Formik } from 'formik';
 
 import CurrentUserContext from 'app/context/current_user';
 
+import { showMessage } from 'react-native-flash-message';
+
 import * as yup from 'yup'
 import AppLoginDetails from 'app/storage/user_profile_details';
-import { showMessage } from 'react-native-flash-message';
 
 const changePasswordSchema = yup.object({
     password: yup.string()
@@ -44,6 +45,10 @@ rePassword: yup.string()
 
 const Account: React.FC = props=>{
 
+    /* Flash message */
+
+    const myMessage = React.useRef("main")
+
     /* Get sign in context here */
 
     const [isLoggedIn, setIsLoggedIn] = React.useContext(LoggedInStatus)
@@ -60,6 +65,10 @@ const Account: React.FC = props=>{
     /* current user context */
 
     const [currentUser, setCurrentUser] = useContext(CurrentUserContext)
+
+    /* Delete account error message */
+
+    const [errorMessageVisible, setErrorMessageVisible] = React.useState("")
 
 
     /* Triggers on sign out */
@@ -81,7 +90,6 @@ const Account: React.FC = props=>{
                         setCurrentUser("")
                     }
                 }
-
             ],
             {
                 cancelable: true
@@ -170,6 +178,7 @@ const Account: React.FC = props=>{
                 </ContentCard>
 
 
+
                 {/* Set password overlay */}
 
                 <AppOverlay
@@ -181,7 +190,7 @@ const Account: React.FC = props=>{
                     <Formik
                         initialValues={{password: "", rePassword: ""}}
                         validationSchema={changePasswordSchema}
-                        onSubmit={async (values, actions)=>{
+                        onSubmit={async (values)=>{
                             
                             /* Call change password function in default settings class */
                             
@@ -221,7 +230,7 @@ const Account: React.FC = props=>{
                                     </Text>
                                 </View>
                                 <View
-                                     style={bottomPasswordContainer}
+                                    style={bottomPasswordContainer}
                                 >
                                     <VocabPandaTextInput
                                         secureTextEntry={true}
@@ -274,61 +283,102 @@ const Account: React.FC = props=>{
                 {/* Delete account warning */}
 
 
-                <AppOverlay
-                    isVisible={deleteAccountOverlay}
-                    style={
-                        {
-                            height: 100
+                <Formik
+                    initialValues={{password: ""}}
+                    onSubmit={async (values, actions)=>{
+
+                        let results = await AppLoginDetails.deleteAccount(currentUser, values.password);
+                       
+                        if(results.deletionSuccessful == true){
+
+                            setIsLoggedIn(false)
+                            setCurrentUser("")
+                            showMessage({
+                                message: "Account deleted",
+                                type: "info"
+                            })
+                            
+
+                        } else if (results.deletionSuccessful == false){
+
+                            setErrorMessageVisible(results.message)
+
                         }
-                    }
+                        actions.resetForm()
+                    }}
                 >
 
-                <ContentCard
-                     cardStylings={overlayCardStyle}
-                    >
-                        <View>
-                            <Text
-                                style={CoreStyles.contentText}
-                            
-                            >Are you sure you want to delete your account?</Text>
-                        </View>
-                        <VocabPandaTextInput
-                            secureTextEntry={true}
-                            multiline={false}
-                            placeholder="Enter password..."
-                            placeholderTextColor="grey"
-
-                        />
-
-                    </ContentCard>
-
-                    <View style={{flex:1, flexDirection: "row", justifyContent: "space-evenly"}}>
-                        <AppButton
-                            customStyles={CoreStyles.backButtonColor}
-                            onPress={()=>setDeleteAccountOverlay(false)}
+                    {({values, handleChange, handleSubmit})=>(
+                    <>
+                        <AppOverlay
+                            isVisible={deleteAccountOverlay}
+                            style={
+                                {
+                                    height: windowDimensions.HEIGHT*0.55,
+                                    width: windowDimensions.WIDTH* 0.85,
+                                    justifyContent: "center",
+                                    alignItems: "center"
+                                }
+                            }
                         >
-                            <Text style={CoreStyles.backButtonText}>
-                                Close
-                            </Text>
 
-                        </AppButton>
+                            <ContentCard
+                                cardStylings={deleteCardStyle}
+                                >
+                                <View>
+                                    <Text
+                                        style={CoreStyles.contentText}
+            
+                                    >Are you sure you want to delete your account?
+                                    
+                                        {/* TODO -- stuff about membership if member */}
+                                                
+                                    </Text>
+                                </View>
 
-                        <AppButton
-                            customStyles={CoreStyles.deleteButtonColor}
-                            onPress={()=>{
-                                /* Delete al local data, cancel billing (Remind user that services last until x) */
-                            }}
-                        >
-                            <Text style={CoreStyles.actionButtonText}>
-                                Delete
-                            </Text>
-                        </AppButton>
+                                <VocabPandaTextInput
+                                    secureTextEntry={true}
+                                    multiline={false}
+                                    placeholder="Enter password..."
+                                    placeholderTextColor="grey"
+                                    value={values.password}
+                                    onChangeText={handleChange("password")}
+                                />
 
-                    </View>
+                                <Text
+                                    style={CoreStyles.errorText}
+                                >
+                                    {errorMessageVisible}
+                                </Text>
 
+                            </ContentCard>
 
-                    
-                </AppOverlay>
+                            <View style={{flex:1, flexDirection: "row", justifyContent: "space-evenly", width: "100%"}}>
+                                <AppButton
+                                    customStyles={CoreStyles.backButtonColor}
+                                    onPress={()=>setDeleteAccountOverlay(false)}
+                                >
+                                    <Text style={CoreStyles.backButtonText}>
+                                        Close
+                                    </Text>
+
+                                </AppButton>
+
+                                <AppButton
+                                    customStyles={CoreStyles.deleteButtonColor}
+                                    onPress={handleSubmit}
+                                >
+                                    <Text style={CoreStyles.actionButtonText}>
+                                        Delete
+                                    </Text>
+                                </AppButton>
+
+                            </View>
+                        </AppOverlay>
+                    </>
+                    )}
+                </Formik>
+                
 
             
             </View>
@@ -377,6 +427,16 @@ const upgradeCardStyle: types.CustomCardStyles = {
     width: windowDimensions.WIDTH * 0.9,
     alignItems: "center",
     justifyContent: "space-evenly"
+}
+
+const deleteCardStyle: ViewStyle = {
+
+    marginBottom: 20,
+    width: windowDimensions.WIDTH * 0.75,
+    height: windowDimensions.HEIGHT * 0.4,
+    justifyContent: "space-evenly"
+
+
 }
 
 

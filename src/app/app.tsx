@@ -24,6 +24,8 @@ import GameSettings from './storage/game_settings_storage';
 import DefaultGameSettingsContext from './context/default_game_settings_context';
 import AppLoginDetails from './storage/user_profile_details';
 
+import LocalDatabase from './database/local_database';
+
 
 const MainAppContainer = createNativeStackNavigator()
 
@@ -72,6 +74,11 @@ const VocabPandaApp: React.FC = props => {
                 /* Sets object defining login details */
                 await AppLoginDetails.setInitial()
 
+                await LocalDatabase.createTestDatabase().catch(()=>{
+
+                    console.log("Test database failed to be connected to")
+                })
+
     
                 setIsLoading(false);
             }
@@ -113,6 +120,11 @@ const VocabPandaApp: React.FC = props => {
                     animationDuration={100}
                     duration={1000}
                     titleStyle={CoreStyles.contentText}
+                    style={
+                        {
+                            zIndex: 99
+                        }
+                    }
                 />
         </LastActivity.Provider>
         </CurrentUserContext.Provider>
@@ -145,9 +157,7 @@ const MainApp: React.FC = props=>{
         if(setsDefault==true){
             GameSettings.setDefaultSettings(gameSettings, currentUser)
         }
-
         setGameSettings(gameSettings)
-
     }
  
 
@@ -155,8 +165,8 @@ const MainApp: React.FC = props=>{
 
         const gameSettingsLoad = async ()=>{
 
-            /* Check whether */
-            let result = await GameSettings.newSettings(currentUser)
+            /* Sets default game settings for new user */
+            await GameSettings.newSettings(currentUser)
 
             const gameSettings = await GameSettings.getDefaultSettings(currentUser)
             setGameSettings(gameSettings)

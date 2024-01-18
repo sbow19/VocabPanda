@@ -20,8 +20,6 @@ class GameSettings {
 
                 const allGameSettings =  JSON.parse(allGameSettingsRaw)
 
-                console.log(allGameSettings)
-
                 if(allGameSettings[userName]){
     
                     /* If game settings already exists */
@@ -88,6 +86,39 @@ class GameSettings {
             console.log(e)
         }
     } 
+
+    static deleteUserSettings(userName: string){
+
+        return new Promise(async(resolve)=>{
+
+            let resultObject = {
+                username : userName,
+                settingsDeletionSuccessful: false
+            }
+    
+            try{
+    
+                const gameSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+    
+                const gameSettings = JSON.parse(gameSettingsRaw)
+    
+                delete gameSettings[userName]
+    
+                let newGameSettings = JSON.stringify(gameSettings)
+    
+                await AsyncStorage.setItem('allDefaultSettings', newGameSettings)
+    
+                resultObject.settingsDeletionSuccessful = true
+    
+                resolve(resultObject)
+            } catch (e){
+    
+                resolve(resultObject)
+            }
+
+        })
+       
+    }
 }
 
 

@@ -18,9 +18,6 @@ import React from 'react'
 
 function parseProps (props:TextInputProps){
 
-
-
-
     let customProps: TextInputProps = {
         numberOfLines: 1,
         editable: true,
@@ -37,7 +34,9 @@ function parseProps (props:TextInputProps){
         onSubmit: ()=>{},
         returnKeyType: "default",
         value: "",
-        onChangeText: ()=>{}
+        onChangeText: ()=>{},
+        onBlur: e=>{},
+        onFocus: e=>{}
     }
 
     if(props.style) {
@@ -105,6 +104,14 @@ function parseProps (props:TextInputProps){
         customProps.onChangeText = props.onChangeText
     }
 
+    if(props.onBlur){
+        customProps.onBlur = props.onBlur
+    }
+
+    if(props.onFocus){
+        customProps.onFocus = props.onFocus
+    }
+
 
 
     return customProps
@@ -114,9 +121,6 @@ function parseProps (props:TextInputProps){
 const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
 
     const [active, setActive] = useState(false);
-
-
-    // TODO - Move custom prop handler to separate function
 
     const customProps: TextInputProps = parseProps(props);
 
@@ -132,11 +136,13 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
             customProps.style,
 
         ]}
-        onFocus={()=>{
+        onFocus={e=>{
             setActive(true);
+            customProps.onFocus(e)
         }}
-        onBlur={()=>{
+        onBlur={e=>{
             setActive(false);
+            customProps.onBlur(e)
         }}
         onChangeText={customProps.onChangeText}
         multiline={customProps.multiline}

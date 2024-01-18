@@ -7,7 +7,7 @@ import {
     View,
     Text, 
     TextStyle,
-    ViewStyle,
+    ViewStyle
 } from 'react-native';
 import Dropdown from 'app/shared/dropdown';
 import AppButton from '@shared/app_button';
@@ -20,20 +20,46 @@ import windowDimensions from '@context/dimensions';
 import AdBanner from 'app/shared/ad_banner';
 import appColours from 'app/shared_styles/app_colours';
 
+import { languagesList } from 'app/shared/languages_list';
+
 
 import { Overlay } from '@rneui/base';
 import { showMessage } from 'react-native-flash-message';
+
+import { Formik, useFormikContext } from 'formik';
+
+import DeeplTranslate from 'app/api/translation_call';
+
+import * as yup from 'yup'
+import UpgradeBanner from 'app/shared/upgrade_banner';
 
 const TranslateVocab: React.FC = props=>{
     
     /* temp data list wth languages */
     const languages: types.ProjectList = ["Spanish", "English"]
 
-    /* define database response object */
-    /* database loaded on first load and stored in cache */
+    /* Language selections stored in local state but also set as default languages */
     const [inputLangSelection, setInputLangSelection] = useState("");
 
+    const handleInputLanguageSelection = (language: string)=>{
+
+        setInputLangSelection(language);
+
+        /* Add code to set default target  language */
+    }
+
     const [outputLangSelection, setOutputLangSelection] = useState("");
+
+    const handleOutputLanguageSelection = (language: string)=>{
+
+        setOutputLangSelection(language);
+
+        /* Add code to set default output language*/
+
+    }
+
+   /*  Output text */
+
 
     const [projectSelection, setProjectSelection] = useState("")
 
@@ -48,143 +74,177 @@ const TranslateVocab: React.FC = props=>{
     return(
 
         <View style={CoreStyles.defaultScreen}>
-            <ScreenTemplate screenTitle="Translate">
-   
-                <ContentCard cardStylings={inputCardStylings}>
-                    <View style={headerWrapper}>
-                        <View style={titleWrapper}>
-                            <Text style={[CoreStyles.contentText, {fontSize: 18}]}>Type to translate</Text>
-                        </View>
-                        <View style={dropdownWrapper}>
+             {/* Render upgrade banner depending on subscription status */}
+             <UpgradeBanner/>
+                <Formik
+                    initialValues={{input: "", output: ""}}
+                    onSubmit={async(values, actions)=>{
 
-                            <Dropdown
-                                data={languages}
-                                defaultButtonText='Target Lang'
-                                customStyles={dropdownStyle}
-                                setSelection={setInputLangSelection}
-                            />
+                        /* add to project */
+                        setOverlayVisible(false)
 
-                        </View>
-                    </View>
-                    <View style={textInputWrapper}>
-                        <VocabPandaTextInput 
-                            style={customInputStyle} 
-                            numberOfLines={4} 
-                            editable={true}
-                            maxLength={50}
-                        />
-                    </View>
-            
-                </ContentCard >
+                        let response = await DeeplTranslate.translate({
+                            targetText: values.input,
+                            outputLanguage: "Spanish",
+                            targetLanguage: "English"
+                        })
+
+                        if(response.text){
+                            await actions.setFieldValue("output", response.text)
+                        }
                     
-
-                <ContentCard cardStylings={outputCardStylings}>
-                        <View style={headerWrapper}>
-                        <View style={titleWrapper}>
-                            <Text style={[CoreStyles.contentText, {fontSize: 18}]}>Output</Text>
-                        </View>
-                        <View style={dropdownWrapper}>
-
-                            <Dropdown
-                                data={languages}
-                                defaultButtonText='Output Lang'
-                                customStyles={dropdownStyle}
-                                setSelection={setOutputLangSelection}
-                            />
-
-                        </View>
-                    </View>
-                    <View style={textInputWrapper}>
-                        <VocabPandaTextInput 
-                            style={customOutputStyle} 
-                            numberOfLines={4} 
-                            editable={false}
-                            placeholder='Output'
-                            maxLength={100}
-                        />
-                    </View>
-                
-                </ContentCard>
-
-                <View style={[CoreStyles.defaultScreen, buttonWrapperStyle]}>                
-                        <AppButton 
-                            customStyles={{width:120}} onPress={nav}>
-                    
-                            <Text style={CoreStyles.actionButtonText}>Add to project</Text>
-                                                 
-                        </AppButton>        
-                </View>               
-
-            </ScreenTemplate>
-
-            <Overlay
-                isVisible={overlayVisible}
-                overlayStyle={overlayStyle}
-            >
-
-                <ContentCard
-                    cardStylings={cardStyle}
-                
+                    }}
+                    validationSchema={inputValidationSchema}
                 >
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            flex: 1,
-                            width: "100%",
-                            justifyContent: "space-evenly",
-                            alignItems: "center"
-                        }}
+
+                    {({values, handleChange, handleSubmit, handleBlur, setFieldValue})=>(
+                        <>
+
+                        <ScreenTemplate screenTitle="Translate">
+
+                        <ContentCard cardStylings={inputCardStylings}>
+                            <View style={headerWrapper}>
+                                <View style={titleWrapper}>
+                                    <Text style={[CoreStyles.contentText, {fontSize: 18}]}>Type to translate</Text>
+                                </View>
+                                <View style={dropdownWrapper}>
+
+                                    <Dropdown
+                                        data={languagesList()}
+                                        defaultButtonText='Target Lang'
+                                        customStyles={dropdownStyle}
+                                        setSelection={handleInputLanguageSelection}
+                                    />
+
+                                </View>
+                            </View>
+                            <View style={textInputWrapper}>
+                                <VocabPandaTextInput 
+                                    style={customInputStyle} 
+                                    numberOfLines={4} 
+                                    editable={true}
+                                    value={values.input}
+                                    onChangeText={handleChange("input")}
+                                    onSubmit={handleSubmit}
+                                    onBlur={async(e) => {
+                                        handleBlur('input')(e)
+
+                                        let response = await DeeplTranslate.translate({
+                                            targetText: values.input,
+                                            outputLanguage: outputLangSelection,
+                                            targetLanguage: inputLangSelection
+                                        })
+
+                                        console.log(response)
+
+                                        if(response.text){
+                                            await setFieldValue("output", response.text)
+                                        }
+                                      
+                                    }}
+                                />
+                            </View>
                     
-                    >
-                        <View>
-                            <Text
-                                style={ CoreStyles.contentText}
-
+                        </ContentCard >
                             
-                            >Select Project</Text>
-                        </View>
-                        <View>
-                            <Dropdown
-                                data={languages}
-                                defaultButtonText='Select Project'
-                                customStyles={dropdownStyle}
-                                setSelection={setProjectSelection}
-                            />
-                        </View>
+                        <ContentCard cardStylings={outputCardStylings}>
+                                <View style={headerWrapper}>
+                                <View style={titleWrapper}>
+                                    <Text style={[CoreStyles.contentText, {fontSize: 18}]}>Output</Text>
+                                </View>
+                                <View style={dropdownWrapper}>
 
-                    </View>
-                </ContentCard>
+                                    <Dropdown
+                                        data={languagesList()}
+                                        defaultButtonText='Output Lang'
+                                        customStyles={dropdownStyle}
+                                        setSelection={handleOutputLanguageSelection}
+                                    />
 
-
-                <View style={{flexDirection:"row", justifyContent: "space-evenly"}}>
-
-                    <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
-                            <Text style={CoreStyles.actionButtonText}>Close</Text>
-                    </AppButton>
-
-                    <AppButton 
-                        onPress={()=>{
-                            setOverlayVisible(!overlayVisible)
-
-                            /* Async function to attempt to update database
-                                - if failed, have reason displayed to user
-                            
-                            */
-                            showMessage({
-                                message: "Update failed",
-                                type:"warning",
-
-                            })
+                                </View>
+                            </View>
+                            <View style={textInputWrapper}>
+                                <VocabPandaTextInput 
+                                    style={customOutputStyle} 
+                                    numberOfLines={4} 
+                                    editable={false}
+                                    placeholder='Output'
+                                    maxLength={100}
+                                    value={values.output}
+                                />
+                            </View>
                         
-                        }}>
-                            <Text style={CoreStyles.actionButtonText}>Add</Text>
-                    </AppButton>
+                        </ContentCard>
 
-                </View>
-               
-            
-            </Overlay>
+                        <View style={[CoreStyles.defaultScreen, buttonWrapperStyle]}>                
+                                <AppButton 
+                                    customStyles={{width:120}} onPress={nav}>
+                            
+                                    <Text style={CoreStyles.actionButtonText}>Add to project</Text>
+                                                        
+                                </AppButton>        
+                        </View>  
+                        </ScreenTemplate>
 
+                        <Overlay
+                            isVisible={overlayVisible}
+                            overlayStyle={overlayStyle}
+                        >
+
+                            <ContentCard
+                                cardStylings={cardStyle}
+                            
+                            >
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        flex: 1,
+                                        width: "100%",
+                                        justifyContent: "space-evenly",
+                                        alignItems: "center"
+                                    }}
+                                
+                                >
+                                    <View>
+                                        <Text
+                                            style={ CoreStyles.contentText}
+
+                                        
+                                        >Select Project</Text>
+                                    </View>
+                                    <View>
+                                        <Dropdown
+                                            data={languages}
+                                            defaultButtonText='Select Project'
+                                            customStyles={dropdownStyle}
+                                            setSelection={setProjectSelection}
+                                        />
+                                    </View>
+
+                                </View>
+                            </ContentCard>
+
+
+                            <View style={{flexDirection:"row", justifyContent: "space-evenly"}}>
+
+                                <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
+                                        <Text style={CoreStyles.actionButtonText}>Close</Text>
+                                </AppButton>
+
+                                <AppButton 
+                                    onPress={handleSubmit}>
+                                        <Text style={CoreStyles.actionButtonText}>Add</Text>
+                                </AppButton>
+
+                            </View>
+                        
+                        
+                        </Overlay>   
+                        
+                        </>
+                    )}
+   
+                </Formik>
             <AdBanner/>
         </View>
     )
@@ -285,6 +345,12 @@ const dropdownStyle = {
     },
 
 }
+
+const inputValidationSchema = yup.object({
+
+    input: yup.string()
+        .max(50)
+})
 
 
 export default TranslateVocab;
