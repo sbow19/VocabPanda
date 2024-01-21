@@ -13,6 +13,10 @@ const ResultsRowTemplate: React.FC = props=>{
 
     const fullTextOverlayObject = React.useContext(FullTextContext)
 
+    /* Results row */
+
+    const resultRow = props.resultRow
+
     const projectNav = ()=>{
 
         props.navigation.navigate("Projects", {
@@ -23,7 +27,7 @@ const ResultsRowTemplate: React.FC = props=>{
         })
     }
 
-    const options =  data=>{
+    const options = data=>{
 
         return(
 
@@ -54,9 +58,9 @@ const ResultsRowTemplate: React.FC = props=>{
 
                         ]}
                 >
-                    {/* Language prefix */}
-                    
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo quos ullam sequi. Debitis, soluta sapiente! Illum repellendus accusantium facere odio exercitationem eligendi quisquam explicabo ducimus sint ea tenetur, ad temporibus!
+                    {
+                        `Project:\n${resultRow.project}`
+                    }
                 </Text>
             </View>
         </TouchableOpacity>
@@ -76,7 +80,22 @@ const ResultsRowTemplate: React.FC = props=>{
                     borderRadius: 10
                 }}
                 onPress={()=>{
+
+                    /* Show overlay object */
                     fullTextOverlayObject.setFullTextVisible(!fullTextOverlayObject.visible)
+
+                    /* Set full text content */
+
+                    fullTextOverlayObject.setFullText({
+
+                        target_language: resultRow.target_language,
+                        target_language_lang: resultRow.target_language_lang,
+                        output_language: resultRow.output_language,
+                        output_language_lang: resultRow.output_language_lang
+
+                    })
+
+                    
                 }}
             >
                 <View
@@ -97,9 +116,9 @@ const ResultsRowTemplate: React.FC = props=>{
 
                             ]}
                     >
-                        {/* Language prefix */}
-                        
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo quos ullam sequi. Debitis, soluta sapiente! Illum repellendus accusantium facere odio exercitationem eligendi quisquam explicabo ducimus sint ea tenetur, ad temporibus!
+                        {
+                            `(${resultRow.target_language_lang}):\n${resultRow.target_language}`
+                        }
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -117,6 +136,18 @@ const ResultsRowTemplate: React.FC = props=>{
                     borderRadius: 10
                 }}
                 onPress={()=>{
+
+                     /* Set full text content */
+
+                     fullTextOverlayObject.setFullText({
+
+                        target_language: resultRow.target_language,
+                        target_language_lang: resultRow.target_language_lang,
+                        output_language: resultRow.output_language,
+                        output_language_lang: resultRow.output_language_lang
+
+                    })
+                    
                     fullTextOverlayObject.setFullTextVisible(!fullTextOverlayObject.visible)
                 }}
             >
@@ -137,9 +168,9 @@ const ResultsRowTemplate: React.FC = props=>{
 
                             ]}
                     >
-                        {/* Language prefix */}
-
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo quos ullam sequi. Debitis, soluta sapiente! Illum repellendus accusantium facere odio exercitationem eligendi quisquam explicabo ducimus sint ea tenetur, ad temporibus!
+                        { 
+                            `(${resultRow.output_language_lang}):\n${resultRow.output_language}`
+                        }
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -180,7 +211,7 @@ export default ResultsRowTemplate
 
 const targCellStyle = {
 
-    height: windowDimensions.HEIGHT*0.08,
+    height: windowDimensions.HEIGHT*0.09,
     backgroundColor: appColours.white,
     flex:3,
     margin:2,
@@ -191,7 +222,7 @@ const targCellStyle = {
 
 const outputCellStyle:ViewStyle = {
 
-    height: windowDimensions.HEIGHT*0.08,
+    height: windowDimensions.HEIGHT*0.09,
     backgroundColor: appColours.white,
     flex: 3,
     margin: 2,
@@ -202,8 +233,8 @@ const outputCellStyle:ViewStyle = {
 
 const projectCellStyle = {
 
-    height: windowDimensions.HEIGHT*0.08,
-    flex:1.5,
+    height: windowDimensions.HEIGHT*0.09,
+    flex:1.8,
     alignItems: "center",
     margin: 1,
     backgroundColor: "rgba(217, 254, 217, 1)",

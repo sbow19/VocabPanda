@@ -16,7 +16,11 @@ import AppSwitch from 'app/shared/switch';
 import AppSlider from 'app/shared/slider';
 import AdBanner from 'app/shared/ad_banner';
 import Dropdown from 'app/shared/dropdown';
+import ProjectDropdown from 'app/shared/project_dropdown';
 import React from 'react';
+
+
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 const GameHome: React.FC = props=>{
 
@@ -151,6 +155,12 @@ const GameHome: React.FC = props=>{
 
 const ProjectModeProject: React.FC = props =>{
 
+    /*  App settings context */
+
+    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
+
+
+
     return(
         <View style={projectModeWrapperStyle}>
 
@@ -158,9 +168,9 @@ const ProjectModeProject: React.FC = props =>{
                 <Text style={[CoreStyles.contentText, {fontSize: 20, paddingBottom: 10}]}>Select Game Mode</Text>
             </View>
             <View>
-                <Dropdown
+                <ProjectDropdown
                     defaultButtonText='Select Project'
-                    data={["Project one", "project two", "project three"]}
+                    data={appSettings.projects}
                 />
             </View>
         </View>

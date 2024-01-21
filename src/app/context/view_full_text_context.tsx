@@ -6,7 +6,13 @@ import {
 
 const fulltext = {
     visible: false,
-    setFullTextVisible: ()=>{}
+    setFullTextVisible: ()=>{},
+    resultTextObject: {
+        target_language: "",
+        target_language_lang: "",
+        output_language: "",
+        output_language_lang: ""
+    }
 }
 
 const FullTextContext = createContext(fulltext)

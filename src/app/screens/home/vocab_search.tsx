@@ -6,15 +6,13 @@ import React, { useContext } from 'react';
 import {
     View,
     Text,
-    ViewStyle,
-    TouchableOpacity
+    ViewStyle
 } from 'react-native';
 import CoreStyles from '@styles/core_styles';
-import appColours from '@styles/app_colours';
 
 import ScreenTemplate from 'app/shared/homescreen_template';
 import VocabPandaTextInput from '@shared/text_input';
-import Dropdown from 'app/shared/dropdown';
+import ProjectDropdown from 'app/shared/project_dropdown';
 
 import ContentCard from '@shared/content_card'
 
@@ -25,17 +23,63 @@ import AppButton from 'app/shared/app_button';
 import { Formik } from 'formik';
 import * as yup from 'yup'
 import UpgradeBanner from 'app/shared/upgrade_banner';
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
+import UserDatabaseContext from 'app/context/current_user_database';
+import { showMessage } from 'react-native-flash-message';
+
+import LocalDatabase from 'app/database/local_database';
 
 const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
-    const data: types.ProjectList = ["First proj", "vocab", "Spain"];
+    /* Get project context */
+
+    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
+
+    const [projectList, setProjectList] = React.useState([]);
+
 
     const [currentProjectSelection, setCurrentProjectSelection] = React.useState("");
 
-    const resultsNav = ()=>{
+    /* Get database context */
 
-        props.navigation.navigate("results")
+    const [databaseObject, setDatabaseObject] = React.useContext(UserDatabaseContext)
+
+    const searchProjectHandler = async ()=>{
+
+        if(!currentProjectSelection){
+
+            showMessage({
+                type: "info",
+                message: "Please select a project"
+            })
+            return
+        } else {
+
+            let resultArray = await LocalDatabase.getProjectEntries(databaseObject, currentProjectSelection)
+
+            let resultListCleaned = ()=>{
+
+                let listLength = resultArray.rows.length
+
+                let listCleaned = []
+
+                for(let i = 0; i < listLength ; i++ ){
+
+                    listCleaned.push(resultArray.rows.item(i))
+                }
+
+                return listCleaned
+            }
+
+            props.navigation.navigate("results", {
+                
+                resultArray: resultListCleaned()
+                
+            })
+        }
+
+
     }
 
 
@@ -118,8 +162,8 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
                         </View>
 
                         <View  style={{justifyContent:"center", flex:1.1} }>
-                            <Dropdown
-                                data={data}
+                            <ProjectDropdown
+                                data={projectList}
                                 defaultButtonText="Choose Project"
                                 setSelection={setCurrentProjectSelection}
                             />
@@ -127,7 +171,12 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
                         <View style={{justifyContent:"center", flex:1.2} }>
                             <AppButton
-                                onPress={resultsNav}
+                                onPress={()=>{
+
+                                    searchProjectHandler()
+                                    
+                                }
+                                }
                             >
                                 <Text style={CoreStyles.actionButtonText}> Search </Text>
                             </AppButton>

@@ -2,10 +2,6 @@
 
 import React from 'react'
 
-const CurrentUserContext = React.createContext({
-
-    userName: ""
-
-})
+const CurrentUserContext = React.createContext([])
 
 export default CurrentUserContext

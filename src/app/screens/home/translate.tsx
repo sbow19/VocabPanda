@@ -10,6 +10,7 @@ import {
     ViewStyle
 } from 'react-native';
 import Dropdown from 'app/shared/dropdown';
+import ProjectDropdown from 'app/shared/project_dropdown';
 import AppButton from '@shared/app_button';
 import VocabPandaTextInput from '@shared/text_input';
 import CoreStyles from '@styles/core_styles';
@@ -21,22 +22,34 @@ import AdBanner from 'app/shared/ad_banner';
 import appColours from 'app/shared_styles/app_colours';
 
 import { languagesList } from 'app/shared/languages_list';
-
-
 import { Overlay } from '@rneui/base';
-import { showMessage } from 'react-native-flash-message';
-
-import { Formik, useFormikContext } from 'formik';
+import { Formik } from 'formik';
 
 import DeeplTranslate from 'app/api/translation_call';
 
 import * as yup from 'yup'
 import UpgradeBanner from 'app/shared/upgrade_banner';
+import AppSettings from 'app/storage/app_settings_storage';
+
+import CurrentUserContext from 'app/context/current_user';
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
+
+import UserDatabaseContext from 'app/context/current_user_database';
+import LocalDatabase from 'app/database/local_database';
+
 
 const TranslateVocab: React.FC = props=>{
+
+    /* Get user database connection */
+
+    const [database, setDatabaseObject] = React.useContext(UserDatabaseContext)
+    /* Get current user context */
     
-    /* temp data list wth languages */
-    const languages: types.ProjectList = ["Spanish", "English"]
+    const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
+
+    /* Current project list context */
+
+    const [appSettings, appSettingsHandler] = React.useContext(DefaultAppSettingsContext)
 
     /* Language selections stored in local state but also set as default languages */
     const [inputLangSelection, setInputLangSelection] = useState("");
@@ -45,7 +58,9 @@ const TranslateVocab: React.FC = props=>{
 
         setInputLangSelection(language);
 
-        /* Add code to set default target  language */
+        appSettings.dropDownLanguages.targetLanguage = language
+
+        AppSettings.setDefaultSettings(currentUser, appSettings)
     }
 
     const [outputLangSelection, setOutputLangSelection] = useState("");
@@ -54,21 +69,52 @@ const TranslateVocab: React.FC = props=>{
 
         setOutputLangSelection(language);
 
-        /* Add code to set default output language*/
+        appSettings.dropDownLanguages.outputLanguage = language
+
+        AppSettings.setDefaultSettings(currentUser, appSettings)
 
     }
 
-   /*  Output text */
-
-
+   /*  project selection for saving new text to project */
     const [projectSelection, setProjectSelection] = useState("")
 
-    /* overlay */
+    /* add to project overlay state  */
     const [overlayVisible, setOverlayVisible] = useState(false)
 
-    const nav = ()=>{
+
+    const addToProjectHandler = (input: string, output: string)=>{
+
+
+        const entryObject = {
+            input: input,
+            inputLang: inputLangSelection,
+            output: output,
+            outputLang: outputLangSelection,
+            project: projectSelection 
+        }
+
+        LocalDatabase.addNewEntry(database, entryObject)
+
+        /* Close overlay */
         setOverlayVisible(!overlayVisible)
     }
+
+    React.useEffect(()=>{
+
+        /* On initial render, set the default value of dropdowns to saved languages for current user */
+        const getLanguageSettings = async()=>{
+
+
+            let appSettings = await AppSettings.getDefaultAppSettings(currentUser);
+
+            setInputLangSelection(appSettings.dropDownLanguages.targetLanguage)
+
+            setOutputLangSelection(appSettings.dropDownLanguages.outputLanguage)
+        }
+        getLanguageSettings()
+
+
+    }, [])
 
 
     return(
@@ -85,8 +131,8 @@ const TranslateVocab: React.FC = props=>{
 
                         let response = await DeeplTranslate.translate({
                             targetText: values.input,
-                            outputLanguage: "Spanish",
-                            targetLanguage: "English"
+                            outputLanguage: outputLangSelection,
+                            targetLanguage: inputLangSelection
                         })
 
                         if(response.text){
@@ -111,9 +157,11 @@ const TranslateVocab: React.FC = props=>{
 
                                     <Dropdown
                                         data={languagesList()}
-                                        defaultButtonText='Target Lang'
                                         customStyles={dropdownStyle}
                                         setSelection={handleInputLanguageSelection}
+                                        defaultValue={inputLangSelection}
+                                        defaultButtonText={inputLangSelection}
+                                        
                                     />
 
                                 </View>
@@ -135,7 +183,6 @@ const TranslateVocab: React.FC = props=>{
                                             targetLanguage: inputLangSelection
                                         })
 
-                                        console.log(response)
 
                                         if(response.text){
                                             await setFieldValue("output", response.text)
@@ -156,9 +203,10 @@ const TranslateVocab: React.FC = props=>{
 
                                     <Dropdown
                                         data={languagesList()}
-                                        defaultButtonText='Output Lang'
+                                        defaultButtonText={outputLangSelection}
                                         customStyles={dropdownStyle}
                                         setSelection={handleOutputLanguageSelection}
+                                        defaultValue={outputLangSelection}
                                     />
 
                                 </View>
@@ -178,7 +226,9 @@ const TranslateVocab: React.FC = props=>{
 
                         <View style={[CoreStyles.defaultScreen, buttonWrapperStyle]}>                
                                 <AppButton 
-                                    customStyles={{width:120}} onPress={nav}>
+                                    customStyles={{width:120}} 
+                                    onPress={()=>setOverlayVisible(!overlayVisible)}
+                                >
                             
                                     <Text style={CoreStyles.actionButtonText}>Add to project</Text>
                                                         
@@ -213,8 +263,8 @@ const TranslateVocab: React.FC = props=>{
                                         >Select Project</Text>
                                     </View>
                                     <View>
-                                        <Dropdown
-                                            data={languages}
+                                        <ProjectDropdown
+                                            data={appSettings.projects}
                                             defaultButtonText='Select Project'
                                             customStyles={dropdownStyle}
                                             setSelection={setProjectSelection}
@@ -232,7 +282,9 @@ const TranslateVocab: React.FC = props=>{
                                 </AppButton>
 
                                 <AppButton 
-                                    onPress={handleSubmit}>
+                                    onPress={()=>{
+                                        addToProjectHandler(values.input, values.output) 
+                                    }}>
                                         <Text style={CoreStyles.actionButtonText}>Add</Text>
                                 </AppButton>
 
@@ -243,7 +295,7 @@ const TranslateVocab: React.FC = props=>{
                         
                         </>
                     )}
-   
+
                 </Formik>
             <AdBanner/>
         </View>

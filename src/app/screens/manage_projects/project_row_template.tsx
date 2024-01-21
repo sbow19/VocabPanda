@@ -18,7 +18,11 @@ const RowTemplate: React.FC = props=>{
 
     const fullTextOverlayObject = useContext(FullTextContext)
 
-    console.log
+    /* Results row */
+
+    const resultRow = props.resultRow
+
+    
 
     const options =  ()=>{
 
@@ -55,6 +59,17 @@ const RowTemplate: React.FC = props=>{
                     borderRadius: 10
                 }}
                 onPress={()=>{
+                    /* Set full text content */
+
+                    fullTextOverlayObject.setFullText({
+
+                        target_language: resultRow.target_language,
+                        target_language_lang: resultRow.target_language_lang,
+                        output_language: resultRow.output_language,
+                        output_language_lang: resultRow.output_language_lang
+
+                    })
+
                     fullTextOverlayObject.setFullTextVisible(!fullTextOverlayObject.visible)
                 }}
             >
@@ -76,9 +91,9 @@ const RowTemplate: React.FC = props=>{
 
                             ]}
                     >
-                        {/* Language prefix */}
-                        
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo quos ullam sequi. Debitis, soluta sapiente! Illum repellendus accusantium facere odio exercitationem eligendi quisquam explicabo ducimus sint ea tenetur, ad temporibus!
+                         {
+                            `(${resultRow.target_language_lang}):\n${resultRow.target_language}`
+                        }
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -96,6 +111,18 @@ const RowTemplate: React.FC = props=>{
                     borderRadius: 10
                 }}
                 onPress={()=>{
+
+                     /* Set full text content */
+
+                     fullTextOverlayObject.setFullText({
+
+                        target_language: resultRow.target_language,
+                        target_language_lang: resultRow.target_language_lang,
+                        output_language: resultRow.output_language,
+                        output_language_lang: resultRow.output_language_lang
+
+                    })
+
                     fullTextOverlayObject.setFullTextVisible(!fullTextOverlayObject.visible)
                 }}
             >
@@ -116,9 +143,9 @@ const RowTemplate: React.FC = props=>{
 
                             ]}
                     >
-                        {/* Language prefix */}
-
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo quos ullam sequi. Debitis, soluta sapiente! Illum repellendus accusantium facere odio exercitationem eligendi quisquam explicabo ducimus sint ea tenetur, ad temporibus!
+                        { 
+                            `(${resultRow.output_language_lang}):\n${resultRow.output_language}`
+                        }
                     </Text>
                 </View>
             </TouchableOpacity>

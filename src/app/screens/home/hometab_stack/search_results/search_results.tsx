@@ -15,6 +15,13 @@ import AppButton from 'app/shared/app_button';
 
 const SearchResults: React.FC = props=>{
 
+    React.useEffect(()=>{
+
+        console.log(props.route.params)
+
+        /* Populate table with results */
+    }, [])
+
     const gameNav = ()=>{
 
         props.navigation.navigate("game", {
@@ -57,7 +64,7 @@ const SearchResults: React.FC = props=>{
                 }}
         
             >
-                <SearchResultTable {...props}/>
+                <SearchResultTable {...props} searchResults={props.route.params.resultArray}/>
             </View>
 
             <View

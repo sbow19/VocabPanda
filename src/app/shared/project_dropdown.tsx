@@ -7,7 +7,7 @@ import SelectDropdown from 'react-native-select-dropdown';
 import appColours from '@styles/app_colours';
 import CoreStyles from '@styles/core_styles';
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
-import { Keyboard } from 'react-native';
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 
 
@@ -55,33 +55,67 @@ function parseProps(props){
 
 
 
-const Dropdown: React.FC<types.CustomDropDownProps> = props=>{
+const ProjectDropdown: React.FC<types.CustomDropDownProps> = props=>{
 
     let customProps:types.CustomDropDownProps = parseProps(props);
+
+    /* Dropdown state*/
+
+    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
 
     /* Dropdown state */
 
     const [dropdownOpen, setDropDownState] = useState(false)
 
+    /* Project List */
+
+    const [projectList, setProjectList] = useState<Array<types.ProjectObject>>([])
+
     /* In order to narrow down the searches in the dropdown menu, we need to do some string matching*/
 
-    const [currentSearchMatches, setCurrentSearchMatches] = useState(customProps.data)
+    const [currentSearchMatches, setCurrentSearchMatches] = useState<Array<string | null>>([])
 
     const currentInputHandler = (newInput: string) =>{
 
-        let newMatchSearches = customProps.data.map(project=>{
+        let newMatchSearches = projectList.map((project)=>{
+            
+            // Project list looped to return  subset where input text matches project name
 
-            //If we match 
-            if(project.match(new RegExp(newInput,"gi")) && project !==null){
+            if(project.projectName == undefined ){
 
-                return project
+                //Checks whether any projects exist
+
+                return
+                
+            } else if(project.projectName.match(new RegExp(newInput,"gi"))){
+
+                return project.projectName
             }
+           
         });
 
         setCurrentSearchMatches(newMatchSearches);
     }
 
-    
+    React.useEffect(() => {
+        
+        // Update ProjectList when appSettings change
+        let updatedProjectList = [];
+
+
+        for (let project of appSettings.projects) {
+
+            if(project != null){
+                updatedProjectList.push(project.projectName)
+            }
+        }
+
+        setCurrentSearchMatches(updatedProjectList);
+
+        setProjectList(appSettings.projects);
+
+
+    }, [appSettings]);
 
     return(
         <SelectDropdown
@@ -147,7 +181,6 @@ const Dropdown: React.FC<types.CustomDropDownProps> = props=>{
             }}
             dropdownIconPosition='right'
             defaultValue={customProps.defaultValue}
-            disableAutoScroll={true}
 
 
         />
@@ -155,4 +188,4 @@ const Dropdown: React.FC<types.CustomDropDownProps> = props=>{
 }
 
 
-export default Dropdown
+export default ProjectDropdown

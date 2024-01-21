@@ -20,6 +20,8 @@ const FullTextView: React.FC  = props=>{
 
     const fullTextOverlayObject = React.useContext(FullTextContext)
 
+    console.log("Ful text view:", fullTextOverlayObject)
+
     return(
         <Overlay
             isVisible={fullTextOverlayObject.visible}
@@ -41,7 +43,7 @@ const FullTextView: React.FC  = props=>{
                                 {fontSize: 18}
                             ]}
                     >
-                        Target Language: {/* Target language placeholder */}
+                        Target Language:   {fullTextOverlayObject.resultTextObject.target_language_lang}
                     </Text>
                 </View>
                 <View
@@ -50,12 +52,12 @@ const FullTextView: React.FC  = props=>{
                     <Text
                         style={[
                             CoreStyles.contentText, 
-                            { lineHeight: 20}
+                            { lineHeight: 20, fontSize: 22}
                         ]
                         }
                     >
 
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Dignissimos, illo? Quasi nihil eius ratione quisquam eum, iusto obcaecati aperiam animi ipsam
+                        {fullTextOverlayObject.resultTextObject.target_language}
                     </Text>
                 </View>
 
@@ -74,7 +76,7 @@ const FullTextView: React.FC  = props=>{
                                 {fontSize: 18}
                             ]}
                     >
-                        Output Language: {/* Output language placeholder */}
+                        Output Language:   {fullTextOverlayObject.resultTextObject.output_language_lang}
                     </Text>
                 </View>
                 <View
@@ -83,11 +85,11 @@ const FullTextView: React.FC  = props=>{
                     <Text
                          style={[
                             CoreStyles.contentText, 
-                            { lineHeight: 20}
+                            { lineHeight: 20, fontSize: 22}
                         ]
                         }
                     >
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Dignissimos, illo? Quasi nihil eius ratione quisquam eum, iusto obcaecati aperiam animi ipsam
+                        {fullTextOverlayObject.resultTextObject.output_language}
 
                     </Text>
                 </View>
@@ -150,14 +152,15 @@ const outputTextCard: CustomCardStyles = {
 
 const cardTitleWrapper: ViewStyle ={
 
-    height: windowDimensions.HEIGHT * 0.05,
+    height: windowDimensions.HEIGHT * 0.07,
     width: windowDimensions.WIDTH * 0.79,
+    
 
 }
 
 const cardContentWrapper: ViewStyle = {
 
-    height: windowDimensions.HEIGHT * 0.14,
+    height: windowDimensions.HEIGHT * 0.12,
     width: windowDimensions.WIDTH * 0.79
 
 }

@@ -14,18 +14,32 @@ import ScreenTemplate from 'app/shared/homescreen_template';
 import CoreStyles from 'app/shared_styles/core_styles';
 import AdBanner from 'app/shared/ad_banner';
 import ContentCard from 'app/shared/content_card';
-import { CustomButtonStyles, CustomCardStyles } from 'app/types/types.d';
+import { CustomButtonStyles, CustomCardStyles, ProjectConfig, ProjectObject } from 'app/types/types.d';
 import windowDimensions from 'app/context/dimensions';
 import appColours from 'app/shared_styles/app_colours';
 import { Overlay } from '@rneui/base';
+
+import CurrentUserContext from 'app/context/current_user';
+import AppSettings from 'app/storage/app_settings_storage';
+
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 import ResultTable from "./project_table_template"
 
 const ProjectView: React.FC = props=>{
 
+    /* Current user context */
+
+    const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
+
+    /* default settings  */
+
+    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
+
     /* Options Overlay state */
 
     const [optionsVisible, setOptionsVisible] = React.useState(false)
+
 
     React.useEffect(() => {
 
@@ -71,8 +85,21 @@ const ProjectView: React.FC = props=>{
                 },
                 {
                     text: "Delete Project",
-                    onPress: ()=>{
+                    onPress: async ()=>{
                         console.log("Delete project logic")
+
+                        await AppSettings.deleteProject(currentUser, project)
+
+                        /*Projectconfig object*/
+
+                        const projectConfig: ProjectConfig<string> = {
+                            mode: "delete",
+                            project: project
+                        }
+
+                        setAppSettings(undefined, undefined, undefined, projectConfig)
+
+                        //Add delete words from database logic
 
                         props.navigation.reset(({
                             index:0,
@@ -87,9 +114,6 @@ const ProjectView: React.FC = props=>{
             }
         )
     }
-    
-
-    /* TODO - call code to get project information in*/
 
     return(
         <View style={CoreStyles.defaultScreen}>
@@ -102,7 +126,7 @@ const ProjectView: React.FC = props=>{
                     style={customCardStyling}
                 >
 
-                    <ResultTable/>
+                    <ResultTable {...props} searchResults={props.route.params.resultArray}/>
 
                 </View>
 
@@ -160,7 +184,7 @@ const ProjectView: React.FC = props=>{
                 >
 
                     <AppButton
-                        onPress={()=>{deleteWarning()}}
+                        onPress={deleteWarning}
                         customStyles={CoreStyles.deleteButtonColor}
                     >
                         <Text 

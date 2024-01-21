@@ -16,6 +16,13 @@ import FullTextView from 'app/shared/view_full_text';
 import EditTextView from './components/edit_text_overlay';
 import EditTextContext from 'app/context/edit_text_context';
 
+type FullTextObject = {
+    target_language: string,
+    target_language_lang: string,
+    output_language: string,
+    output_language_lang: string
+}
+
 const ResultTable = props => {
 
 
@@ -33,9 +40,18 @@ const ResultTable = props => {
 
     const [fullTextVisible, setFullTextVisible] = React.useState(false);
 
+    const [fullText, setFullText] = React.useState<FullTextObject>({
+        target_language: "",
+        target_language_lang: "",
+        output_language: "",
+        output_language_lang: ""
+    })
+
     const fullTextOverlayObject = {
         visible: fullTextVisible,
-        setFullTextVisible: setFullTextVisible
+        setFullTextVisible: setFullTextVisible,
+        resultTextObject: fullText,
+        setFullText: setFullText
     }
 
     /* Edit text overlay state */
@@ -106,24 +122,24 @@ const ResultTable = props => {
                     <View onStartShouldSetResponder={()=>true}>
                         <Table>
                             {/* Results displayed here in rows */}
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
-                            <RowTemplate/>
+                            {
+                            (()=>{
+                                
+                                let listLength = props.searchResults.length
+                                let resultRows = []
+
+                                for(let i=0; i < listLength ; i++){
+
+                                    let resultRow = props.searchResults[i]
+
+                                    resultRows.push(<RowTemplate {...props} key={i} resultRow={resultRow}/>)
+
+                                }
+
+                                return resultRows
+                            
+                            })()
+                        }
                         </Table>
                         
                     </View>

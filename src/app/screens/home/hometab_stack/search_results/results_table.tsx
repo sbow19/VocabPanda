@@ -12,6 +12,12 @@ import ResultsRowTemplate from './results_row';
 import FullTextView from 'app/shared/view_full_text';
 import FullTextContext from 'app/context/view_full_text_context';
 
+type FullTextObject = {
+    target_language: string,
+    target_language_lang: string,
+    output_language: string,
+    output_language_lang: string
+}
 
 const SearchResultTable = props => {
 
@@ -19,9 +25,18 @@ const SearchResultTable = props => {
 
     const [fullTextVisible, setFullTextVisible] = React.useState(false);
 
+    const [fullText, setFullText] = React.useState<FullTextObject>({
+        target_language: "",
+        target_language_lang: "",
+        output_language: "",
+        output_language_lang: ""
+    })
+
     const fullTextOverlayObject = {
         visible: fullTextVisible,
-        setFullTextVisible: setFullTextVisible
+        setFullTextVisible: setFullTextVisible,
+        resultTextObject: fullText,
+        setFullText: setFullText
     }
 
     return (
@@ -78,26 +93,25 @@ const SearchResultTable = props => {
                 <View onStartShouldSetResponder={()=>true}>
                     <Table>
                         {/* Results displayed here in rows; support pagination of up to 20, 100 per proj */}
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
-                        <ResultsRowTemplate/>
+                        {
+                            (()=>{
+                                
+                                let listLength = props.searchResults.length
+                                let resultRows = []
+
+                                for(let i=0; i < listLength ; i++){
+
+                                    let resultRow = props.searchResults[i]
+
+                                    resultRows.push(<ResultsRowTemplate {...props} key={i} resultRow={resultRow}/>)
+
+                                }
+
+                                return resultRows
+                            
+                            })()
+                        }
+                       
                     </Table>
                 </View>
             </ScrollView>
@@ -151,7 +165,7 @@ const headerCellStyleProject: ViewStyle ={
 
     height: windowDimensions.HEIGHT*0.05,
     backgroundColor: appColours.lightGreen,
-    flex: 1.5,
+    flex: 1.8,
     borderTopEndRadius: 10
 
 }

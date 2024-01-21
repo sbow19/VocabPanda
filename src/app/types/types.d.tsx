@@ -85,10 +85,6 @@ export type CustomAdBannerProps = {
     customStyles?: ViewStyle
 }
 
-export type ProjectList = Array<ListItem|null>;
-
-export type ListItem = string;
-
 export type WindowDimensions = {
     HEIGHT: number
     WIDTH: number
@@ -103,6 +99,44 @@ export type userDetails = {
     email: string
     
 }
+
+export type ProjectObject = {
+
+    projectName: string
+    targetLanguage: string
+    outputLanguage: string
+
+}
+
+export type AppSettingsObject = {
+
+    gameSettings?: {
+        timerOn: boolean
+        noOfTurns: number
+    }
+
+    dropDownLanguages?:{
+
+        targetLanguage?: string
+        outputLanguage?: string
+
+    }
+
+    projects?: Array<ProjectObject | null>
+} 
+
+export type ProjectConfig<ProjectObject> ={
+
+    project: ProjectObject
+    mode: "add"|"delete"
+}
+
+export type StateHandlerList<state, setter> = [
+
+    state,
+    setter
+
+]
 
 export type languageObject = {
     Bulgarian: "BG",

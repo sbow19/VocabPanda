@@ -26,6 +26,9 @@ import { showMessage } from 'react-native-flash-message';
 import * as yup from 'yup'
 import AppLoginDetails from 'app/storage/user_profile_details';
 
+import UserDatabaseContext from 'app/context/current_user_database';
+import LocalDatabase from 'app/database/local_database';
+
 const changePasswordSchema = yup.object({
     password: yup.string()
     .required()
@@ -45,9 +48,6 @@ rePassword: yup.string()
 
 const Account: React.FC = props=>{
 
-    /* Flash message */
-
-    const myMessage = React.useRef("main")
 
     /* Get sign in context here */
 
@@ -57,7 +57,6 @@ const Account: React.FC = props=>{
 
     /* Password overlay visible state */
     const [passwordOverlay, setPasswordOverlay] = React.useState(false)
-
 
     /* Password overlay visible state */
     const [deleteAccountOverlay, setDeleteAccountOverlay] = React.useState(false)
@@ -69,6 +68,10 @@ const Account: React.FC = props=>{
     /* Delete account error message */
 
     const [errorMessageVisible, setErrorMessageVisible] = React.useState("")
+
+    /* User database context */
+
+    const [databaseObject, setMyDatabaseObject] = React.useContext(UserDatabaseContext)
 
 
     /* Triggers on sign out */
@@ -287,10 +290,13 @@ const Account: React.FC = props=>{
                     initialValues={{password: ""}}
                     onSubmit={async (values, actions)=>{
 
+                        
                         let results = await AppLoginDetails.deleteAccount(currentUser, values.password);
                        
                         if(results.deletionSuccessful == true){
 
+                            await LocalDatabase.deleteTable(currentUser, databaseObject.database)
+                           
                             setIsLoggedIn(false)
                             setCurrentUser("")
                             showMessage({

@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 import EncryptedStorage from "react-native-encrypted-storage";
-import GameSettings from "./game_settings_storage";
+import AppSettings from "./app_settings_storage";
 
 class AppLoginDetails {
 
@@ -258,6 +258,8 @@ class AppLoginDetails {
     
                 let usersDetails = JSON.parse(usersDetailsRaw)
 
+                console.log(usersDetails)
+
                 if(usersDetails[username].password === password){
                     /* Check if inputted password matches password in database */
 
@@ -276,7 +278,7 @@ class AppLoginDetails {
         
                 /* delete saved user settings */
     
-                let results = await GameSettings.deleteUserSettings(username);
+                let results = await AppSettings.deleteUserSettings(username);
 
                 if(results.settingsDeletionSuccessful == true){
 
@@ -298,14 +300,8 @@ class AppLoginDetails {
                 resolve(resultObject)
     
             }
-
-
-
         })
-
-       
-    }
-       
+    }      
 }
 
 export default AppLoginDetails

@@ -10,18 +10,17 @@ import {
     View,
     Text
 } from'react-native'
-import DefaultGameSettingsContext from 'app/context/default_game_settings_context';
-import CurrentUserContext from 'app/context/current_user';
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 const AppSlider:React.FC = props=>{
 
-    const [gameSettings, setGameSettingsHandler] = React.useContext(DefaultGameSettingsContext)
+    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
 
     const [localSliderValue, setLocalSliderValue] = useState(10)
 
     React.useEffect(()=>{
 
-        setLocalSliderValue(gameSettings.noOfTurns)
+        setLocalSliderValue(appSettings.gameSettings.noOfTurns)
 
     }, [])
 
@@ -31,7 +30,7 @@ const AppSlider:React.FC = props=>{
             <View style={{flexDirection:"column", flex:1, width: "95%"}}>
                 <View style={{width: "100%", alignItems:"center"}}>
 
-                <Text style={[{color:appColours.black, fontSize:18}, CoreStyles.contentText]}>{props.setsDefault != true ? localSliderValue : gameSettings.noOfTurns}
+                <Text style={[{color:appColours.black, fontSize:18}, CoreStyles.contentText]}>{props.setsDefault != true ? localSliderValue : appSettings.gameSettings.noOfTurns}
                 
                 
                 </Text>
@@ -46,7 +45,7 @@ const AppSlider:React.FC = props=>{
                     onValueChange={val=>{
                         
                         if(props.setsDefault == true){
-                            setGameSettingsHandler(null, val, props.setsDefault)
+                            setAppSettingsHandler(null, val, props.setsDefault)
                             setLocalSliderValue(val)
                         } else {
                             setLocalSliderValue(val)
@@ -59,7 +58,7 @@ const AppSlider:React.FC = props=>{
                     minimumTrackTintColor={appColours.lightGreen}
                     thumbTintColor={appColours.darkGreen}
                     maximumTrackTintColor={appColours.black}
-                    value={props.setsDefault != true ? localSliderValue : gameSettings.noOfTurns}
+                    value={props.setsDefault != true ? localSliderValue : appSettings.gameSettings.noOfTurns}
                 />
             </View>
         </>

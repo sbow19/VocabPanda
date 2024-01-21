@@ -5,33 +5,31 @@ import * as types from '@customTypes/types.d';
 import React, {useState} from 'react'
 import { Switch } from 'react-native-switch';
 import appColours from '@styles/app_colours';
-import DefaultGameSettingsContext from 'app/context/default_game_settings_context';
-import CurrentUserContext from 'app/context/current_user';
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 
 const AppSwitch:React.FC = props =>{
 
-    const [gameSettings, setGameSettingsHandler] = React.useContext(DefaultGameSettingsContext)
+    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
 
-    const [myLocalSetting, setMyLocalSetting] = React.useState(false)
+    const [myLocalSetting, setMyLocalSetting] = React.useState<boolean>(false)
 
     React.useEffect(()=>{
 
-        setMyLocalSetting(gameSettings.timerOn)
+        setMyLocalSetting(appSettings.gameSettings.timerOn)
 
     }, [])
-
-
+  
     return(
     
     <>
         <Switch
-            value={props.setsDefault != true ? myLocalSetting : gameSettings.timerOn}
+            value={props.setsDefault != true ? myLocalSetting : appSettings.gameSettings.timerOn}
             onValueChange={
                 (val)=>{
 
                     if(props.setsDefault == true){
-                        setGameSettingsHandler(val, "", props.setsDefault)
+                        setAppSettingsHandler(val, "", props.setsDefault)
                         setMyLocalSetting(!myLocalSetting)
                     } else {
                         setMyLocalSetting(!myLocalSetting)

@@ -50,7 +50,7 @@ return (
                     <View style={[contentCellStyle, {paddingTop:70}]}>
                         <AppSlider
 
-                        setsDefault={true}
+                            setsDefault={true}
                         
                         />
                     </View>

@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-
+import * as types from '@customTypes/types.d'
 import React, { useEffect } from 'react';
 import { CurrentRenderContext, NavigationContainer} from '@react-navigation/native'
 import AppMainDrawer from '@routes/drawer';
@@ -20,11 +20,13 @@ import LoginStack from 'app/routes/login_stack';
 import FlashMessage from 'react-native-flash-message';
 import CoreStyles from './shared_styles/core_styles';
 
-import GameSettings from './storage/game_settings_storage';
-import DefaultGameSettingsContext from './context/default_game_settings_context';
+import AppSettings from './storage/app_settings_storage';
+import DefaultAppSettingsContext from './context/default_app_settings_context';
 import AppLoginDetails from './storage/user_profile_details';
 
 import LocalDatabase from './database/local_database';
+import UserDatabaseContext from './context/current_user_database';
+import { SQLiteDatabase } from 'react-native-sqlite-storage';
 
 
 const MainAppContainer = createNativeStackNavigator()
@@ -38,17 +40,13 @@ const VocabPandaApp: React.FC = props => {
 
     const [isLoading, setIsLoading] = React.useContext(LoadingStatus);
 
-    const [lastActivityData, setLastActivityData] = React.useState(lastActivityObject)
-
-    const lastActivitySet = [lastActivityData, setLastActivityData]
-
     /* Current user state */
 
     const [currentUser, setCurrentUser] = React.useState("")
 
     const currentUserSet = [currentUser, setCurrentUser] 
 
-    const myRef = React.useRef("mine")
+
 
     React.useEffect(()=>{
 
@@ -68,35 +66,30 @@ const VocabPandaApp: React.FC = props => {
                     - dropping of internet connection mid-update
                 
                 */
-                
-                /* Replace timeout with login check function */
-    
                 /* Sets object defining login details */
                 await AppLoginDetails.setInitial()
 
-                await LocalDatabase.createTestDatabase().catch(()=>{
+                /* Tests whether a database can be connected to */
 
-                    console.log("Test database failed to be connected to")
+                await LocalDatabase.createTestDatabase().catch((e)=>{
+
+                    console.log("Connection to database failed")
+                    console.log(e)
                 })
 
     
                 setIsLoading(false);
             }
-
-            
         }
 
         onStartUpLoad()
         
     }, [isLoggedIn])
 
-
-
     
     return(
     
         <CurrentUserContext.Provider value={currentUserSet}>
-        <LastActivity.Provider value={lastActivitySet}>
             <NavigationContainer>
                 {(()=>{
                     if(isLoading){
@@ -116,7 +109,6 @@ const VocabPandaApp: React.FC = props => {
             </NavigationContainer>
             <FlashMessage 
                     position="center"
-                    ref={myRef}
                     animationDuration={100}
                     duration={1000}
                     titleStyle={CoreStyles.contentText}
@@ -126,68 +118,142 @@ const VocabPandaApp: React.FC = props => {
                         }
                     }
                 />
-        </LastActivity.Provider>
         </CurrentUserContext.Provider>
     )
 
 }
 
 const MainApp: React.FC = props=>{
-
-    /* Code for handling default game settings globally */
-
-    const [gameSettings, setGameSettings] = React.useState({})
-
-    const myDefaultGameSettings = [gameSettings, setGameSettingsHandler]
+    
+    /* Setting current user */
 
     const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
 
-    
-    function setGameSettingsHandler(timerOn: boolean|null, noOfTurns: number|null, setsDefault: boolean|null){
+    /* Setting database object globally to app */
 
+    const [databaseObject, setMyDatabaseObject] = React.useState({})
+
+    const myDatabaseOptions: types.StateHandlerList<SQLiteDatabase, React.Dispatch<React.SetStateAction<SQLiteDatabase>>> = [databaseObject, setMyDatabaseObject]
+
+    /* Getting last activity data on sign in */
+
+    const [lastActivityData, setLastActivityData] = React.useState(lastActivityObject)
+
+    const lastActivitySet = [lastActivityData, setLastActivityData]
+
+
+
+    /* Code for handling default game settings globally */
+
+    const [appSettings, setAppSettings] = React.useState<types.AppSettingsObject>(
+        
+        {
+
+        gameSettings: {
+            timerOn: false,
+            noOfTurns: 10
+        },
+
+        dropDownLanguages:{
+
+            targetLanguage: "English",
+            outputLanguage: "English"
+        },
+    
+        projects: []
+    
+    })
+    
+    function setAppSettingsHandler(
+        timerOn: boolean|null, 
+        noOfTurns: number|null, 
+        setsDefault: boolean|null,
+        projectConfig?: types.ProjectConfig<types.ProjectObject> | types.ProjectConfig<string>
+    
+        ){
+
+
+        let newSettings = { ...appSettings}
     
         if(timerOn == true || timerOn == false){
-            gameSettings.timerOn = timerOn
+            newSettings.gameSettings.timerOn = timerOn
         }
 
         if(typeof(noOfTurns)==="number"){
-            gameSettings.noOfTurns = noOfTurns
+            newSettings.gameSettings.noOfTurns = noOfTurns
+        }
+
+
+        /* When a project is added or deleted, the global state of the dropdowns is updated here
+        so any changes will show immediately, rather than on the next app reload */
+
+        if(projectConfig){
+            if(projectConfig.mode === "add"){
+
+                newSettings.projects.push(projectConfig.project)
+            }
+
+            if(projectConfig.mode === "delete"){
+
+                const newList = newSettings.projects.filter(item => item?.projectName !==  projectConfig.project);
+
+                newSettings.projects = newList
+
+            }
         }
 
         if(setsDefault==true){
-            GameSettings.setDefaultSettings(gameSettings, currentUser)
+            AppSettings.setDefaultSettings(currentUser, newSettings)
         }
-        setGameSettings(gameSettings)
+
+        setAppSettings(newSettings)
+        
     }
- 
+
+
+
 
     React.useEffect(()=>{
 
-        const gameSettingsLoad = async ()=>{
+            const appSettingsLoad = async ()=>{
 
-            /* Sets default game settings for new user */
-            await GameSettings.newSettings(currentUser)
+                /* Opening database and creating new table */
+                await LocalDatabase.openDatabase(currentUser).then((databaseObject)=>{
 
-            const gameSettings = await GameSettings.getDefaultSettings(currentUser)
-            setGameSettings(gameSettings)
+                    setMyDatabaseObject(databaseObject);
 
-        }
-        
-        gameSettingsLoad()
+                }).catch((e)=>{
 
-    }, [currentUser])
+                    console.log("Failed to open database")
+                    console.log(e)
+                })
+
+                /* Sets default app settings for new user */
+                await AppSettings.newSettings(currentUser)
+
+                const appSettings = await AppSettings.getDefaultAppSettings(currentUser)
+                setAppSettings(appSettings)   
+            }
+            appSettingsLoad()    
+
+    }, [])
+
+
+    const myDefaultAppSettings:types.StateHandlerList<types.AppSettingsObject, Function> =[appSettings, setAppSettingsHandler]
 
 
     return(<>
-
-            
-            <DefaultGameSettingsContext.Provider value={myDefaultGameSettings}>
+            <UserDatabaseContext.Provider value={myDatabaseOptions}>
+            <LastActivity.Provider value={lastActivitySet}>
+            <DefaultAppSettingsContext.Provider value={myDefaultAppSettings}>
                 <MainAppContainer.Navigator screenOptions={{headerShown:false}}>
                     <MainAppContainer.Screen name="main" component={AppMainDrawer}/>
                     <MainAppContainer.Screen name="game" component={GameStack} options={{presentation: "modal"}}/>
                     <MainAppContainer.Screen name="results" component={SearchResults}  options={{presentation: "modal"}}/>
                 </MainAppContainer.Navigator>
-            </DefaultGameSettingsContext.Provider>
+            </DefaultAppSettingsContext.Provider>
+            </LastActivity.Provider>
+            </UserDatabaseContext.Provider>
             
 
             </>

@@ -6,9 +6,8 @@ import {
     View,
     Text,
     ViewStyle,
-    TouchableOpacity
 } from 'react-native';
-import Dropdown from 'app/shared/dropdown';
+import ProjectDropdown from 'app/shared/project_dropdown';
 import AppButton from '@shared/app_button';
 import CoreStyles from '@styles/core_styles';
 import ScreenTemplate from '@shared/homescreen_template';
@@ -25,31 +24,82 @@ import * as yup from 'yup'
 import { languagesList } from 'app/shared/languages_list';
 import UpgradeBanner from 'app/shared/upgrade_banner';
 
+import AppSettings from 'app/storage/app_settings_storage';
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
+import UserDatabaseContext from 'app/context/current_user_database';
+import CurrentUserContext from 'app/context/current_user';
+
+import Dropdown from 'app/shared/dropdown';
+import LocalDatabase from 'app/database/local_database';
+import { showMessage } from 'react-native-flash-message';
+
 
 
 const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
+    const [currentUser] = React.useContext(CurrentUserContext)
+
     const [currentProjectSelection, setCurrentProjectSelection] = useState("");
 
-    const [overlayVisible, setOverlayVisible] = useState(false)
+    const [overlayVisible, setOverlayVisible] = useState(false);
+
+    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
 
 
-    const nav = ()=>{
+    /* States for target language and output language */
+
+    const [targetLanguage, setTargetLanguage] = React.useState(appSettings.dropDownLanguages.targetLanguage)
+
+    const [outputLanguage, setOutputLanguage] = React.useState(appSettings.dropDownLanguages.outputLanguage)
+
+    /* Database object context */
+
+    const [databaseObject, setDatabaseObject] = React.useContext(UserDatabaseContext)
+
+
+    const navHandler = async()=>{
 
         /* Set up alert here */
 
-        props.navigation.navigate("project view", {
+        if(!currentProjectSelection){
 
-            screen: "project view",
-            project: currentProjectSelection
-            
-        })
+            showMessage({
+                type: "info",
+                message: "Please select a project"
+            })
+            return
+        } else {
+
+            let resultArray = await LocalDatabase.getProjectEntries(databaseObject, currentProjectSelection)
+
+            let resultListCleaned = ()=>{
+
+                let listLength = resultArray.rows.length
+
+                let listCleaned = []
+
+                for(let i = 0; i < listLength ; i++ ){
+
+                    listCleaned.push(resultArray.rows.item(i))
+                }
+
+                return listCleaned
+            }
+
+            props.navigation.navigate("project view", {
+
+                screen: "project view",
+                project: currentProjectSelection,
+                resultArray: resultListCleaned()
+                
+            })
+        }
+
+        
     }
 
     const overlayNav = ()=>{
-
         setOverlayVisible(!overlayVisible)
-
     }
 
     return(
@@ -66,15 +116,14 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                     <View style={{flex:1, justifyContent: "space-evenly", alignItems:"center"}}>
                     
                         <View>
-                            <Dropdown 
-                                data={languagesList()} 
+                            <ProjectDropdown 
+                                data={[]} 
                                 defaultButtonText='Choose Project'
                                 setSelection={setCurrentProjectSelection}
-                                customStyles={customStylesDropdown}
                             />
                         </View>
                         <View>
-                            <AppButton {...props} onPress={nav}>
+                            <AppButton {...props} onPress={navHandler}>
                                 <Text style={CoreStyles.actionButtonText}>Review</Text>
                             </AppButton>
                         </View>
@@ -102,8 +151,31 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
             <Formik
                 initialValues={{projectName: ""}}
-                onSubmit={(values, actions)=>{
+                onSubmit={async(values, actions)=>{
 
+                    const projectObject: types.ProjectObject = {
+
+                        projectName: values.projectName,
+                        targetLanguage: targetLanguage,
+                        outputLanguage: outputLanguage
+                    }
+
+                    const projectConfig:types.ProjectConfig<types.ProjectObject> ={
+
+                        project:{
+
+                            projectName: values.projectName,
+                            targetLanguage: targetLanguage,
+                            outputLanguage: outputLanguage
+
+                        },
+
+                        mode: "add"
+                       
+                    }
+
+                    await AppSettings.addProject(currentUser, projectObject)
+                    setAppSettingsHandler(undefined,undefined,undefined, projectConfig)
                     actions.resetForm()
                     overlayNav()
                 }}
@@ -155,10 +227,9 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                                 </View>
                                 <View>
                                 <Dropdown
+                                        setSelection={setTargetLanguage}
                                         defaultButtonText='Target lang'
                                         data={languagesList()}
-                                    
-                                    
                                     />
                                 </View>
                                 
@@ -178,6 +249,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                                     <Dropdown
                                         defaultButtonText='Output lang'
                                         data={languagesList()}
+                                        setSelection={setOutputLanguage}
                                         custom={dropdownStyles}
                                     
                                     />
@@ -217,12 +289,8 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                             </AppButton>
                         </View>
                 </Overlay>
-
-                
-                
                 
                 </>)}
-
            
             </Formik>
         </View>
@@ -255,27 +323,6 @@ const customButtonStyling: types.CustomButtonStyles = {
 
     width: 150
 
-}
-
-const customStylesDropdown: types.CustomDropDown = {
-    buttonContainerStyle: {
-
-
-    },
-    dropdownContainerStyle: {
-    
-
-    },
-    rowTextStyle: {
-        
-
-
-    },
-    buttonTextStyle: {
-
-
-
-    }
 }
 
 const overlayStyle: ViewStyle = {
