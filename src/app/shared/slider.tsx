@@ -12,11 +12,30 @@ import {
 } from'react-native'
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
+const parseProps = props=>{
+
+    customProps = {
+
+        onPress: ()=>{}
+    }
+
+    if(props.onPress){
+        customProps.onPress = props.onPress
+    }
+
+    return customProps
+
+}
+
 const AppSlider:React.FC = props=>{
 
-    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext);
 
-    const [localSliderValue, setLocalSliderValue] = useState(10)
+    const [localSliderValue, setLocalSliderValue] = useState(10);
+
+    const customProps = parseProps(props)
+
+
 
     React.useEffect(()=>{
 
@@ -30,8 +49,9 @@ const AppSlider:React.FC = props=>{
             <View style={{flexDirection:"column", flex:1, width: "95%"}}>
                 <View style={{width: "100%", alignItems:"center"}}>
 
-                <Text style={[{color:appColours.black, fontSize:18}, CoreStyles.contentText]}>{props.setsDefault != true ? localSliderValue : appSettings.gameSettings.noOfTurns}
-                
+                <Text style={[{color:appColours.black, fontSize:18}, CoreStyles.contentText]}>
+                    
+                    {props.setsDefault != true ? localSliderValue : appSettings.gameSettings.noOfTurns}
                 
                 </Text>
 
@@ -49,6 +69,11 @@ const AppSlider:React.FC = props=>{
                             setLocalSliderValue(val)
                         } else {
                             setLocalSliderValue(val)
+                        }
+
+                        if(props.onPress){
+
+                            customProps.onPress(val)
                         }
                     
                     }}

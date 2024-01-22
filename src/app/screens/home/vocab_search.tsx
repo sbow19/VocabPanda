@@ -74,12 +74,49 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
             props.navigation.navigate("results", {
                 
-                resultArray: resultListCleaned()
+                resultArray: resultListCleaned(),
+                project: currentProjectSelection,
+                gameMode: "By Project"
                 
             })
         }
+    }
 
+    const searchEntryHandler = async (searchTerm:string)=>{
 
+        if(!searchTerm){
+
+            showMessage({
+                type: "info",
+                message: "Please type search input"
+            })
+            return
+        } else {
+
+            let resultArray = await LocalDatabase.searchTerm(databaseObject.currentUser, databaseObject.database, searchTerm)
+
+            let resultListCleaned = ()=>{
+
+                let listLength = resultArray.rows.length
+
+                let listCleaned = []
+
+                for(let i = 0; i < listLength ; i++ ){
+
+                    listCleaned.push(resultArray.rows.item(i))
+                }
+
+                return listCleaned
+            }
+
+            props.navigation.navigate("results", {
+                
+                resultArray: resultListCleaned(),
+                gameMode: "Search Results",
+                project: ""
+                
+            })
+        }
     }
 
 
@@ -108,7 +145,7 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
                                 initialValues={{input: ""}}
                                 onSubmit={(values, actions)=>{
 
-                                    resultsNav()
+                                    searchEntryHandler(values.input)
                                     console.log(values.input)
                                     actions.resetForm()
 

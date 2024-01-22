@@ -8,6 +8,38 @@ class LocalDatabase {
 
     }
 
+    static getAll = (userName: string, database: SQLiteDatabase) =>{
+
+        return new Promise((resolve, reject)=>{
+
+
+            const deleteTableQuery = `SELECT * FROM ${userName}`
+
+            database.transaction(async(transaction)=>{
+
+                let [_, resultArray] = await transaction.executeSql(deleteTableQuery)
+
+                console.log(resultArray)
+            },
+            (error)=>{
+
+                console.log("Account deletion failed")
+                console.log(error)
+                reject(error)
+            },
+            (success)=>{
+
+                console.log("Account deletion successful")
+                resolve(success)
+            })
+
+
+        })
+
+
+
+    }
+
     static deleteTable = (userName: string, database: SQLiteDatabase)=>{
 
         return new Promise(async(resolve, reject)=>{
@@ -207,9 +239,88 @@ class LocalDatabase {
 
     }
 
-    static  deleteProject()
+    static deleteProject= (userName: string, database: SQLiteDatabase, project: string)=>{
 
-    static deleteEntry()
+        return new Promise(async(resolve, reject)=>{
+
+            const deleteProjectQuery = `DELETE FROM ${userName} WHERE project='${project}'`
+
+            database.transaction(transaction=>{
+
+                transaction.executeSql(deleteProjectQuery)
+            },
+            (error)=>{
+
+                console.log("Project deletion failed")
+                console.log(error)
+                reject(error)
+            },
+            (success)=>{
+
+                console.log("Project deletion successful")
+                resolve(success)
+            })
+        })
+    }
+
+    static deleteEntry = (userName: string, database: SQLiteDatabase, entryId: string)=>{
+
+        return new Promise(async(resolve, reject)=>{
+
+            const deleteEntryQuery = `DELETE FROM ${userName} WHERE id='${entryId}'`
+
+            database.transaction(transaction=>{
+
+                transaction.executeSql(deleteEntryQuery)
+            },
+            (error)=>{
+
+                console.log("Entry deletion failed")
+                console.log(error)
+                reject(error)
+            },
+            (success)=>{
+
+                console.log("Entry deletion successful")
+                resolve(success)
+            })
+        })
+    }
+
+    static searchTerm = (userName: string, database: SQLiteDatabase, searchString: string)=>{
+
+        return new Promise((resolve, reject)=>{
+
+            const searchQuery = `
+            SELECT * FROM ${userName} 
+            WHERE 
+                (target_language LIKE '${searchString}%' OR 
+                target_language LIKE '%${searchString}%' OR 
+                target_language LIKE '%${searchString}') OR
+                (output_language LIKE '${searchString}%' OR 
+                output_language LIKE '%${searchString}%' OR 
+                output_language LIKE '%${searchString}')
+        `;
+
+            database.transaction(async(transaction)=>{
+
+
+            let [_, resultArray] = await transaction.executeSql(searchQuery)
+
+            resolve(resultArray)
+
+            },
+            error=>{
+                reject(error)
+            },
+            success=>{
+
+                console.log("Project fetch was a success")
+            })
+
+        })
+
+    }
 }
 
 export default LocalDatabase;

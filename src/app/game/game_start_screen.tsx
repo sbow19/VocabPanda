@@ -21,29 +21,174 @@ import React from 'react';
 
 
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
+import { showMessage } from 'react-native-flash-message';
 
 const GameHome: React.FC = props=>{
 
-    /* Mode selection state */
 
-    const [projectModeSelectionState, setProjectModeSelectionState] = React.useState(true)
+    /* App settings */
 
-    const setSelectionHandler = (item)=>{
+    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
 
-        if (item === "By Project"){
+    /* Game slider value */
 
-            setProjectModeSelectionState(true)
-        }else{
+    const [gameSliderValue, setGameSliderValue] = React.useState(10)
 
-            setProjectModeSelectionState(false)
+    /* Game turns value */
+
+    const [gameTimeronValue, setGameTimeronValue] = React.useState(false)
+
+    /* Project dropdown index */
+
+    const [projectIndex, setProjectIndex] = React.useState("0")
+
+    /* Mode dropdwon index */
+
+    const [modeDropdownIndex, setModeDropdownIndex] = React.useState(1)
+
+    /* Game mode */
+
+    const [gameMode, setGameMode] = React.useState("All Words")
+
+    /* set project state */
+
+    const [project, setProject] = React.useState("")
+
+
+    const getProjectIndex = ()=>{
+
+        let projectList = [];
+
+        for(let project of appSettings.projects){
+            projectList.push(project?.projectName)
+        }
+
+        let projectDropdownIndex = projectList.indexOf(props.route.params.project)
+
+        return projectDropdownIndex 
+   }
+
+    /* Logic for managing route direction into home screen */
+
+   React.useEffect(()=>{
+
+    /* Set game mode */
+
+    if(props.route?.params?.reDirectContent){
+
+        switch(props.route.params.gameMode){
+
+            case "By Project":
+
+                let index = getProjectIndex()
+
+                setGameMode("By Project")
+                setModeDropdownIndex(1)
+                setProjectIndex(index)
+                
+                break
+
+            case "Latest Activity":
+                setGameMode("Latest Activity")
+                setModeDropdownIndex(2)
+
+                break
+
+            case "Search Results":
+                setGameMode("Search Results")
+                setModeDropdownIndex(3)
+
+                break
         }
     }
 
+    /* Set game settings */
+
+    setGameSliderValue(appSettings.gameSettings?.noOfTurns)
+    setGameTimeronValue(appSettings.gameSettings?.timerOn)
+
+
+   }, [props.route])
+    
 
     const gameStart = ()=>{
 
+        if(props.route.params.gameMode === "Search Results" && gameMode === "Search Results"){
 
-        props.navigation.navigate("vocab game")
+            props.navigation.navigate("vocab game", {
+
+                timerOn: gameTimeronValue,
+                noOfTurns: gameSliderValue,
+                gameMode: "Search Results",
+                resultArray: props.route.params.resultArray,
+                project: ""
+            })
+
+            return
+        }
+
+        if(gameMode === "All Words"){
+
+            props.navigation.navigate("vocab game", {
+
+                timerOn: gameTimeronValue,
+                noOfTurns: gameSliderValue,
+                gameMode: "All Words",
+                resultArray: [],
+                project: ""
+            })
+
+            return
+        }
+
+        if(gameMode === "By Project" && props.route.params.gameMode === "By Project"){
+
+            props.navigation.navigate("vocab game", {
+
+                timerOn: gameTimeronValue,
+                noOfTurns: gameSliderValue,
+                gameMode: "By Project",
+                resultArray: [],
+                project: props.route.params.project
+            })
+            return
+        } else if (gameMode === "By Project") {
+
+            props.navigation.navigate("vocab game", {
+
+                timerOn: gameTimeronValue,
+                noOfTurns: gameSliderValue,
+                gameMode: "By Project",
+                resultArray: [],
+                project: project
+            })
+            return
+        }
+
+        if(gameMode === "Latest Activity"){
+
+            props.navigation.navigate("vocab game", {
+
+                timerOn: gameTimeronValue,
+                noOfTurns: gameSliderValue,
+                gameMode: "Latest Activity",
+                resultArray: [],
+                project: ""
+            })
+
+            return
+        }
+
+        if(gameMode === "Search Results"){
+
+            showMessage({
+                type: "info",
+                message: "No search results"
+            })
+
+            return
+        }
+        
     }
 
     return(
@@ -102,7 +247,9 @@ const GameHome: React.FC = props=>{
                         </View>
                     
                         <View style={contentCellStyle}>
-                            <AppSwitch/>
+                            <AppSwitch
+                                onPress={setGameTimeronValue}
+                            />
                         </View>
                     </View>
 
@@ -114,7 +261,9 @@ const GameHome: React.FC = props=>{
                         </View>
 
                         <View style={[contentCellStyle, {paddingBottom:30}]}>
-                            <AppSlider/>
+                            <AppSlider
+                                onPress={setGameSliderValue}
+                            />
                         </View>
                     </View>
 
@@ -126,14 +275,15 @@ const GameHome: React.FC = props=>{
                         <View>
                             <Dropdown
                                 defaultButtonText='Select Mode'
-                                data={["All Words", "By Project", "Latest Activity"]}
-                                setSelection={setSelectionHandler}
+                                data={["All Words", "By Project", "Latest Activity", "Search Results"]}
+                                setSelection={setGameMode}
+                                defaultValueByIndex={modeDropdownIndex}
+                                search={false}
                             />
                         </View>
                     </View>
 
-                    {projectModeSelectionState ? <ProjectModeProject/> : null}
-
+                    {gameMode === "By Project" ? <ProjectModeProject index={projectIndex} setProject={setProject}/> : null}
 
                 </ContentCard>
 
@@ -159,23 +309,24 @@ const ProjectModeProject: React.FC = props =>{
 
     const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
 
-
-
     return(
         <View style={projectModeWrapperStyle}>
 
             <View>
-                <Text style={[CoreStyles.contentText, {fontSize: 20, paddingBottom: 10}]}>Select Game Mode</Text>
+                <Text style={[CoreStyles.contentText, {fontSize: 20, paddingBottom: 10}]}>Select Project</Text>
             </View>
             <View>
                 <ProjectDropdown
                     defaultButtonText='Select Project'
                     data={appSettings.projects}
+                    defaultValueByIndex={props.index}
+                    setSelection={props.setProject}
                 />
             </View>
         </View>
     )
 }
+
 
 const customCardStyling: types.CustomCardStyles ={
     width: windowDimensions.WIDTH * 0.9,

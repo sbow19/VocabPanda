@@ -24,7 +24,8 @@ function parseProps(props){
         },
         defaultButtonText: "",
         setSelection: null,
-        defaultValue: ""
+        defaultValue: "",
+        defaultValueByIndex: 0
     } 
 
     if (props.data) {
@@ -48,6 +49,10 @@ function parseProps(props){
         customProps.defaultValue = props.defaultValue
     }
 
+    if(props.defaultValueByIndex){
+
+        customProps.defaultValueByIndex = props.defaultValueByIndex
+    }
 
     return customProps
 
@@ -66,6 +71,10 @@ const ProjectDropdown: React.FC<types.CustomDropDownProps> = props=>{
     /* Dropdown state */
 
     const [dropdownOpen, setDropDownState] = useState(false)
+
+    /* Set dropdown index */
+
+    const [dropdownIndex, setDropdownIndex] = useState(0)
 
     /* Project List */
 
@@ -113,6 +122,8 @@ const ProjectDropdown: React.FC<types.CustomDropDownProps> = props=>{
         setCurrentSearchMatches(updatedProjectList);
 
         setProjectList(appSettings.projects);
+
+        setDropdownIndex(props.defaultValueByIndex)
 
 
     }, [appSettings]);
@@ -181,6 +192,7 @@ const ProjectDropdown: React.FC<types.CustomDropDownProps> = props=>{
             }}
             dropdownIconPosition='right'
             defaultValue={customProps.defaultValue}
+            defaultValueByIndex={dropdownIndex}
 
 
         />

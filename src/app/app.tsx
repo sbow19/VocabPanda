@@ -11,7 +11,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoggedInStatus from './context/loggedIn';
 import LoadingStatus from './context/loading';
-import LastActivity, {lastActivityObject} from './context/last_activity';
+import LastActivity from './context/last_activity';
 import CurrentUserContext from './context/current_user';
 
 import LoadingScreen from '@screens/login/loading_screen';
@@ -54,6 +54,7 @@ const VocabPandaApp: React.FC = props => {
 
             if(isLoading){
 
+            
                 /* Async function to fetch last activity data */
     
                 /* async function to link up to account database if possible
@@ -137,7 +138,13 @@ const MainApp: React.FC = props=>{
 
     /* Getting last activity data on sign in */
 
-    const [lastActivityData, setLastActivityData] = React.useState(lastActivityObject)
+    const [lastActivityData, setLastActivityData] = React.useState<types.LastActivityObject>({
+        lastActivity: false,
+        lastActivityData:{
+            projects: [""],
+            noOfAdditions: []
+        }
+    })
 
     const lastActivitySet = [lastActivityData, setLastActivityData]
 
@@ -228,11 +235,42 @@ const MainApp: React.FC = props=>{
                     console.log(e)
                 })
 
+                // await LocalDatabase.getAll(currentUser, databaseObject.database)
+
                 /* Sets default app settings for new user */
                 await AppSettings.newSettings(currentUser)
 
                 const appSettings = await AppSettings.getDefaultAppSettings(currentUser)
-                setAppSettings(appSettings)   
+                setAppSettings(appSettings)
+
+                /* Last activity determiner */
+
+                let lastActivityObject: types.LastActivityObject = {
+
+                    lastActivity: true,
+                    lastActivityData:{
+
+                        projects: ["First Project", "Second project"],
+                        noOfAdditions: [10, 3]
+
+                    },
+                    lastActivityResultArrays: [
+                        {
+                            project: "First Project",
+                            resultArray: ["hello"]
+                        },
+
+                        {
+                            project: "Second Project",
+                            resultArray: ["sup", "how are you"]
+                        },
+
+
+                    ]
+                   
+                }
+
+                setLastActivityData(lastActivityObject)
             }
             appSettingsLoad()    
 

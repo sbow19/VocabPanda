@@ -28,6 +28,10 @@ const VocabGame: React.FC = props=>{
 
     /* No of turns state */
 
+    /*  */
+
+    console.log(props.route.params)
+
     return(
         <>
             <GameHeader {...props}/>

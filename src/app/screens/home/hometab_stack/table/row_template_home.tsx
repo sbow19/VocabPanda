@@ -5,14 +5,29 @@ import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
 
-import {default as SimpleIcon} from 'react-native-vector-icons/SimpleLineIcons'
-
 const HomeRowTemplate: React.FC = props=>{
+
+    /* Results row */
+
+    const resultsNav= ()=>{
+
+        props.navigation.navigate("results", {
+                
+            
+
+            resultArray: props.resultArray,
+            project: props.project,
+            gameMode: "Latest Activity"
+            
+        })
+    }
+    
+
 
     const projectName =  props=>{
 
         return(
-                <View
+                <TouchableOpacity
                     style={{
                         height: "100%", 
                         width: "100%",
@@ -20,6 +35,8 @@ const HomeRowTemplate: React.FC = props=>{
                         borderRadius: 10,
                         justifyContent: "center"
                     }}
+
+                    onPress={resultsNav}
                     
                 >
                     
@@ -36,11 +53,11 @@ const HomeRowTemplate: React.FC = props=>{
 
                             ]}
                     >
-                        {/* Language prefix */}
-                        
-                        Project One
+                        {
+                            props.project
+                        }
                     </Text>
-                </View>
+                </TouchableOpacity>
         )
     }
 
@@ -48,7 +65,7 @@ const HomeRowTemplate: React.FC = props=>{
 
         return(
         
-                <View
+                <TouchableOpacity
                     style={{
                         height: "100%", 
                         width: "100%",
@@ -56,6 +73,7 @@ const HomeRowTemplate: React.FC = props=>{
                         borderRadius: 10,
                         justifyContent: "center"
                     }}
+                    onPress={resultsNav}
                     
                 >
                     <Text
@@ -71,11 +89,9 @@ const HomeRowTemplate: React.FC = props=>{
 
                             ]}
                     >
-                        {/* Language prefix */}
-
-                        5 new words!
+                        {props.noOfAdditions}
                     </Text>
-                </View>
+                </TouchableOpacity>
         )
     }
 
@@ -98,7 +114,7 @@ const HomeRowTemplate: React.FC = props=>{
                             
                         />
 
-                    </TableWrapper>
+                </TableWrapper>
     )
 }
 

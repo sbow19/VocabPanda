@@ -7,11 +7,17 @@ import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
 
 import HomeRowTemplate from './row_template_home';
+import LastActivity from 'app/context/last_activity';
+import React from 'react';
 
 
 const HomeTable = props => {
 
     /* Use last activity data here to gain access to data */
+
+    const [lastActivityObject] = React.useContext(LastActivity)
+
+    /* Full table content */
 
     return (
 
@@ -37,7 +43,7 @@ const HomeTable = props => {
                                 headerCellStyle,
                                 {borderTopStartRadius: 10}
                             ]}
-                            data="Target Text"
+                            data="Project"
                             textStyle={CoreStyles.contentText}
                         />
 
@@ -46,7 +52,7 @@ const HomeTable = props => {
                                 headerCellStyle,
                                 {borderTopEndRadius: 10}
                             ]}
-                            data="Output Text"
+                            data="Number of Additions"
                             textStyle={CoreStyles.contentText}          
                         />
 
@@ -64,10 +70,26 @@ const HomeTable = props => {
                 <View onStartShouldSetResponder={()=>true}>
                     <Table>
                         {/* Results displayed here in rows, use loop to render list, with props added for data */}
-                        <HomeRowTemplate/>
-                        <HomeRowTemplate/>
-                        <HomeRowTemplate/>
-                        <HomeRowTemplate/>
+                        {(()=>{
+
+                            let resultRowsComp = []
+                            let listLength = lastActivityObject.lastActivityData.projects.length
+
+                                for(let i=0; i < listLength ; i++){
+
+                                    let project = lastActivityObject.lastActivityData.projects[i]
+                                    let noOfAdditions = lastActivityObject.lastActivityData.noOfAdditions[i]
+                                    let resultArray = lastActivityObject.lastActivityResultArrays[i].resultArray
+
+                                    resultRowsComp.push(<HomeRowTemplate {...props} key={i} project={project} noOfAdditions={noOfAdditions} resultArray={resultArray}/>)
+
+                 
+                                }
+                            
+                            return resultRowsComp
+
+
+                        })()}
                     </Table>
                 </View>
             </ScrollView>

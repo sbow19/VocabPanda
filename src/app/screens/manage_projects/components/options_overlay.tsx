@@ -14,12 +14,18 @@ import {
 import CoreStyles from "app/shared_styles/core_styles";
 import ContentCard from "app/shared/content_card";
 import { CustomButtonStylesProp, CustomCardStyles } from "app/types/types.d";
-import EditTextContext from "app/context/edit_text_context";
+import LocalDatabase from "app/database/local_database";
+import CurrentUserContext from "app/context/current_user";
+import UserDatabaseContext from "app/context/current_user_database";
 
 const OptionsOverlay: React.FC = props=>{
 
     const optionsOverlayObject = React.useContext(OptionsOverlayContext)
     // const editTextOverlayObject = React.useContext(EditTextContext)
+
+    const [databaseObject] = React.useContext(UserDatabaseContext)
+
+    const [currentUser] = React.useContext(CurrentUserContext) 
 
     return(
 
@@ -39,6 +45,13 @@ const OptionsOverlay: React.FC = props=>{
                 >
                     <AppButton
                         customStyles={CoreStyles.deleteButtonColor}
+                        onPress={async()=>{
+                            await LocalDatabase.deleteEntry(currentUser, databaseObject.database, optionsOverlayObject.currentEntryId)
+
+                            props.setDeletedRowId(optionsOverlayObject.currentEntryId)
+
+                            optionsOverlayObject.setOptionsOverlayVisible(!optionsOverlayObject.visible)
+                        }}
                     >
                         <Text
                             style={CoreStyles.actionButtonText}

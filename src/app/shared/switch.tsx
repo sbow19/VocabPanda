@@ -2,17 +2,36 @@
 
 import * as types from '@customTypes/types.d';
 
-import React, {useState} from 'react'
+import React from 'react'
 import { Switch } from 'react-native-switch';
 import appColours from '@styles/app_colours';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
+const parseProps = props=>{
+
+    customProps = {
+
+        onPress: ()=>{}
+
+    }
+
+    if(props.onPress){
+
+        customProps.onPress = props.onPress
+        
+    }
+
+    return customProps
+
+}
 
 const AppSwitch:React.FC = props =>{
 
     const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
 
     const [myLocalSetting, setMyLocalSetting] = React.useState<boolean>(false)
+
+    const customProps = parseProps(props)
 
     React.useEffect(()=>{
 
@@ -29,10 +48,21 @@ const AppSwitch:React.FC = props =>{
                 (val)=>{
 
                     if(props.setsDefault == true){
+
                         setAppSettingsHandler(val, "", props.setsDefault)
+
                         setMyLocalSetting(!myLocalSetting)
+
                     } else {
-                        setMyLocalSetting(!myLocalSetting)
+
+                        setMyLocalSetting(!myLocalSetting);
+
+                    }
+
+                    if(props.onPress){
+
+                        customProps.onPress(val);
+
                     }
                     
                 }

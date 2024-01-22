@@ -16,7 +16,6 @@ const ActivityContent: React.FC = props=>{
 
     const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
 
-    
     return(
 
         <View
@@ -51,7 +50,7 @@ const ActivityContent: React.FC = props=>{
                     width: "95%"
                 }}
             >
-                <HomeTable/>
+                <HomeTable {...props}/>
 
             </View>
             

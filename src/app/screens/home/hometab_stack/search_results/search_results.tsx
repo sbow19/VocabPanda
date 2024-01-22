@@ -15,18 +15,16 @@ import AppButton from 'app/shared/app_button';
 
 const SearchResults: React.FC = props=>{
 
-    React.useEffect(()=>{
-
-        console.log(props.route.params)
-
-        /* Populate table with results */
-    }, [])
-
     const gameNav = ()=>{
 
         props.navigation.navigate("game", {
             screen: "game home",
-            params: "search results"
+            params: {
+                reDirectContent: true,
+                gameMode: props.route.params.gameMode,
+                project: props.route.params.project,
+                resultArray: props.route.params.resultArray
+            }
         })
     }
 

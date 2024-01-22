@@ -169,3 +169,17 @@ export type languageObject = {
     English: "EN",
     German: "DE"
 }
+
+export type LastActivityObject = {
+    lastActivity: boolean,
+    lastActivityData: {
+        projects: Array<string| null>,
+        noOfAdditions: Array<number| null>
+    },
+    lastActivityResultArrays: Array<ResultArrayObject>
+}
+
+export type ResultArrayObject = {
+    project: string
+    resultArray: Array<any>
+}

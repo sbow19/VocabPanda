@@ -29,13 +29,36 @@ const HomeScreen = (props: Object) =>{
 
     const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
 
-    const [lastActivityData] = useContext(LastActivity)
+    const [lastActivityObject] = React.useContext(LastActivity)
+
+    const lastActivityDataCleanUp = ()=>{
+
+        let resultRowsComp = []
+
+        for (let project of lastActivityObject.lastActivityResultArrays){
+
+            let listLength = project.resultArray.length
+
+            for(let i=0; i < listLength ; i++){
+
+                resultRowsComp.push(project.resultArray[i])
+            }
+        }
+
+        return resultRowsComp
+        
+    }
 
     const gameNav = ()=>{
 
         props.navigation.navigate("game", {
+            screen: "game home",
             params:{
-                mode: "Last Activity"
+                reDirectContent: true,
+                gameMode: "Latest Activity",
+                project: "",
+                resultArray: lastActivityDataCleanUp()
+
             }
         })
     }
@@ -54,7 +77,7 @@ return (
                         Content filling card is determined by whether the user has added new content since the last login
                     */}
 
-                    {lastActivityData.lastActivity == false ? <DefaultContent/> : <ActivityContent/>}
+                    {lastActivityObject.lastActivity == false ? <DefaultContent/> : <ActivityContent {...props}/>}
                 </ContentCard>
 
                 <View style={buttonContainerStyle}>

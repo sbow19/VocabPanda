@@ -25,6 +25,8 @@ import AppSettings from 'app/storage/app_settings_storage';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 import ResultTable from "./project_table_template"
+import LocalDatabase from 'app/database/local_database';
+import UserDatabaseContext from 'app/context/current_user_database';
 
 const ProjectView: React.FC = props=>{
 
@@ -39,6 +41,14 @@ const ProjectView: React.FC = props=>{
     /* Options Overlay state */
 
     const [optionsVisible, setOptionsVisible] = React.useState(false)
+
+    /* Get project name */
+
+    const project = props.route.params.project;
+
+    /* Get user database context */
+
+    const [databaseObject, setDatabaseObject] = React.useContext(UserDatabaseContext)
 
 
     React.useEffect(() => {
@@ -61,15 +71,23 @@ const ProjectView: React.FC = props=>{
         return () => backHandler.remove();
     }, []);
 
-    /* Get project name */
-
-    const project = props.route.params.project;
+   
 
     /* Navigate to game */
 
     const nav = ()=>{
 
-        props.navigation.navigate("game")
+        props.navigation.navigate("game", {
+
+            screen: "game home",
+            params: {
+                reDirectContent: true,
+                gameMode: "By Project",
+                project: project,
+                resultArray: props.route.params.resultArray
+            }
+
+        })
     }
     
     const deleteWarning = ()=>{
@@ -100,6 +118,8 @@ const ProjectView: React.FC = props=>{
                         setAppSettings(undefined, undefined, undefined, projectConfig)
 
                         //Add delete words from database logic
+
+                        await LocalDatabase.deleteProject(currentUser, databaseObject.database, project)
 
                         props.navigation.reset(({
                             index:0,

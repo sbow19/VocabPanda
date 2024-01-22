@@ -24,7 +24,9 @@ function parseProps(props){
         },
         defaultButtonText: "",
         setSelection: null,
-        defaultValue: ""
+        defaultValue: "",
+        defaultValueByIndex: 0,
+        search: true
     } 
 
     if (props.data) {
@@ -48,6 +50,16 @@ function parseProps(props){
         customProps.defaultValue = props.defaultValue
     }
 
+    if(props.defaultValueByIndex){
+
+        customProps.defaultValueByIndex = props.defaultValueByIndex
+    }
+
+    if(props.search == true || props.search == false){
+
+        customProps.search = props.search
+    }
+
 
     return customProps
 
@@ -56,6 +68,7 @@ function parseProps(props){
 
 
 const Dropdown: React.FC<types.CustomDropDownProps> = props=>{
+
 
     let customProps:types.CustomDropDownProps = parseProps(props);
 
@@ -148,6 +161,7 @@ const Dropdown: React.FC<types.CustomDropDownProps> = props=>{
             dropdownIconPosition='right'
             defaultValue={customProps.defaultValue}
             disableAutoScroll={true}
+            defaultValueByIndex={customProps.defaultValueByIndex}
 
 
         />

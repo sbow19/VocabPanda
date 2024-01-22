@@ -25,14 +25,19 @@ type FullTextObject = {
 
 const ResultTable = props => {
 
-
     /* options overlay state */
 
     const [optionsOverlayVisible, setOptionsOverlayVisible] = React.useState(false)
 
+    /* Options row id state */
+
+    const [currentEntryId, setCurrentEntryId] = React.useState("")
+
     const optionsOverlayObject = {
         visible: optionsOverlayVisible,
-        setOptionsOverlayVisible: setOptionsOverlayVisible
+        setOptionsOverlayVisible: setOptionsOverlayVisible,
+        currentEntryId: currentEntryId,
+        setCurrentEntryId: setCurrentEntryId
     }
 
 
@@ -63,7 +68,25 @@ const ResultTable = props => {
         setEditTextVisible: setEditTextVisible
     }
 
+    const [deletedRowId, setDeletedRowId] = React.useState("")
 
+    const [resultRows, setResultRows] = React.useState(props.searchResults)
+
+
+    React.useEffect(()=>{
+
+            if(typeof deletedRowId === "number"){
+
+                let newResultRows = props.searchResults.filter(row => row.id != deletedRowId)
+
+                setResultRows(newResultRows)
+
+            }
+       
+
+    }, [deletedRowId])
+
+    
 
     return (
 
@@ -125,18 +148,18 @@ const ResultTable = props => {
                             {
                             (()=>{
                                 
-                                let listLength = props.searchResults.length
-                                let resultRows = []
+                                let listLength = resultRows.length
+                                let resultRowsComp = []
 
                                 for(let i=0; i < listLength ; i++){
 
-                                    let resultRow = props.searchResults[i]
+                                    let resultRow = resultRows[i]
 
-                                    resultRows.push(<RowTemplate {...props} key={i} resultRow={resultRow}/>)
+                                    resultRowsComp.push(<RowTemplate {...props} key={i} resultRow={resultRow}/>)
 
                                 }
 
-                                return resultRows
+                                return resultRowsComp
                             
                             })()
                         }
@@ -147,7 +170,7 @@ const ResultTable = props => {
                 
             </View>
 
-            <OptionsOverlay/>
+            <OptionsOverlay setDeletedRowId={setDeletedRowId}/>
             <FullTextView/>
             <EditTextView/>
 

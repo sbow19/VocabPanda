@@ -22,7 +22,6 @@ const RowTemplate: React.FC = props=>{
 
     const resultRow = props.resultRow
 
-    
 
     const options =  ()=>{
 
@@ -38,6 +37,7 @@ const RowTemplate: React.FC = props=>{
                 }}
 
                 onPress={()=>{
+                    optionsObject.setCurrentEntryId(resultRow.id)
                     optionsObject.setOptionsOverlayVisible(!optionsObject.visible)
                 }}
                 
