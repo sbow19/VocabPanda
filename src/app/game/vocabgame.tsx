@@ -5,7 +5,10 @@ import {
     Text,
     ViewStyle,
     KeyboardAvoidingView,
+    Animated,
+    Easing
 } from 'react-native'
+
 
 import * as types from '@customTypes/types.d'
 import CoreStyles from 'app/shared_styles/core_styles';
@@ -58,6 +61,16 @@ const VocabGame: React.FC = props=>{
 
     const [nextButton, setNextButton] = React.useState(false)
 
+    /* countdown interval id */
+
+    const interval  = React.useRef({})
+
+    /* Slide Anim target content card */
+    const slideAnimTarget = React.useRef(new Animated.Value(0)).current
+
+    /* Slide Anim target content card */
+    const slideAnimOutput = React.useRef(new Animated.Value(0)).current
+
     /* Game Logic load */
 
     React.useEffect(()=>{
@@ -65,7 +78,6 @@ const VocabGame: React.FC = props=>{
         if(isLoading == true){
 
             async function setUpGame(){
-
 
                 let myGameState=  new GameLogic(props.route.params, currentUser, databaseObject)
 
@@ -87,64 +99,118 @@ const VocabGame: React.FC = props=>{
     /* Reset timer logic on turn change */
     React.useEffect(()=>{
 
-        if(!isLoading){
+        //Timer doesn't start until slide in animation complete
+        setTimeout(()=>{
+            
+            if(!isLoading){
 
-            let thisTurnTime;
+                let thisTurnTime;
 
-             /* Set turn type */
-             gameState.current.getTurnType
+                if(gameState.current.timerOn){
 
-            if(gameState.current.timerOn){
+                    /* Set timer if user selected timer on on select screen */
 
-                /* Set timer if user selected timer on on select screen */
+                    thisTurnTime = gameState.current.getTurnTime()
 
-                thisTurnTime = gameState.current.getTurnTime()
-
-            }
-
-            /* If timer is not on, then interval countdown not set */
-            if(gameState.current.timerOn == true){
-
-                setTimeLeft(thisTurnTime)
-
-                let interval = setInterval(()=>{
-
-                    if(thisTurnTime > 0){
-
-                        setTimeLeft(prevTime => prevTime-1)
-
-                        thisTurnTime -= 1
-
-                    } else {
-                        clearInterval(interval)
-                    }
-
-                }, 1000)
-
-                return ()=>{
-
-                    clearInterval(interval)
                 }
-            }
-        }        
+
+                /* If timer is not on, then interval countdown not set */
+                if(gameState.current.timerOn == true){
+
+                    setTimeLeft(thisTurnTime)
+
+                    interval.current = setInterval(()=>{
+
+                        if(thisTurnTime > 0){
+
+                            setTimeLeft(prevTime => prevTime-1)
+
+                            thisTurnTime -= 1
+
+                        } else {
+                            clearInterval(interval.current)
+                        }
+
+                    }, 1000)
+
+                    return ()=>{
+
+                        clearInterval(interval.current)
+                    }
+                }
+            } 
+        }, 500)       
 
     }, [currentTurn, isLoading])
 
+    /* Pauxe the timer when stopped */
+    React.useEffect(()=>{
+
+
+        if(endTurnSequence){
+            /* Set turn type */
+        
+            clearInterval(interval.current)
+        }
+
+    }, [endTurnSequence])
+
+    React.useEffect(()=>{
+
+        Animated.timing(slideAnimTarget,  {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.elastic(1),
+            useNativeDriver: true
+        }).start()
+
+        Animated.timing(slideAnimOutput,  {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.elastic(1),
+            useNativeDriver: true
+        }).start()
+    },[slideAnimTarget, slideAnimOutput, currentTurn])
+
+
+
     const triggerNextTurn = ()=>{
 
+        Animated.timing(slideAnimTarget,  {
+            toValue: 0,
+            duration: 700,
+            easing: Easing.quad,
+            useNativeDriver: true
+        }).start()
 
-        if(currentTurn === gameState.current.noOfTurns){
-            /* Trigger end game sequence when final turn reached */
-        } else {
+        Animated.timing(slideAnimOutput,  {
+            toValue: 0,
+            duration: 700,
+            easing: Easing.quad,
+            useNativeDriver: true
+        }).start()
 
-            setEndTurnSequence(false)
-            setNextButton(false)
+        gameState.current.turnNumber = currentTurn + 1
 
-            gameState.current.turnNumber = currentTurn + 1
-            setCurrentTurn(currentTurn + 1)
-        }
+        // Wait until above animations are done before triggering next turn (current turn), thereby restarting 
+        //Animations
+        setTimeout(()=>{ 
+
+            gameState.current.setTurnType()
+            
+            if(currentTurn === gameState.current.noOfTurns){
+                /* Trigger end game sequence when final turn reached */
+                gameState.current.gameFinished = true
+            } else {
+
+                setEndTurnSequence(false)
+                setNextButton(false)
+
+                
+                setCurrentTurn(currentTurn + 1)
+            }
+        }, 800)
     }
-
 
     return(
     <>
@@ -168,6 +234,19 @@ const VocabGame: React.FC = props=>{
             >
 
                 <KeyboardAvoidingView>
+                
+                <Animated.View
+                    style={{
+                        transform:[
+                            {
+                                translateX: slideAnimTarget.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [-400, 0]
+                                })
+                            }
+                        ]
+                    }}
+                >
                 <ContentCard
                     cardStylings={targetTextCard}
                 >
@@ -208,10 +287,23 @@ const VocabGame: React.FC = props=>{
                             }
                         </Text>
                     </View>
-
                 </ContentCard>
+                </Animated.View>
 
             {/* These are remounted on next slide, some animation to transition */}
+
+                <Animated.View
+                    style={{
+                        transform:[
+                            {
+                                translateX: slideAnimOutput.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [400, 0]
+                                })
+                            }
+                        ]
+                    }}
+                >
                 <ContentCard
                     cardStylings={outputTextCard}
                 >
@@ -242,6 +334,7 @@ const VocabGame: React.FC = props=>{
                                 /* Pause timer */
                                 /* Score determiner */
                                 let score: number = 0;
+                               
 
                                 if(gameState.current.turnType === "target"){
                                     score = gameState.current.checkAnswer(
@@ -257,17 +350,22 @@ const VocabGame: React.FC = props=>{
                                     )
                                 }
 
-
                                 gameState.current.currentPoints = gameState.current.currentPoints + score
 
                                 setEndTurnSequence(true)
-                                setNextButton(true)
+                                
+                                setTimeout(() => {
+
+                                    setNextButton(true)
+                                    
+                                }, 700);
                                 actions.resetForm()
                             }}
                         >
                             {({values, handleChange, handleSubmit})=>(
       
                                 <VocabPandaTextInput
+                                        state={currentTurn}
                                         numberOfLines={4}
                                         maxLength={100}
                                         style={{
@@ -275,13 +373,13 @@ const VocabGame: React.FC = props=>{
                                             width: windowDimensions.WIDTH*0.8,
                                             fontSize: 16,
                                         }}  
-
                                         autoFocus={true}
                                         editable={true}
                                         value={values.input}
                                         onChangeText={handleChange("input")}
                                         placeholder=''
                                         onSubmit={handleSubmit}
+                                        keyboardType='visible-password'
                                         
                                 />
                             )}
@@ -290,9 +388,10 @@ const VocabGame: React.FC = props=>{
                     </View>
                 
                 </ContentCard>
+                </Animated.View>
                 </KeyboardAvoidingView>
-                {endTurnSequence ? <TurnEndCard gameState={gameState}/> : null}
-                {nextButton ? <NextButton {...props} onPress={triggerNextTurn}/> : null}
+                {endTurnSequence || timeLeft === 0 ? <TurnEndCard {...props} gameState={gameState} timeLeft={timeLeft}/> : null}
+                {nextButton || timeLeft === 0 ? <NextButton {...props} gameState={gameState} onPress={triggerNextTurn}/> : null}
             </View>
         </>)}
     </>
@@ -301,7 +400,25 @@ const VocabGame: React.FC = props=>{
 
 const NextButton = props=>{
 
+    const opacityValue = React.useRef(new Animated.Value(0)).current
+
+    React.useEffect(()=>{
+
+        Animated.timing(opacityValue, {
+
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true
+        }).start()
+
+    }, [opacityValue])
+
     return(
+        <Animated.View
+            style={{
+                opacity: opacityValue
+            }}
+        >
         <View
             style={{
                 height: 100,
@@ -309,16 +426,18 @@ const NextButton = props=>{
             }}
         >
             <AppButton
-              onPress={props.onPress}
+              onPress={props.gameState.current.noOfTurns === props.gameState.current.turnNumber? props.navigation.pop : 
+            props.onPress}
             >
                 <Text
                     style={CoreStyles.actionButtonText}
                 >
-                    Next
+                   {props.gameState.current.noOfTurns === props.gameState.current.turnNumber ? "End Game" : "Next"} 
                 </Text>
             </AppButton>
 
         </View>
+        </Animated.View>
     )
 } 
 
@@ -419,8 +538,33 @@ const GameHeader: React.FC = props =>{
 
 const TurnEndCard = props =>{
 
+    const slideInAnimEndCard = React.useRef(new Animated.Value(0)).current
+
+    React.useEffect(()=>{
+    
+        Animated.timing(slideInAnimEndCard, {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.elastic(2), 
+            useNativeDriver: true
+        }).start()
+
+    }, [])
+
 
     return(
+        <Animated.View
+            style={{
+                transform: [
+                    {translateX: slideInAnimEndCard.interpolate({
+
+                        inputRange: [0, 1],
+                        outputRange: [-400, 0]
+                    })
+                     }
+                ]
+            }}
+        >
         <ContentCard
             cardStylings={endTurnCardStyle}
         >
@@ -435,7 +579,7 @@ const TurnEndCard = props =>{
                                     {fontSize: 18}
                                 ]}
                         >
-                            You Scored {props.gameState.current.lastRoundScore} Points!
+                           {props.timeLeft === 0 ? "Time's Up" : `You Scored ${props.gameState.current.lastRoundScore} Points!`}
 
                         </Text>
             </View>
@@ -457,6 +601,7 @@ const TurnEndCard = props =>{
             </View>
 
         </ContentCard>
+        </Animated.View>
     )
 }
 

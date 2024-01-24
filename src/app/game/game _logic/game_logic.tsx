@@ -38,6 +38,7 @@ class GameLogic {
     lastRoundAnswer = "";
     turnNumber = 1;
     turnType = "target"
+    gameFinished = false
 
     timerOn = false
     gameMode = "All Words"
@@ -177,7 +178,7 @@ class GameLogic {
         }
     }
 
-    getTurnType = ()=>{
+    setTurnType = ()=>{
 
         let turnType;
 
@@ -192,6 +193,7 @@ class GameLogic {
 
         /* Sets turn type */
         this.turnType = turnType
+
 
         return turnType
 
@@ -274,7 +276,6 @@ class GameLogic {
             correctScoreBase = fullMarks
         } else
         if(matchScorePercentage <= 99 && matchScorePercentage >= 75){
-
             correctScoreBase = Math.round(fullMarks * 0.75)
         } else
         if(matchScorePercentage <= 74 && matchScorePercentage >= 66){

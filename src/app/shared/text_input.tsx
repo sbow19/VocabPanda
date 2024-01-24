@@ -36,8 +36,13 @@ function parseProps (props:TextInputProps){
         value: "",
         onChangeText: ()=>{},
         onBlur: e=>{},
-        onFocus: e=>{}
+        onFocus: e=>{},
+        state: null
     }
+
+    if(props.state) {
+        customProps.state = props.state
+    } 
 
     if(props.style) {
         customProps.style = props.style
@@ -112,8 +117,6 @@ function parseProps (props:TextInputProps){
         customProps.onFocus = props.onFocus
     }
 
-
-
     return customProps
     
 }
@@ -122,11 +125,26 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
 
     const [active, setActive] = useState(false);
 
+    const textInput = React.useRef([])
+
     const customProps: TextInputProps = parseProps(props);
+
+    React.useEffect(()=>{
+
+        if(props.state){
+
+            setActive(true)
+            textInput.current.focus()
+
+        }
+        
+
+    }, [props.state])
 
     return(<>
 
     <TextInput
+        ref={textInput}
         autoFocus={customProps.autoFocus}
         style={[additionalStyles, 
             {
@@ -160,6 +178,7 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
         }}
         returnKeyType={customProps.returnKeyType}
         value={customProps.value}
+        autoComplete="off"
         
     />
     
