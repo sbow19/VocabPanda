@@ -15,17 +15,17 @@ const LoadingScreen: React.FC = props =>{
     return(
 
         <>
-        <StatusBar backgroundColor={appColours.lightGreen}/>
+            <StatusBar backgroundColor={appColours.lightGreen}/>
 
-        <View 
-        style={[
-            CoreStyles.defaultScreen,
-            loadingScreenStyle
-        ]}>
-            <Image source={require("../../../assets/icons/AppIcons/android/mipmap-xxxhdpi/ic_launcher.png")}/>
-            <Text style={CoreStyles.contentText}> Loading... </Text>
+            <View 
+            style={[
+                CoreStyles.defaultScreen,
+                loadingScreenStyle
+            ]}>
+                <Image source={require("../../../assets/icons/AppIcons/android/mipmap-xxxhdpi/ic_launcher.png")}/>
+                <Text style={CoreStyles.contentText}> Loading... </Text>
 
-        </View>
+            </View>
         </>
 
     )

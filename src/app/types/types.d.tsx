@@ -183,3 +183,11 @@ export type ResultArrayObject = {
     project: string
     resultArray: Array<any>
 }
+
+export type GameSettingsObject = {
+    timerOn: boolean
+    noOfTurns: number
+    gameMode: "All Words" | "Latest Activity" | "Search Results" | "By Project"
+    resultArray: Array<any>
+    project: string
+}

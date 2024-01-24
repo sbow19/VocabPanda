@@ -19,17 +19,17 @@ class LocalDatabase {
 
                 let [_, resultArray] = await transaction.executeSql(deleteTableQuery)
 
-                console.log(resultArray)
+                resolve(resultArray)
             },
             (error)=>{
 
-                console.log("Account deletion failed")
+                console.log("All data fetch filed")
                 console.log(error)
                 reject(error)
             },
             (success)=>{
 
-                console.log("Account deletion successful")
+                console.log("All data fetch success")
                 resolve(success)
             })
 

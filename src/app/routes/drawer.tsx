@@ -155,7 +155,15 @@ const VocabDrawerContent = props=>{
 
     const nav = ()=>{
 
-        props.navigation.navigate("game")
+        props.navigation.navigate("game",{
+            screen: "game home",
+            params: {
+                reDirectContent: true,
+                gameMode: "All Words",
+                project: "",
+                resultArray: []
+            }
+        })
     }
 
     return(

@@ -19,22 +19,120 @@ import VocabPandaTextInput from 'app/shared/text_input';
 import AdBanner from 'app/shared/ad_banner';
 import React from 'react';
 import { Formik } from 'formik';
+import GameLoadingScreen from './loading_screen ';
+
+import GameLogic from './game _logic/game_logic';
+import CurrentUserContext from 'app/context/current_user';
+import UserDatabaseContext from 'app/context/current_user_database';
 
 const VocabGame: React.FC = props=>{
 
-    /* Timer state */
+    /* Game state object */
 
-    /* Points state */
+    const gameState = React.useRef([])
 
     /* No of turns state */
+    const [currentTurn, setCurrentTurn] = React.useState(1)
 
-    /*  */
+    /* Current user state */
+    
+    const[currentUser] = React.useContext(CurrentUserContext)
 
-    console.log(props.route.params)
+    /* Current user database object */
+    const[databaseObject] = React.useContext(UserDatabaseContext)
+
+    /* Loading state */
+
+    const [isLoading, setIsLoading] = React.useState(true)
+
+    /* Time left */
+
+    const [timeLeft, setTimeLeft] = React.useState(null)
+
+    /* Trigger end turn sequence */
+
+    const [endTurnSequence, setEndTurnSequence] = React.useState(false)
+
+    /* Game Logic load */
+
+    React.useEffect(()=>{
+
+        if(isLoading == true){
+
+            async function setUpGame(){
+
+
+                let myGameState=  new GameLogic(props.route.params, currentUser, databaseObject)
+
+                await myGameState.fetchArray()
+
+                gameState.current = myGameState
+
+                /* Then fetch game rows used for game with this line below */
+
+                if(gameState.current.timerOn){
+
+                    /* Set timer if user selected timer on on select screen */
+
+                    let thisTurnTime = gameState.current.getTurnTime()
+
+                    setTimeLeft(thisTurnTime)
+                }
+
+                setIsLoading(false)
+        
+            }
+    
+            setUpGame()
+        }
+    }, [isLoading])
+    
+
+    /* Reset timer logic on turn change */
+    React.useEffect(()=>{
+
+        if(!isLoading){
+
+            /* Every turn change, the turn time is fetched and turn type determined */
+            let thisTurnTime = gameState.current.getTurnTime()
+
+            /* If timer is not on, then interval countdown not set */
+            if(gameState.current.timerOn == true){
+
+                setTimeLeft(thisTurnTime)
+
+                let interval = setInterval(()=>{
+
+                    if(thisTurnTime > 0){
+
+                        setTimeLeft(prevTime => prevTime-1)
+
+                        thisTurnTime -= 1
+
+                    } else {
+                        clearInterval(interval)
+                    }
+
+                }, 1000)
+
+                return ()=>{
+
+                    clearInterval(interval)
+                }
+            }
+        }        
+
+    }, [currentTurn, isLoading])
+
 
     return(
-        <>
-            <GameHeader {...props}/>
+    <>
+        { isLoading ? 
+
+        (<GameLoadingScreen/>) : 
+        
+        (<>
+            <GameHeader {...props} gameState={gameState} timeLeft={timeLeft}/>
             <AdBanner
                 customStyles={{
                     marginBottom: 5
@@ -62,7 +160,11 @@ const VocabGame: React.FC = props=>{
                                     {fontSize: 18}
                                 ]}
                         >
-                            Target Language: {/* Target language placeholder */}
+                            Target Language: {
+                            gameState.current.turnType === "target" ? 
+                            gameState.current.gameArray[currentTurn-1].target_language_lang : 
+                            gameState.current.gameArray[currentTurn-1].output_language_lang
+                            }
                         </Text>
                     </View>
                     <View
@@ -77,15 +179,18 @@ const VocabGame: React.FC = props=>{
                                 }
                             ]
                             }
-                        >
-
-                            Bien hecho
+                        >    
+                            {
+                            gameState.current.turnType === "target" ? 
+                            gameState.current.gameArray[currentTurn-1].target_language : 
+                            gameState.current.gameArray[currentTurn-1].output_language
+                            }
                         </Text>
                     </View>
 
                 </ContentCard>
 
-{/* These are remounted on next slide, some animation to transition */}
+            {/* These are remounted on next slide, some animation to transition */}
                 <ContentCard
                     cardStylings={outputTextCard}
                 >
@@ -99,7 +204,11 @@ const VocabGame: React.FC = props=>{
                                     {fontSize: 18}
                                 ]}
                         >
-                            Output Language: {/* Output language placeholder */}
+                            Output Language: {
+                            gameState.current.turnType === "target" ? 
+                            gameState.current.gameArray[currentTurn-1].output_language_lang : 
+                            gameState.current.gameArray[currentTurn-1].target_language_lang
+                            }
                         </Text>
                     </View>
                     <View
@@ -109,9 +218,40 @@ const VocabGame: React.FC = props=>{
                             initialValues={{input: ""}}
                             onSubmit={(values, actions)=>{
 
-                                /* Compare to answer, trigger animation, etc  */
-                                console.log(values)
-                                actions.resetForm()
+                                /* Pause timer */
+                                /* Score determiner */
+                                let score: number = 0;
+
+                                if(gameState.current.turnType === "target"){
+                                    score = gameState.current.checkAnswer(
+                                        values.input, 
+                                        gameState.current.gameArray[currentTurn-1].output_language,
+                                        timeLeft
+                                    )
+                                } else if (gameState.current.turnType === "output"){
+                                    score = gameState.current.checkAnswer(
+                                        values.input,
+                                        gameState.current.gameArray[currentTurn-1].target_language,
+                                        timeLeft
+                                    )
+                                }
+
+
+                                gameState.current.currentPoints = gameState.current.currentPoints + score
+
+
+
+
+                                if(currentTurn === gameState.current.noOfTurns){
+                                    /* Trigger end game sequence when final turn reached */
+                                } else {
+
+                                    gameState.current.turnNumber = currentTurn + 1
+                                    setCurrentTurn(currentTurn + 1)
+                                    actions.resetForm()
+
+                                }
+                               
 
                             }}
                         >
@@ -134,8 +274,6 @@ const VocabGame: React.FC = props=>{
                                         onSubmit={handleSubmit}
                                         
                                 />
-
-
                             )}
                          </Formik>
                    
@@ -143,14 +281,17 @@ const VocabGame: React.FC = props=>{
                 
                 </ContentCard>
                 </KeyboardAvoidingView>
+                <TurnEndCard gameState={gameState}/>
             </View>
-        </>
+        </>)}
+    </>
     )
 }
 
 const GameHeader: React.FC = props =>{
 
     /* Use game state logic to determine indiv header items,*/
+
     return(
         <View
             style={[
@@ -203,7 +344,11 @@ const GameHeader: React.FC = props =>{
                 >
                     <Text
                         style={CoreStyles.actionButtonText}
-                    >  20/20{/* turn number */}</Text>
+                    >  
+                        {
+                            `${props.gameState.current.turnNumber} / ${props.gameState.current.noOfTurns}`
+                        }
+                    </Text>
                 </View>
                 <View
                     style={{
@@ -214,7 +359,11 @@ const GameHeader: React.FC = props =>{
                 >
                     <Text
                         style={CoreStyles.actionButtonText}
-                    > 0:30 {/* timer, determined by length of string */}</Text>
+                    > 
+                    
+                     {props.gameState.current.timerOn ? props.timeLeft : null}
+                     
+                    </Text>
                 </View>
                 <View
                     style={{
@@ -225,13 +374,42 @@ const GameHeader: React.FC = props =>{
                 >
                     <Text
                         style={CoreStyles.actionButtonText}
-                    > 200 {/* Points, determined by points rating system */}</Text>
+                    > 
+                        {props.gameState.current.currentPoints}
+                    </Text>
+                </View>
+            </View>
+        </View>
+    )
+}
+
+const TurnEndCard = props =>{
+
+
+    return(
+        <ContentCard
+        
+        >
+             <View style= {cardTitleWrapper}>
+                        <Text
+                            style={
+                                [
+                                    CoreStyles.contentTitleText,
+                                    {fontSize: 18}
+                                ]}
+                        >
+
+                        </Text>
+            </View>
+
+            <View>
+                <View
+                    style= {cardContentWrapper}
+                >
                 </View>
 
             </View>
-
-        
-        </View>
+        </ContentCard>
     )
 }
 

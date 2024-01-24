@@ -44,7 +44,7 @@ const GameHome: React.FC = props=>{
 
     /* Mode dropdwon index */
 
-    const [modeDropdownIndex, setModeDropdownIndex] = React.useState(1)
+    const [modeDropdownIndex, setModeDropdownIndex] = React.useState(0)
 
     /* Game mode */
 
@@ -151,7 +151,9 @@ const GameHome: React.FC = props=>{
                 resultArray: [],
                 project: props.route.params.project
             })
+
             return
+
         } else if (gameMode === "By Project") {
 
             props.navigation.navigate("vocab game", {
@@ -162,7 +164,9 @@ const GameHome: React.FC = props=>{
                 resultArray: [],
                 project: project
             })
+
             return
+
         }
 
         if(gameMode === "Latest Activity"){
@@ -177,6 +181,7 @@ const GameHome: React.FC = props=>{
             })
 
             return
+
         }
 
         if(gameMode === "Search Results"){
@@ -187,6 +192,7 @@ const GameHome: React.FC = props=>{
             })
 
             return
+
         }
         
     }
