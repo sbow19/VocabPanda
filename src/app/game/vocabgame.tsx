@@ -24,6 +24,7 @@ import GameLoadingScreen from './loading_screen ';
 import GameLogic from './game _logic/game_logic';
 import CurrentUserContext from 'app/context/current_user';
 import UserDatabaseContext from 'app/context/current_user_database';
+import AppButton from 'app/shared/app_button';
 
 const VocabGame: React.FC = props=>{
 
@@ -53,6 +54,10 @@ const VocabGame: React.FC = props=>{
 
     const [endTurnSequence, setEndTurnSequence] = React.useState(false)
 
+    /* Set next button */
+
+    const [nextButton, setNextButton] = React.useState(false)
+
     /* Game Logic load */
 
     React.useEffect(()=>{
@@ -70,15 +75,6 @@ const VocabGame: React.FC = props=>{
 
                 /* Then fetch game rows used for game with this line below */
 
-                if(gameState.current.timerOn){
-
-                    /* Set timer if user selected timer on on select screen */
-
-                    let thisTurnTime = gameState.current.getTurnTime()
-
-                    setTimeLeft(thisTurnTime)
-                }
-
                 setIsLoading(false)
         
             }
@@ -93,8 +89,18 @@ const VocabGame: React.FC = props=>{
 
         if(!isLoading){
 
-            /* Every turn change, the turn time is fetched and turn type determined */
-            let thisTurnTime = gameState.current.getTurnTime()
+            let thisTurnTime;
+
+             /* Set turn type */
+             gameState.current.getTurnType
+
+            if(gameState.current.timerOn){
+
+                /* Set timer if user selected timer on on select screen */
+
+                thisTurnTime = gameState.current.getTurnTime()
+
+            }
 
             /* If timer is not on, then interval countdown not set */
             if(gameState.current.timerOn == true){
@@ -123,6 +129,21 @@ const VocabGame: React.FC = props=>{
         }        
 
     }, [currentTurn, isLoading])
+
+    const triggerNextTurn = ()=>{
+
+
+        if(currentTurn === gameState.current.noOfTurns){
+            /* Trigger end game sequence when final turn reached */
+        } else {
+
+            setEndTurnSequence(false)
+            setNextButton(false)
+
+            gameState.current.turnNumber = currentTurn + 1
+            setCurrentTurn(currentTurn + 1)
+        }
+    }
 
 
     return(
@@ -239,20 +260,9 @@ const VocabGame: React.FC = props=>{
 
                                 gameState.current.currentPoints = gameState.current.currentPoints + score
 
-
-
-
-                                if(currentTurn === gameState.current.noOfTurns){
-                                    /* Trigger end game sequence when final turn reached */
-                                } else {
-
-                                    gameState.current.turnNumber = currentTurn + 1
-                                    setCurrentTurn(currentTurn + 1)
-                                    actions.resetForm()
-
-                                }
-                               
-
+                                setEndTurnSequence(true)
+                                setNextButton(true)
+                                actions.resetForm()
                             }}
                         >
                             {({values, handleChange, handleSubmit})=>(
@@ -281,12 +291,36 @@ const VocabGame: React.FC = props=>{
                 
                 </ContentCard>
                 </KeyboardAvoidingView>
-                <TurnEndCard gameState={gameState}/>
+                {endTurnSequence ? <TurnEndCard gameState={gameState}/> : null}
+                {nextButton ? <NextButton {...props} onPress={triggerNextTurn}/> : null}
             </View>
         </>)}
     </>
     )
 }
+
+const NextButton = props=>{
+
+    return(
+        <View
+            style={{
+                height: 100,
+                width: 100
+            }}
+        >
+            <AppButton
+              onPress={props.onPress}
+            >
+                <Text
+                    style={CoreStyles.actionButtonText}
+                >
+                    Next
+                </Text>
+            </AppButton>
+
+        </View>
+    )
+} 
 
 const GameHeader: React.FC = props =>{
 
@@ -388,9 +422,12 @@ const TurnEndCard = props =>{
 
     return(
         <ContentCard
-        
+            cardStylings={endTurnCardStyle}
         >
-             <View style= {cardTitleWrapper}>
+             <View style= {[
+                cardTitleWrapper,
+                {justifyContent: "flex-start", alignItems: "center"}
+            ]}>
                         <Text
                             style={
                                 [
@@ -398,6 +435,7 @@ const TurnEndCard = props =>{
                                     {fontSize: 18}
                                 ]}
                         >
+                            You Scored {props.gameState.current.lastRoundScore} Points!
 
                         </Text>
             </View>
@@ -406,11 +444,28 @@ const TurnEndCard = props =>{
                 <View
                     style= {cardContentWrapper}
                 >
+                    <Text
+                    style={
+                        [
+                            CoreStyles.contentTitleText,
+                            {fontSize: 18}
+                        ]}>
+                        Answer: {props.gameState.current.lastRoundAnswer}
+                    </Text>
                 </View>
 
             </View>
+
         </ContentCard>
     )
+}
+
+const endTurnCardStyle: ViewStyle = {
+
+    width: windowDimensions.WIDTH * 0.85,
+    height: windowDimensions.HEIGHT * 0.25,
+    justifyContent: "space-evenly",
+    marginBottom: 10
 }
 
 const gameStatsWrapper: ViewStyle = {
@@ -435,7 +490,7 @@ const outputTextCard: CustomCardStyles = {
 
     height: windowDimensions.HEIGHT * 0.19,
     width: windowDimensions.WIDTH * 0.9,
-    marginBottom: 10
+    marginBottom: 30
 
 }
 

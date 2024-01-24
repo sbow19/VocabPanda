@@ -34,6 +34,8 @@ class GameLogic {
     resultArray: Array<any> = [];
     gameArray: Array<any> = [];
     currentPoints = 0;
+    lastRoundScore = 0;
+    lastRoundAnswer = "";
     turnNumber = 1;
     turnType = "target"
 
@@ -145,9 +147,7 @@ class GameLogic {
 
         let currentTurnContent = this.gameArray[this.turnNumber - 1]
 
-        let turnType = this.#getTurnType()
-
-        if(turnType === "target"){
+        if(this.turnType === "target"){
 
             if(currentTurnContent.target_language.length < 10){
 
@@ -160,7 +160,7 @@ class GameLogic {
                 return 20
             }
             
-        } else if (turnType === "output"){
+        } else if (this.turnType === "output"){
 
             
             if(currentTurnContent.output_language.length < 10){
@@ -177,7 +177,7 @@ class GameLogic {
         }
     }
 
-    #getTurnType = ()=>{
+    getTurnType = ()=>{
 
         let turnType;
 
@@ -199,6 +199,8 @@ class GameLogic {
 
     checkAnswer = (inputString: string, answerString: string,  timeLeft: number|null)=>{
 
+
+        this.lastRoundAnswer = answerString;
 
         let correctScoreBase: number = 0;
         let timerScore: number = 0; 
@@ -285,9 +287,12 @@ class GameLogic {
         if(typeof timeLeft === "number"){
 
             timerScore = correctScoreBase * timeLeft
+            this.lastRoundScore = timerScore
 
             return timerScore
         } else {
+
+            this.lastRoundScore = correctScoreBase
 
             return correctScoreBase
         }
