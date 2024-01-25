@@ -17,7 +17,7 @@ const HomeRowTemplate: React.FC = props=>{
 
             resultArray: props.resultArray,
             project: props.project,
-            gameMode: "Latest Activity"
+            gameMode: "Latest Activity - By Project"
             
         })
     }

@@ -18,6 +18,7 @@ import AdBanner from 'app/shared/ad_banner';
 import Dropdown from 'app/shared/dropdown';
 import ProjectDropdown from 'app/shared/project_dropdown';
 import React from 'react';
+import LastActivity from 'app/context/last_activity';
 
 
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
@@ -30,11 +31,15 @@ const GameHome: React.FC = props=>{
 
     const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
 
-    /* Game slider value */
+    /* Kast activity object context */
+
+    const lastActivityObject = React.useContext(LastActivity)
+
+    /* Game slider value */ /* TODO change to useRef to avoid entire screen re renders */
 
     const [gameSliderValue, setGameSliderValue] = React.useState(10)
 
-    /* Game turns value */
+    /* Game turns value */ /* TODO change to useRef to avoid entire screen re renders  */
 
     const [gameTimeronValue, setGameTimeronValue] = React.useState(false)
 
@@ -53,6 +58,8 @@ const GameHome: React.FC = props=>{
     /* set project state */
 
     const [project, setProject] = React.useState("")
+
+    /* Serialise last activity */
 
 
     const getProjectIndex = ()=>{
@@ -78,6 +85,12 @@ const GameHome: React.FC = props=>{
 
         switch(props.route.params.gameMode){
 
+            case "Latest Activity - By Project":
+
+                setGameMode("Latest Activity - By Project")
+                setModeDropdownIndex(2)
+                break
+
             case "By Project":
 
                 let index = getProjectIndex()
@@ -85,6 +98,7 @@ const GameHome: React.FC = props=>{
                 setGameMode("By Project")
                 setModeDropdownIndex(1)
                 setProjectIndex(index)
+                setProject(props.route.params.project)
                 
                 break
 
@@ -141,20 +155,7 @@ const GameHome: React.FC = props=>{
             return
         }
 
-        if(gameMode === "By Project" && props.route.params.gameMode === "By Project"){
-
-            props.navigation.navigate("vocab game", {
-
-                timerOn: gameTimeronValue,
-                noOfTurns: gameSliderValue,
-                gameMode: "By Project",
-                resultArray: [],
-                project: props.route.params.project
-            })
-
-            return
-
-        } else if (gameMode === "By Project") {
+        if (gameMode === "By Project") {
 
             props.navigation.navigate("vocab game", {
 
@@ -169,7 +170,7 @@ const GameHome: React.FC = props=>{
 
         }
 
-        if(gameMode === "Latest Activity"){
+        if(gameMode === "Latest Activity" && lastActivityObject.lastActivity == true){
 
             props.navigation.navigate("vocab game", {
 
@@ -177,6 +178,30 @@ const GameHome: React.FC = props=>{
                 noOfTurns: gameSliderValue,
                 gameMode: "Latest Activity",
                 resultArray: [],
+                project: ""
+            })
+
+            return
+
+        }
+
+        if(gameMode === "Latest Activity" && lastActivityObject.lastActivity == false){
+
+
+            showMessage({
+                type: "info",
+                message: "No activity since last logged in"
+            })
+        }
+
+        if(gameMode === "Latest Activity - By Project"){
+
+            props.navigation.navigate("vocab game", {
+
+                timerOn: gameTimeronValue,
+                noOfTurns: gameSliderValue,
+                gameMode: "Latest Activity - By Project",
+                resultArray: props.route.params.resultArray,
                 project: ""
             })
 
@@ -293,7 +318,12 @@ const GameHome: React.FC = props=>{
 
                 </ContentCard>
 
-                <View>
+                <View
+                     style={{
+                        width: windowDimensions.WIDTH*0.3,
+                        height: windowDimensions.HEIGHT*0.08,
+                        
+                }}>
                     <AppButton
                         onPress={gameStart}
                     >

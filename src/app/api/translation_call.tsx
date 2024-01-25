@@ -53,7 +53,6 @@ class DeeplTranslate{
 
         return new Promise(async(resolve, reject)=>{
 
-            console.log(searchTerms);
 
             let [target_language_id, output_language_id] = this.#changeLanguageValue(searchTerms.targetLanguage, searchTerms.outputLanguage);
 
@@ -77,7 +76,6 @@ class DeeplTranslate{
                 
                 let response = await apiResponse.json();
 
-                console.log(response)
 
                 //return translation which was nested in the returned response object
                 resolve(response.translations[0]);

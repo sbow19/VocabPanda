@@ -22,24 +22,37 @@ class AppSettings {
 
                 if(allAppSettings[userName]){
     
-                    /* If app settings already exists on user*/
+                    /* If app settings already exists on user, just add login time and resolve promise */
+
+                    
+                    allAppSettings[userName].lastLoggedIn = new Date() //Set logged in time
+
+                    const stringifiedSettings = JSON.stringify(allAppSettings)
+    
+                    await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
                     resolve("User exists")
     
                 } else if (!allAppSettings[userName]) {
     
-                    /* If no app settings exist on user */
+                    /* If no app settings exist on user, set default settings on user */
 
-                    allAppSettings[userName] = {}
+                    allAppSettings[userName] = {} //Create new settings object on user
 
                     allAppSettings[userName].gameSettings = {
                         timerOn: false,
                         noOfTurns: 10
-                    }
+                    } // Set default game settings
+
                     allAppSettings[userName].dropDownLanguages = {
                         targetLanguage: "English",
                         outputLanguage: "English"
-                    }
-                    allAppSettings[userName].projects = []
+                    } // Set default target and output languages, which appear on translation dropdowns
+
+                    allAppSettings[userName].projects = [] // Set empty projects list
+
+                    /* Set logged in time */
+                    allAppSettings[userName].lastLoggedIn = new Date()
 
                     const stringifiedSettings = JSON.stringify(allAppSettings)
     
@@ -59,6 +72,24 @@ class AppSettings {
             }
         })
        
+    }
+
+    static async getLastLoggedInDate(userName: string){
+        return new Promise(async(resolve,reject)=>{
+
+            try{
+                const allAppSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+
+                const allAppSettings =  JSON.parse(allAppSettingsRaw)
+
+                const lastLoggedIn = allAppSettings[userName].lastLoggedIn
+
+                resolve(lastLoggedIn)
+            } catch(e){
+                reject(e)
+            }
+        })
+
     }
 
     static async setDefaultSettings(userName: string, settingsObject:types.AppSettingsObject)
@@ -90,8 +121,6 @@ class AppSettings {
                 const appSettingsRaw = await AsyncStorage.getItem('allDefaultSettings')
     
                 const appSettings = JSON.parse(appSettingsRaw)
-
-                console.log(appSettings[userName])
 
                 appSettings[userName].dropDownLanguages.targetLanguage = settingsObject.dropDownLanguages.targetLanguage
 

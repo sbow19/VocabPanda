@@ -15,9 +15,49 @@ const HomeTable = props => {
 
     /* Use last activity data here to gain access to data */
 
-    const [lastActivityObject] = React.useContext(LastActivity)
+    const lastActivityObject = React.useContext(LastActivity)
+
 
     /* Full table content */
+
+    const lastActivityDataCleanUp = ()=>{
+
+        let sortingObject = {}
+        let lastActivityResultArray = lastActivityObject.lastActivityResultArray
+        let lastActivityResultArrayLength = lastActivityObject.lastActivityResultArray.length
+
+        for (let i=0 ; i < lastActivityResultArrayLength ; i++){
+
+            let entry = lastActivityResultArray[i]
+
+
+            if(!sortingObject[entry.project]){
+
+                sortingObject[entry.project] = {
+                    projectName: entry.project,
+                    noOfAdditions: 0,
+                    resultArray: []
+                }
+            }
+
+            if(sortingObject[entry.project]){
+
+                sortingObject[entry.project].noOfAdditions += 1
+
+                sortingObject[entry.project].resultArray.push(entry)
+
+            }
+        }
+
+        return sortingObject
+    }
+
+    const storedSortingObject = React.useMemo(()=>{
+        
+        let result = lastActivityDataCleanUp();
+
+        return result
+    }, [])
 
     return (
 
@@ -39,19 +79,14 @@ const HomeTable = props => {
                         style={wrapperStyle}
                     >
                         <Cell
-                            style={[
-                                headerCellStyle,
-                                {borderTopStartRadius: 10}
-                            ]}
+                            style={headerCellStyle}
                             data="Project"
                             textStyle={CoreStyles.contentText}
                         />
 
                         <Cell
-                            style={[
-                                headerCellStyle,
-                                {borderTopEndRadius: 10}
-                            ]}
+                            style={headerCellStyle}
+                            
                             data="Number of Additions"
                             textStyle={CoreStyles.contentText}          
                         />
@@ -73,15 +108,16 @@ const HomeTable = props => {
                         {(()=>{
 
                             let resultRowsComp = []
-                            let listLength = lastActivityObject.lastActivityData.projects.length
+                            let sortingObject = storedSortingObject
+                            
 
-                                for(let i=0; i < listLength ; i++){
+                                for(let project of Object.keys(sortingObject)){
 
-                                    let project = lastActivityObject.lastActivityData.projects[i]
-                                    let noOfAdditions = lastActivityObject.lastActivityData.noOfAdditions[i]
-                                    let resultArray = lastActivityObject.lastActivityResultArrays[i].resultArray
+                                    let projectName = project
+                                    let noOfAdditions = sortingObject[project].noOfAdditions
+                                    let resultArray = sortingObject[project].resultArray
 
-                                    resultRowsComp.push(<HomeRowTemplate {...props} key={i} project={project} noOfAdditions={noOfAdditions} resultArray={resultArray}/>)
+                                    resultRowsComp.push(<HomeRowTemplate {...props} key={project} project={projectName} noOfAdditions={noOfAdditions} resultArray={resultArray}/>)
 
                  
                                 }
@@ -133,8 +169,9 @@ const headerCellStyle: ViewStyle ={
     height: windowDimensions.HEIGHT*0.05,
     backgroundColor: appColours.lightGreen,
     flex: 4,
-    alignItems:"center"
-
+    alignItems:"center",
+    borderTopStartRadius: 10,
+    borderTopEndRadius: 10
 }
 
 

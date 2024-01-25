@@ -20,7 +20,6 @@ const FullTextView: React.FC  = props=>{
 
     const fullTextOverlayObject = React.useContext(FullTextContext)
 
-    console.log("Ful text view:", fullTextOverlayObject)
 
     return(
         <Overlay

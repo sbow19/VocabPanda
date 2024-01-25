@@ -58,23 +58,9 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
             let resultArray = await LocalDatabase.getProjectEntries(databaseObject, currentProjectSelection)
 
-            let resultListCleaned = ()=>{
-
-                let listLength = resultArray.rows.length
-
-                let listCleaned = []
-
-                for(let i = 0; i < listLength ; i++ ){
-
-                    listCleaned.push(resultArray.rows.item(i))
-                }
-
-                return listCleaned
-            }
-
             props.navigation.navigate("results", {
                 
-                resultArray: resultListCleaned(),
+                resultArray: resultArray,
                 project: currentProjectSelection,
                 gameMode: "By Project"
                 
@@ -95,23 +81,9 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
             let resultArray = await LocalDatabase.searchTerm(databaseObject.currentUser, databaseObject.database, searchTerm)
 
-            let resultListCleaned = ()=>{
-
-                let listLength = resultArray.rows.length
-
-                let listCleaned = []
-
-                for(let i = 0; i < listLength ; i++ ){
-
-                    listCleaned.push(resultArray.rows.item(i))
-                }
-
-                return listCleaned
-            }
-
             props.navigation.navigate("results", {
                 
-                resultArray: resultListCleaned(),
+                resultArray: resultArray,
                 gameMode: "Search Results",
                 project: ""
                 

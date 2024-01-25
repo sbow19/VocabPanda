@@ -275,27 +275,37 @@ const TranslateVocab: React.FC = props=>{
                             </ContentCard>
 
 
-                            <View style={{flexDirection:"row", justifyContent: "space-evenly"}}>
+                            <View style={{
+                                flexDirection:"row", 
+                                justifyContent: "space-evenly",
+                                alignItems: "center",
+                                height:windowDimensions.HEIGHT *0.1
+                            }}>
 
-                                <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
-                                        <Text style={CoreStyles.actionButtonText}>Close</Text>
-                                </AppButton>
-
-                                <AppButton 
+                                <View
+                                  style={{
+                                    width: windowDimensions.WIDTH*0.3,
+                                }}>
+                                    <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
+                                            <Text style={CoreStyles.actionButtonText}>Close</Text>
+                                    </AppButton>
+                                </View>
+                                <View
+                                  style={{
+                                    width: windowDimensions.WIDTH*0.3,
+                                }}>
+                                    <AppButton 
                                     onPress={()=>{
                                         addToProjectHandler(values.input, values.output) 
                                     }}>
                                         <Text style={CoreStyles.actionButtonText}>Add</Text>
-                                </AppButton>
+                                    </AppButton>
 
+                                </View>
                             </View>
-                        
-                        
                         </Overlay>   
-                        
                         </>
                     )}
-
                 </Formik>
             <AdBanner/>
         </View>
@@ -304,7 +314,8 @@ const TranslateVocab: React.FC = props=>{
 
 const cardStyle: types.CustomCardStyles = {
 
-    width: windowDimensions.WIDTH * 0.75
+    width: windowDimensions.WIDTH * 0.75,
+    height: windowDimensions.HEIGHT*0.15
 
 
 }

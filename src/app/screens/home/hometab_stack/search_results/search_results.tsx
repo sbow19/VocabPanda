@@ -73,23 +73,28 @@ const SearchResults: React.FC = props=>{
                     flexDirection: "row"
                 }}
             >
+                <View
+                    style={{
+                    width: windowDimensions.WIDTH*0.3,
+                }}>
                     <AppButton
                         onPress={()=>{
                             props.navigation.pop()
                         }}
                         customStyles={CoreStyles.backButtonColor}
                     >
-                        <Text style={
-                            [
-                            
-                                CoreStyles.backButtonText
-                            ]
-                        }
+                        <Text style={CoreStyles.backButtonText}
                         >Go Back
                         </Text>
 
                     </AppButton>
+                </View>
+                    
 
+                <View
+                    style={{
+                    width: windowDimensions.WIDTH*0.3,
+                }}>
                     <AppButton
                         onPress={()=>{
                             console.log("Export")
@@ -97,13 +102,21 @@ const SearchResults: React.FC = props=>{
                     >
                         <Text style={CoreStyles.actionButtonText}>Export</Text>
                     </AppButton>
+                </View>
 
+                <View
+                    style={{
+                    width: windowDimensions.WIDTH*0.3,
+                }}>
                     <AppButton
                         customStyles={CoreStyles.playButtonColor}     
                         onPress={()=>gameNav()}
                     >
                         <Text style={CoreStyles.actionButtonText}>Play</Text>
                     </AppButton>
+                </View>
+
+                    
             </View>
             
         </View>

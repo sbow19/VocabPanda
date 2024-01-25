@@ -5,7 +5,7 @@ import LocalDatabase from 'app/database/local_database'
 
 class GameLogic {
 
-    constructor(gameSettings: types.GameSettingsObject, userName: string, databaseObject){
+    constructor(gameSettings: types.GameSettingsObject, userName: string, databaseObject, resultArrayParam: Array<any>){
 
         /* Turn timer on? */
         this.timerOn = gameSettings.timerOn
@@ -28,7 +28,7 @@ class GameLogic {
 
         /* Set result array */
         
-        this.resultArray = gameSettings.resultArray
+        this.resultArray = resultArrayParam
     }
 
     resultArray: Array<any> = [];
@@ -77,9 +77,16 @@ class GameLogic {
 
             } else 
 
-            if(this.gameMode === "Latest Activity") {
+            if(this.gameMode === "Latest Activity"){
 
                 /* Result array already provided in gameSettings argument */
+
+                let gameArray = await this.#setGameArray(this.resultArray)
+
+
+                this.gameArray = gameArray
+
+                resolve(gameArray)
 
             } else 
 
@@ -98,24 +105,38 @@ class GameLogic {
                 this.gameArray = gameArray
 
                 resolve(gameArray)
+            } else
+
+            if(this.gameMode === "Latest Activity - By Project"){
+
+                /* Result array already provided in gameSettings argument */
+
+                let gameArray = await this.#setGameArray(this.resultArray)
+
+
+                this.gameArray = gameArray
+
+                resolve(gameArray)
+
+
             }
 
             reject("Nothing")
         })
     }
 
-    #setGameArray = async(resultArray)=>{
+    #setGameArray = async(resultArray: Array<any>)=>{
 
         return new Promise((resolve, reject)=>{
 
             let randomisedArray = []
             let filteredArray = []
-            let resultArrayLength = resultArray.rows.length
+            let resultArrayLength = resultArray.length
 
             
             for(let i=0; i< resultArrayLength ; i++){
 
-                filteredArray.push(resultArray.rows.item(i))
+                filteredArray.push(resultArray[i])
 
             }
 

@@ -8,16 +8,51 @@ class LocalDatabase {
 
     }
 
+    
+
+    static getLastActivity = (userName: string, database: SQLiteDatabase, lastLoggedIn) =>{
+
+        return new Promise((resolve, reject)=>{
+
+            const formattedDatetime = lastLoggedIn.slice(0, 19).replace("T", " "); //Converts js datetime to SQL compatible datetime string
+
+            const getLastActivityQuery = `SELECT * FROM ${userName}
+            
+            WHERE last_updated_at > ?`
+
+            database.transaction(async(transaction)=>{
+
+                let [_, resultArrayRaw] = await transaction.executeSql(getLastActivityQuery, [formattedDatetime]);
+
+                let resultArray = this.#parseRowResults(resultArrayRaw)
+
+                resolve(resultArray)
+
+            },
+            error=>{
+                console.log("Last activity update unsuccessful")
+                reject(error)
+            }, 
+            success=>{
+                console.log("Last activity update successful")
+
+            }) 
+        })
+
+    }
+
     static getAll = (userName: string, database: SQLiteDatabase) =>{
 
         return new Promise((resolve, reject)=>{
 
 
-            const deleteTableQuery = `SELECT * FROM ${userName}`
+            const getAllTableQuery = `SELECT * FROM ${userName}`
 
             database.transaction(async(transaction)=>{
 
-                let [_, resultArray] = await transaction.executeSql(deleteTableQuery)
+                let [_, resultArrayRaw] = await transaction.executeSql(getAllTableQuery);
+
+                let resultArray = this.#parseRowResults(resultArrayRaw)
 
                 resolve(resultArray)
             },
@@ -35,9 +70,6 @@ class LocalDatabase {
 
 
         })
-
-
-
     }
 
     static deleteTable = (userName: string, database: SQLiteDatabase)=>{
@@ -121,6 +153,20 @@ class LocalDatabase {
                 resolve(success)
             })
         })
+    };
+
+    static #parseRowResults = (resultArrayRaw)=>{
+
+        let resultArrayRawLength = resultArrayRaw.rows.length;
+        let resultArray = [];
+
+        for(let i=0; i<resultArrayRawLength; i++){
+
+            resultArray.push(resultArrayRaw.rows.item(i))
+        };
+
+
+        return resultArray
     }
 
 
@@ -222,7 +268,9 @@ class LocalDatabase {
                 
                 `
 
-                let [_, resultArray] = await transaction.executeSql(getProjectSQLQuery)
+                let [_, resultArrayRaw] = await transaction.executeSql(getProjectSQLQuery);
+
+                let resultArray = this.#parseRowResults(resultArrayRaw)
 
                 resolve(resultArray)
 
@@ -305,7 +353,9 @@ class LocalDatabase {
             database.transaction(async(transaction)=>{
 
 
-            let [_, resultArray] = await transaction.executeSql(searchQuery)
+            let [_, resultArrayRaw] = await transaction.executeSql(searchQuery);
+
+            let resultArray = this.#parseRowResults(resultArrayRaw)
 
             resolve(resultArray)
 

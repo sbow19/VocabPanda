@@ -72,25 +72,11 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
             let resultArray = await LocalDatabase.getProjectEntries(databaseObject, currentProjectSelection)
 
-            let resultListCleaned = ()=>{
-
-                let listLength = resultArray.rows.length
-
-                let listCleaned = []
-
-                for(let i = 0; i < listLength ; i++ ){
-
-                    listCleaned.push(resultArray.rows.item(i))
-                }
-
-                return listCleaned
-            }
-
             props.navigation.navigate("project view", {
 
                 screen: "project view",
                 project: currentProjectSelection,
-                resultArray: resultListCleaned()
+                resultArray: resultArray
                 
             })
         }
@@ -122,7 +108,12 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                                 setSelection={setCurrentProjectSelection}
                             />
                         </View>
-                        <View>
+                        <View
+                         style={{
+                            width: windowDimensions.WIDTH*0.3,
+                            height: windowDimensions.HEIGHT*0.08
+                        }}
+                        >
                             <AppButton {...props} onPress={navHandler}>
                                 <Text style={CoreStyles.actionButtonText}>Review</Text>
                             </AppButton>
@@ -184,7 +175,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
                 {({values, handleChange, handleSubmit})=>(
                 <>
-                
+            
                     <Overlay
                     isVisible={overlayVisible}
                     overlayStyle={overlayStyle}
@@ -266,30 +257,43 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                             }}
                         
                         >
-                            <AppButton 
-                                onPress={overlayNav}
-                                customStyles={backButton}
-                            >
-                                <Text
-                                    style={[
-                                        CoreStyles.actionButtonText,
-                                        {color: appColours.black}
-                                    ]}
-                                >Close</Text>
-                            </AppButton>
+                            <View
+                            style={{
+                                width: windowDimensions.WIDTH*0.4,
+                                height: windowDimensions.HEIGHT*0.08
+                            }}>
+                                <AppButton 
+                                    onPress={overlayNav}
+                                    customStyles={backButton}
+                                >
+                                    <Text
+                                        style={[
+                                            CoreStyles.actionButtonText,
+                                            {color: appColours.black}
+                                        ]}
+                                    >Close</Text>
+                                </AppButton>
+                            </View>
+                            
+                            <View
+                            style={{
+                                width: windowDimensions.WIDTH*0.3,
+                                height: windowDimensions.HEIGHT*0.08
+                            }}>
+                                   <AppButton 
+                                    onPress={handleSubmit}
+                                >
+                                    <Text
+                                        style={[
+                                            CoreStyles.actionButtonText,
+                                        ]}
+                                    >Add</Text>
+                                </AppButton>
+                            </View>
 
-                            <AppButton 
-                                onPress={handleSubmit}
-                            >
-                                <Text
-                                    style={[
-                                        CoreStyles.actionButtonText,
-                                    ]}
-                                >Add</Text>
-                            </AppButton>
+                         
                         </View>
-                </Overlay>
-                
+                </Overlay>                
                 </>)}
            
             </Formik>
@@ -326,12 +330,14 @@ const customButtonStyling: types.CustomButtonStyles = {
 }
 
 const overlayStyle: ViewStyle = {
-    height: windowDimensions.HEIGHT * 0.44,
+    height: windowDimensions.HEIGHT * 0.48,
     width: windowDimensions.WIDTH * 0.92,
     backgroundColor: appColours.white,
     borderRadius: 10,
     borderColor: appColours.black,
-    borderWidth: 2
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
 }
 
 const backButton: types.CustomButtonStyles ={
@@ -340,9 +346,9 @@ const backButton: types.CustomButtonStyles ={
 
 const addProjectCardStyles: types.CustomCardStyles ={
 
-    height: windowDimensions.HEIGHT * 0.32,
+    height: windowDimensions.HEIGHT * 0.34,
     width: windowDimensions.WIDTH * 0.85,
-    marginBottom: 10
+    marginBottom: 24
 }
 
 const  projectNameScheme = yup.object({

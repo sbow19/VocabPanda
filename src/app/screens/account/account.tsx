@@ -153,7 +153,11 @@ const Account: React.FC = props=>{
                             You are currently using the free version of Vocab Panda. For unlimited flashcard turns and more vocab storage, you can upgrade to premium for £3.49!
                         </Text>
                     </View>
-                    <View>
+                    <View
+                    style={{
+                        width: windowDimensions.WIDTH*0.3,
+                        height: windowDimensions.HEIGHT*0.08
+                    }}>
                         <AppButton
                         >
                            <Text style={CoreStyles.actionButtonText}>
@@ -360,25 +364,35 @@ const Account: React.FC = props=>{
                             </ContentCard>
 
                             <View style={{flex:1, flexDirection: "row", justifyContent: "space-evenly", width: "100%"}}>
-                                <AppButton
-                                    customStyles={CoreStyles.backButtonColor}
-                                    onPress={()=>setDeleteAccountOverlay(false)}
-                                >
-                                    <Text style={CoreStyles.backButtonText}>
-                                        Close
-                                    </Text>
+                                <View
+                                 style={{
+                                    width: windowDimensions.WIDTH*0.3,
+                                    height: windowDimensions.HEIGHT*0.08
+                                }}>
+                                    <AppButton
+                                        customStyles={CoreStyles.backButtonColor}
+                                        onPress={()=>setDeleteAccountOverlay(false)}
+                                    >
+                                        <Text style={CoreStyles.backButtonText}>
+                                            Close
+                                        </Text>
 
-                                </AppButton>
-
-                                <AppButton
-                                    customStyles={CoreStyles.deleteButtonColor}
-                                    onPress={handleSubmit}
-                                >
-                                    <Text style={CoreStyles.actionButtonText}>
-                                        Delete
-                                    </Text>
-                                </AppButton>
-
+                                    </AppButton>
+                                </View>
+                                <View
+                                 style={{
+                                    width: windowDimensions.WIDTH*0.3,
+                                    height: windowDimensions.HEIGHT*0.08
+                                }}>
+                                    <AppButton
+                                        customStyles={CoreStyles.deleteButtonColor}
+                                        onPress={handleSubmit}
+                                    >
+                                        <Text style={CoreStyles.actionButtonText}>
+                                            Delete
+                                        </Text>
+                                    </AppButton>
+                                </View>   
                             </View>
                         </AppOverlay>
                     </>

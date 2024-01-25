@@ -29,27 +29,10 @@ const HomeScreen = (props: Object) =>{
 
     const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
 
-    const [lastActivityObject] = React.useContext(LastActivity)
-
-    const lastActivityDataCleanUp = ()=>{
-
-        let resultRowsComp = []
-
-        for (let project of lastActivityObject.lastActivityResultArrays){
-
-            let listLength = project.resultArray.length
-
-            for(let i=0; i < listLength ; i++){
-
-                resultRowsComp.push(project.resultArray[i])
-            }
-        }
-
-        return resultRowsComp
-        
-    }
+    const lastActivityObject = React.useContext(LastActivity)
 
     const gameNav = ()=>{
+
 
         props.navigation.navigate("game", {
             screen: "game home",
@@ -57,8 +40,7 @@ const HomeScreen = (props: Object) =>{
                 reDirectContent: true,
                 gameMode: "Latest Activity",
                 project: "",
-                resultArray: lastActivityDataCleanUp()
-
+                resultArray: []
             }
         })
     }

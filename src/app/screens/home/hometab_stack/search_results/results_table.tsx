@@ -59,10 +59,7 @@ const SearchResultTable = props => {
                         style={wrapperStyle}
                     >
                         <Cell
-                            style={[
-                                headerCellStyle,
-                                {borderTopStartRadius: 10}
-                            ]}
+                            style={headerCellStyle}
                             data="Target Text"
                             textStyle={CoreStyles.contentText}
                         />
@@ -158,6 +155,8 @@ const headerCellStyle ={
     backgroundColor: appColours.lightGreen,
     flex: 3,
     alignItems:"center",
+    borderTopStartRadius: 10,
+    borderTopEndRadius: 10
 
 }
 
@@ -166,7 +165,9 @@ const headerCellStyleProject: ViewStyle ={
     height: windowDimensions.HEIGHT*0.05,
     backgroundColor: appColours.lightGreen,
     flex: 1.8,
-    borderTopEndRadius: 10
+    borderTopStartRadius: 10,
+    borderTopEndRadius: 10,
+    alignItems:"center",
 
 }
 

@@ -152,43 +152,67 @@ const ProjectView: React.FC = props=>{
 
                 <View style={{marginTop:-18, flexDirection:"row", justifyContent:"space-evenly", width:windowDimensions.WIDTH,}}>
 
-                    <AppButton
-                        onPress={()=>{props.navigation.reset(
-                            ({
-                            index:0,
-                            routes: [{ name: 'choose project' }],
-                            key: null
-                            })
-                        )}}
+                    <View
+                     style={{
+                        width: windowDimensions.WIDTH*0.3,
+                        height: windowDimensions.HEIGHT*0.08,
                         
-                        customStyles={backButton}
-                    >
-                        <Text style={
-                            [
+                    }}>
+                         <AppButton
+                            onPress={()=>{props.navigation.reset(
+                                ({
+                                index:0,
+                                routes: [{ name: 'choose project' }],
+                                key: null
+                                })
+                            )}}
                             
-                                CoreStyles.actionButtonText,
-                                {color: appColours.black}
-                            ]
-                        }
-                        >Go Back
-                        </Text>
+                            customStyles={backButton}
+                        >
+                            <Text style={
+                                [
+                                
+                                    CoreStyles.actionButtonText,
+                                    {color: appColours.black}
+                                ]
+                            }
+                            >Go Back
+                            </Text>
 
-                    </AppButton>
+                        </AppButton>
+                    </View>
 
-                    <AppButton
-                        onPress={()=>{
-                            setOptionsVisible(true)
-                        }}
-                    >
-                        <Text style={CoreStyles.actionButtonText}>Options</Text>
-                    </AppButton>
+                    <View
+                     style={{
+                        width: windowDimensions.WIDTH*0.3,
+                        height: windowDimensions.HEIGHT*0.08
+                    }}>
+                        <AppButton
+                            onPress={()=>{
+                                setOptionsVisible(true)
+                            }}
+                        >
+                            <Text style={CoreStyles.actionButtonText}>Options</Text>
+                        </AppButton>
+                    </View>
 
-                    <AppButton
-                        customStyles={playButton}     
-                        onPress={()=>nav()}
-                    >
-                        <Text style={CoreStyles.actionButtonText}>Play</Text>
-                    </AppButton>
+                    <View
+                     style={{
+                        width: windowDimensions.WIDTH*0.3,
+                        height: windowDimensions.HEIGHT*0.08
+                    }}>
+                        <AppButton
+                            customStyles={playButton}     
+                            onPress={()=>nav()}
+                        >
+                            <Text style={CoreStyles.actionButtonText}>Play</Text>
+                        </AppButton>
+                    </View>
+                   
+
+                    
+
+                    
                 </View>
             </ScreenTemplate>
 
@@ -202,23 +226,41 @@ const ProjectView: React.FC = props=>{
                 <ContentCard
                     cardStylings={buttonCardStyling}
                 >
+                      <View
+                     style={{
+                        width: windowDimensions.WIDTH*0.3,
+                        height: windowDimensions.HEIGHT*0.08,
+                        
+                    }}>
+                        <AppButton
+                            onPress={deleteWarning}
+                            customStyles={CoreStyles.deleteButtonColor}
+                        >
+                            <Text 
+                                style={CoreStyles.actionButtonText}
+                            >Delete Project</Text>
+                        </AppButton>
+                    </View>
 
-                    <AppButton
-                        onPress={deleteWarning}
-                        customStyles={CoreStyles.deleteButtonColor}
-                    >
-                        <Text 
-                            style={CoreStyles.actionButtonText}
-                        >Delete Project</Text>
-                    </AppButton>
+                    <View
+                     style={{
+                        width: windowDimensions.WIDTH*0.3,
+                        height: windowDimensions.HEIGHT*0.08,
+                        
+                    }}>
 
-                    <AppButton
-                        onPress={()=>setOptionsVisible(false)}
-                    >
-                        <Text 
-                            style={CoreStyles.actionButtonText}
-                        >Export</Text>
-                    </AppButton>
+                        <AppButton
+                            onPress={()=>setOptionsVisible(false)}
+                        >
+                            <Text 
+                                style={CoreStyles.actionButtonText}
+                            >Export</Text>
+                        </AppButton>
+
+                    </View>
+                    
+
+                    
 
                 </ContentCard>
 

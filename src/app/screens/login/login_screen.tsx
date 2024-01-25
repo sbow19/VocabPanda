@@ -56,7 +56,7 @@ const LoginScreen: React.FC = props=>{
                             if(resultObject.loginSuccess){
 
                                 showMessage({
-                                    message: "Success",
+                                    message: "Login success",
                                     type: "success"
                                 })
 
@@ -148,24 +148,38 @@ const LoginScreen: React.FC = props=>{
                             ]
                         }
                     >
-                        <AppButton
-                            customStyles={{backgroundColor:appColours.darkGreen}}
-                            onPress={()=>{
-                                props.navigation.pop()
-                                handleReset()
+                        <View
+                            style={{
+                                width: windowDimensions.WIDTH*0.3
                             }}
                         >
-                            <Text style={CoreStyles.actionButtonText}>Go back</Text>
-                        </AppButton>
+                            <AppButton
+                                customStyles={
+                                    CoreStyles.backButtonColor
+                                }
+                                onPress={()=>{
+                                    props.navigation.pop()
+                                    handleReset()
+                                }}
+                            >
+                                <Text style={CoreStyles.backButtonText}>Go back</Text>
+                            </AppButton>
+                        </View>
 
-                        <AppButton
-                            customStyles={{backgroundColor:appColours.darkGreen}}
-                            onPress={()=>{
-                                handleSubmit()
+                        <View
+                            style={{
+                                width: windowDimensions.WIDTH*0.3,
                             }}
                         >
-                            <Text style={CoreStyles.actionButtonText}>Sign In</Text>
-                        </AppButton>
+                            <AppButton
+                                customStyles={{backgroundColor:appColours.darkGreen}}
+                                onPress={()=>{
+                                    handleSubmit()
+                                }}
+                            >
+                                <Text style={CoreStyles.actionButtonText}>Sign In</Text>
+                            </AppButton>
+                        </View>
                     </View>
                 </>
 

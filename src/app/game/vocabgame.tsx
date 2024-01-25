@@ -28,6 +28,7 @@ import GameLogic from './game _logic/game_logic';
 import CurrentUserContext from 'app/context/current_user';
 import UserDatabaseContext from 'app/context/current_user_database';
 import AppButton from 'app/shared/app_button';
+import LastActivity from 'app/context/last_activity';
 
 const VocabGame: React.FC = props=>{
 
@@ -61,6 +62,10 @@ const VocabGame: React.FC = props=>{
 
     const [nextButton, setNextButton] = React.useState(false)
 
+    /* last activity */
+
+    const lastActivityObject = React.useContext(LastActivity)
+
     /* countdown interval id */
 
     const interval  = React.useRef({})
@@ -79,7 +84,20 @@ const VocabGame: React.FC = props=>{
 
             async function setUpGame(){
 
-                let myGameState=  new GameLogic(props.route.params, currentUser, databaseObject)
+                
+
+                /* Insert latest activity array to props.route.params;
+                note however that this throws a warning, given the result array is "non-serialisable
+                REFACTOR NEEDED; parse database array results at source so we ony deal with arrays of search results
+                " */
+                if(props.route.params.gameMode === "Latest Activity"){
+
+                    props.route.params.resultArray = lastActivityObject.lastActivityResultArray                
+                }
+            
+                /* Logic to set up game depending on the game mode */
+
+                let myGameState=  new GameLogic(props.route.params, currentUser, databaseObject, props.route.params.resultArray)
 
                 await myGameState.fetchArray()
 
@@ -216,9 +234,9 @@ const VocabGame: React.FC = props=>{
     <>
         { isLoading ? 
 
-        (<GameLoadingScreen/>) : 
+        <GameLoadingScreen/> : 
         
-        (<>
+        <>
             <GameHeader {...props} gameState={gameState} timeLeft={timeLeft}/>
             <AdBanner
                 customStyles={{
@@ -393,7 +411,7 @@ const VocabGame: React.FC = props=>{
                 {endTurnSequence || timeLeft === 0 ? <TurnEndCard {...props} gameState={gameState} timeLeft={timeLeft}/> : null}
                 {nextButton || timeLeft === 0 ? <NextButton {...props} gameState={gameState} onPress={triggerNextTurn}/> : null}
             </View>
-        </>)}
+        </>}
     </>
     )
 }

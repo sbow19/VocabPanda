@@ -55,18 +55,7 @@ const VocabPandaApp: React.FC = props => {
             if(isLoading){
 
             
-                /* Async function to fetch last activity data */
-    
-                /* async function to link up to account database if possible
-                - if no connection, skip this step, and render an alert to inform user of lack of connection
-                - if connection then either:
-                  - Download entire content table, if none on local --> inform user that this is taking place on loading screen.
-                  - Update local content table with changes if already  occured.
-                  - Make sure that there are built in safeguards for: 
-                    - too much data on local device
-                    - dropping of internet connection mid-update
-                
-                */
+               
                 /* Sets object defining login details */
                 await AppLoginDetails.setInitial()
 
@@ -138,15 +127,12 @@ const MainApp: React.FC = props=>{
 
     /* Getting last activity data on sign in */
 
-    const [lastActivityData, setLastActivityData] = React.useState<types.LastActivityObject>({
-        lastActivity: false,
-        lastActivityData:{
-            projects: [""],
-            noOfAdditions: []
-        }
-    })
+    const [lastActivityObject, setLastActivityData] = React.useState({})
 
-    const lastActivitySet = [lastActivityData, setLastActivityData]
+
+    /* Loading screen set */
+
+    const [isLoading, setIsLoading] = React.useState(true)
 
 
 
@@ -220,22 +206,50 @@ const MainApp: React.FC = props=>{
 
 
 
+    // Loads global variables such as datrabase objects and app settings once on sign in
     React.useEffect(()=>{
 
+
+        if(isLoading){
             const appSettingsLoad = async ()=>{
 
+                
+                 /* Async function to fetch last activity data */
+    
+                /* async function to link up to account database if possible
+                - if no connection, skip this step, and render an alert to inform user of lack of connection
+                - if connection then either:
+                  - Download entire content table, if none on local --> inform user that this is taking place on loading screen.
+                  - Update local content table with changes if already  occured.
+                  - Make sure that there are built in safeguards for: 
+                    - too much data on local device
+                    - dropping of internet connection mid-update
+                
+                */
+
                 /* Opening database and creating new table */
-                await LocalDatabase.openDatabase(currentUser).then((databaseObject)=>{
+                const lastActivityResultArray = await LocalDatabase.openDatabase(currentUser).then(async(databaseObject)=>{
 
                     setMyDatabaseObject(databaseObject);
 
-                }).catch((e)=>{
+                    /* Last activity determiner */
+
+                    const lastLoggedIn = await AppSettings.getLastLoggedInDate(currentUser)
+
+                    const lastActivityResultArray = await LocalDatabase.getLastActivity(currentUser, databaseObject.database, lastLoggedIn);
+
+                    return lastActivityResultArray
+
+                }).then(lastActivityResultArray =>{
+
+                    return lastActivityResultArray
+
+                })
+                .catch((e)=>{
 
                     console.log("Failed to open database")
                     console.log(e)
                 })
-
-                // await LocalDatabase.getAll(currentUser, databaseObject.database)
 
                 /* Sets default app settings for new user */
                 await AppSettings.newSettings(currentUser)
@@ -243,36 +257,27 @@ const MainApp: React.FC = props=>{
                 const appSettings = await AppSettings.getDefaultAppSettings(currentUser)
                 setAppSettings(appSettings)
 
-                /* Last activity determiner */
+                /* Setting last activity object */
 
-                let lastActivityObject: types.LastActivityObject = {
+                let lastActivityObject = {
 
-                    lastActivity: true,
-                    lastActivityData:{
+                    lastActivity: false,
+                    lastActivityResultArray: lastActivityResultArray
+                    
+                };
 
-                        projects: ["First Project", "Second project"],
-                        noOfAdditions: [10, 3]
-
-                    },
-                    lastActivityResultArrays: [
-                        {
-                            project: "First Project",
-                            resultArray: ["hello"]
-                        },
-
-                        {
-                            project: "Second Project",
-                            resultArray: ["sup", "how are you"]
-                        },
-
-
-                    ]
-                   
+                if(lastActivityResultArray.length > 0){
+                    lastActivityObject.lastActivity = true
                 }
 
+                console.log(lastActivityObject)
+
                 setLastActivityData(lastActivityObject)
+
+                setIsLoading(false)
             }
             appSettingsLoad()    
+        }
 
     }, [])
 
@@ -280,9 +285,14 @@ const MainApp: React.FC = props=>{
     const myDefaultAppSettings:types.StateHandlerList<types.AppSettingsObject, Function> =[appSettings, setAppSettingsHandler]
 
 
-    return(<>
+    return(
+        <>
+        
+        { isLoading ? <LoadingScreen/> : 
+    
+            <>
             <UserDatabaseContext.Provider value={myDatabaseOptions}>
-            <LastActivity.Provider value={lastActivitySet}>
+            <LastActivity.Provider value={lastActivityObject}>
             <DefaultAppSettingsContext.Provider value={myDefaultAppSettings}>
                 <MainAppContainer.Navigator screenOptions={{headerShown:false}}>
                     <MainAppContainer.Screen name="main" component={AppMainDrawer}/>
@@ -294,7 +304,8 @@ const MainApp: React.FC = props=>{
             </UserDatabaseContext.Provider>
             
 
-            </>
+            </>}
+        </>
            
     )
 }

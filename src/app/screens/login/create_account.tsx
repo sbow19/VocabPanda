@@ -227,25 +227,40 @@ const CreateAccount: React.FC = props=>{
 
                             ]}
                             >
-                                <AppButton
-                                    customStyles={CoreStyles.backButtonColor}
-                                    onPress={()=>{
-                                        props.navigation.pop()
-                                        handleReset()
-                                    }}
-                                >
-                                    <Text style={CoreStyles.backButtonText}>Go back</Text>
-                                </AppButton>
+                                <View
+                                style={{
+                                    width: windowDimensions.WIDTH*0.3,
+                                }}>
+                                    <AppButton
+                                        customStyles={CoreStyles.backButtonColor}
+                                        onPress={()=>{
+                                            props.navigation.pop()
+                                            handleReset()
+                                        }}
+                                    >
+                                        <Text style={CoreStyles.backButtonText}>Go back</Text>
+                                    </AppButton>
 
-                                <AppButton
-                                    customStyles={{backgroundColor:appColours.darkGreen}}
-                                    onPress={()=>{
-                                        handleSubmit()
-            
-                                    }}
-                                >
-                                    <Text style={CoreStyles.actionButtonText}>Submit</Text>
-                                </AppButton>
+
+                                </View>
+
+
+                                <View
+                                style={{
+                                    width: windowDimensions.WIDTH*0.3,
+                                }}>
+                                    
+                                    <AppButton
+                                        customStyles={{backgroundColor:appColours.darkGreen}}
+                                        onPress={()=>{
+                                            handleSubmit()
+                
+                                        }}
+                                    >
+                                        <Text style={CoreStyles.actionButtonText}>Submit</Text>
+                                    </AppButton>
+
+                                </View>
                             </View>
 
                         </>
