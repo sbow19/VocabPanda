@@ -28,6 +28,7 @@ import AppLoginDetails from 'app/storage/user_profile_details';
 
 import UserDatabaseContext from 'app/context/current_user_database';
 import LocalDatabase from 'app/database/local_database';
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 const changePasswordSchema = yup.object({
     password: yup.string()
@@ -52,7 +53,10 @@ const Account: React.FC = props=>{
     /* Get sign in context here */
 
     const [isLoggedIn, setIsLoggedIn] = React.useContext(LoggedInStatus)
-    /* use free/premium status here */
+
+    /* App settings */
+
+    const [appSettings] = React.useContext(DefaultAppSettingsContext)
 
 
     /* Password overlay visible state */
@@ -148,24 +152,57 @@ const Account: React.FC = props=>{
                 <ContentCard
                     cardStylings={upgradeCardStyle}
                 >
-                    <View>
-                        <Text style={CoreStyles.contentText}> 
-                            You are currently using the free version of Vocab Panda. For unlimited flashcard turns and more vocab storage, you can upgrade to premium for £3.49!
-                        </Text>
-                    </View>
-                    <View
-                    style={{
-                        width: windowDimensions.WIDTH*0.3,
-                        height: windowDimensions.HEIGHT*0.08
-                    }}>
-                        <AppButton
-                        >
-                           <Text style={CoreStyles.actionButtonText}>
-                                Upgrade
-                           </Text> 
-                        </AppButton>
-                    </View>
+                    {/* Render if user is not premium */}
+
+                    {appSettings.premium.premium ? 
                     
+                    <>
+
+                        <View>
+                            <Text style={CoreStyles.contentText}> 
+                                You have subscribed to Vocab Panda premium. Your subscription ends {appSettings.premium.endTime}. You can cancel your subscription at any time.
+                            </Text>
+                        </View>
+                        <View
+                        style={{
+                            width: windowDimensions.WIDTH*0.3,
+                            height: windowDimensions.HEIGHT*0.08
+                        }}>
+                            <AppButton
+                                customStyles={
+                                    CoreStyles.deleteButtonColor
+                                }
+                            >
+                            <Text style={CoreStyles.actionButtonText}>
+                                    Cancel
+                            </Text> 
+                            </AppButton>
+                        </View>
+                    
+                    </> :
+
+                    <>
+                        <View>
+                            <Text style={CoreStyles.contentText}> 
+                                You are currently using the free version of Vocab Panda. For unlimited flashcard turns and more vocab storage, you can upgrade to premium for £3.49!
+                            </Text>
+                        </View>
+                        <View
+                        style={{
+                            width: windowDimensions.WIDTH*0.3,
+                            height: windowDimensions.HEIGHT*0.08
+                        }}>
+                            <AppButton
+                            >
+                            <Text style={CoreStyles.actionButtonText}>
+                                    Upgrade
+                            </Text> 
+                            </AppButton>
+                        </View>
+                    </>
+                    }
+
+                
                 </ContentCard>
 
                 {/* Delete account container*/}

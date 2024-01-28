@@ -74,7 +74,7 @@ const ProjectDropdown: React.FC<types.CustomDropDownProps> = props=>{
 
     /* Set dropdown index */
 
-    const [dropdownIndex, setDropdownIndex] = useState(0)
+    const [dropdownIndex, setDropdownIndex] = useState(null)
 
     /* Project List */
 

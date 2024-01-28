@@ -14,7 +14,7 @@ import ScreenTemplate from 'app/shared/homescreen_template';
 import CoreStyles from 'app/shared_styles/core_styles';
 import AdBanner from 'app/shared/ad_banner';
 import ContentCard from 'app/shared/content_card';
-import { CustomButtonStyles, CustomCardStyles, ProjectConfig, ProjectObject } from 'app/types/types.d';
+import { CustomButtonStyles, CustomCardStyles, ProjectConfig } from 'app/types/types.d';
 import windowDimensions from 'app/context/dimensions';
 import appColours from 'app/shared_styles/app_colours';
 import { Overlay } from '@rneui/base';

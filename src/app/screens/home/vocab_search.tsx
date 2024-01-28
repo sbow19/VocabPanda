@@ -97,7 +97,7 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
             <View style={[CoreStyles.defaultScreen, additionalStyles, {height: windowDimensions.HEIGHT}]}>
 
                 {/* Render depending on upgrade status */}
-                <UpgradeBanner/>
+                <UpgradeBanner {...props}/>
 
                 <ScreenTemplate screenTitle="Search Your Vocabulary!">
 

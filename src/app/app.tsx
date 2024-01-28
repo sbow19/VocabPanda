@@ -135,33 +135,16 @@ const MainApp: React.FC = props=>{
     const [isLoading, setIsLoading] = React.useState(true)
 
 
-
     /* Code for handling default game settings globally */
 
-    const [appSettings, setAppSettings] = React.useState<types.AppSettingsObject>(
-        
-        {
-
-        gameSettings: {
-            timerOn: false,
-            noOfTurns: 10
-        },
-
-        dropDownLanguages:{
-
-            targetLanguage: "English",
-            outputLanguage: "English"
-        },
-    
-        projects: []
-    
-    })
+    const [appSettings, setAppSettings] = React.useState<types.AppSettingsObject>({})
     
     function setAppSettingsHandler(
         timerOn: boolean|null, 
         noOfTurns: number|null, 
         setsDefault: boolean|null,
-        projectConfig?: types.ProjectConfig<types.ProjectObject> | types.ProjectConfig<string>
+        projectConfig?: types.ProjectConfig<types.ProjectObject> | types.ProjectConfig<string>,
+        leftConfig?
     
         ){
 
@@ -195,20 +178,23 @@ const MainApp: React.FC = props=>{
             }
         }
 
+        if(leftConfig){
+
+            newSettings = leftConfig
+        }
+
         if(setsDefault==true){
             AppSettings.setDefaultSettings(currentUser, newSettings)
         }
+
+
 
         setAppSettings(newSettings)
         
     }
 
-
-
-
     // Loads global variables such as datrabase objects and app settings once on sign in
     React.useEffect(()=>{
-
 
         if(isLoading){
             const appSettingsLoad = async ()=>{
@@ -226,6 +212,8 @@ const MainApp: React.FC = props=>{
                     - dropping of internet connection mid-update
                 
                 */
+                /* Sets default app settings for new user */
+                await AppSettings.newSettings(currentUser)
 
                 /* Opening database and creating new table */
                 const lastActivityResultArray = await LocalDatabase.openDatabase(currentUser).then(async(databaseObject)=>{
@@ -251,10 +239,13 @@ const MainApp: React.FC = props=>{
                     console.log(e)
                 })
 
-                /* Sets default app settings for new user */
-                await AppSettings.newSettings(currentUser)
-
                 const appSettings = await AppSettings.getDefaultAppSettings(currentUser)
+
+                /* 
+                    Fetch API to check whether user is premium and set end date. This data is set on first run.
+                    Check to see if there is a timeout thing  
+                */
+
                 setAppSettings(appSettings)
 
                 /* Setting last activity object */
@@ -270,8 +261,6 @@ const MainApp: React.FC = props=>{
                     lastActivityObject.lastActivity = true
                 }
 
-                console.log(lastActivityObject)
-
                 setLastActivityData(lastActivityObject)
 
                 setIsLoading(false)
@@ -281,6 +270,66 @@ const MainApp: React.FC = props=>{
 
     }, [])
 
+
+    const gamesLeftInterval = React.useRef("")
+    const translationsLeftInterval = React.useRef("")
+
+    /* Interval timer to check countdowns for refreshes across the app */
+    React.useEffect(()=>{
+
+        if(!isLoading){
+
+            clearInterval(gamesLeftInterval.current)
+            clearInterval(translationsLeftInterval.current)
+            
+            /* Checking game */
+            gamesLeftInterval.current = setInterval(async()=>{
+
+                const HOUR_IN_MILLISECONDS = 60 * 60 * 1000; // 1 hour in milliseconds
+
+                if(appSettings.gamesLeft.refreshNeeded && ! appSettings.premium.premium){
+
+                    let currentTime = new Date();
+                    let refreshBaseTime = new Date(appSettings.gamesLeft.refreshBaseTime);
+
+                    let timeDifference = Math.abs(currentTime-refreshBaseTime)
+                    
+                    if(timeDifference > HOUR_IN_MILLISECONDS){
+
+                        let newAppSettings = await AppSettings.refreshGamesLeft(currentUser, appSettings)
+
+                        setAppSettings(newAppSettings)
+                    }      
+                }
+
+            }, 10000);
+
+            /* Checking translations */
+            translationsLeftInterval.current = setInterval(async()=>{
+
+                const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+
+
+                if(appSettings.translationsLeft.refreshNeeded){
+
+                    let currentTime = new Date();
+                    let refreshBaseTime = new Date(appSettings.translationsLeft.refreshBaseTime);
+
+                    let timeDifference = Math.abs(currentTime-refreshBaseTime);
+
+                    if(timeDifference > DAY_IN_MILLISECONDS){
+                        
+                        let newAppSettings = await AppSettings.refreshTranslationsLeft(currentUser, appSettings)
+
+                        setAppSettings(newAppSettings)
+
+                    }
+                }
+                
+            }, 10000);
+        }
+
+    }, [isLoading, appSettings])
 
     const myDefaultAppSettings:types.StateHandlerList<types.AppSettingsObject, Function> =[appSettings, setAppSettingsHandler]
 

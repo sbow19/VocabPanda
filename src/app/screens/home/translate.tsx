@@ -37,6 +37,10 @@ import DefaultAppSettingsContext from 'app/context/default_app_settings_context'
 import UserDatabaseContext from 'app/context/current_user_database';
 import LocalDatabase from 'app/database/local_database';
 
+import UpgradePrompt from 'app/premium/upgrade_overlay';
+import PremiumChecks from 'app/premium/premium_checks';
+import { showMessage } from 'react-native-flash-message';
+
 
 const TranslateVocab: React.FC = props=>{
 
@@ -50,6 +54,10 @@ const TranslateVocab: React.FC = props=>{
     /* Current project list context */
 
     const [appSettings, appSettingsHandler] = React.useContext(DefaultAppSettingsContext)
+
+    /* Set upgrade prompt  */
+
+    const [upgradePrompt, setUpgradePrompt] = React.useState(false)
 
     /* Language selections stored in local state but also set as default languages */
     const [inputLangSelection, setInputLangSelection] = useState("");
@@ -82,19 +90,40 @@ const TranslateVocab: React.FC = props=>{
     const [overlayVisible, setOverlayVisible] = useState(false)
 
 
-    const addToProjectHandler = (input: string, output: string)=>{
+    const addToProjectHandler = async(input: string, output: string)=>{
 
+        let responseObject = await PremiumChecks.checkProjectLength(database, projectSelection, appSettings);
 
-        const entryObject = {
-            input: input,
-            inputLang: inputLangSelection,
-            output: output,
-            outputLang: outputLangSelection,
-            project: projectSelection 
+        if(responseObject.upgrade){
+
+            setUpgradePrompt(true)
+
+        } else 
+        if(!responseObject.upgrade && responseObject.reason === "50 Limit"){
+
+            showMessage({
+                type: "warning",
+                message: "50 entry limit reached"
+            })
+        } else 
+        if(!responseObject.upgrade && responseObject.reason === ""){
+
+            const entryObject = {
+                input: input,
+                inputLang: inputLangSelection,
+                output: output,
+                outputLang: outputLangSelection,
+                project: projectSelection 
+            }
+    
+            await LocalDatabase.addNewEntry(database, entryObject)
+
+            showMessage({
+                type: "success",
+                message: "Entry added successfully!"
+            })
         }
-
-        LocalDatabase.addNewEntry(database, entryObject)
-
+    
         /* Close overlay */
         setOverlayVisible(!overlayVisible)
     }
@@ -121,7 +150,7 @@ const TranslateVocab: React.FC = props=>{
 
         <View style={CoreStyles.defaultScreen}>
              {/* Render upgrade banner depending on subscription status */}
-             <UpgradeBanner/>
+             <UpgradeBanner {...props}/>
                 <Formik
                     initialValues={{input: "", output: ""}}
                     onSubmit={async(values, actions)=>{
@@ -129,14 +158,43 @@ const TranslateVocab: React.FC = props=>{
                         /* add to project */
                         setOverlayVisible(false)
 
-                        let response = await DeeplTranslate.translate({
-                            targetText: values.input,
-                            outputLanguage: outputLangSelection,
-                            targetLanguage: inputLangSelection
-                        })
+                        /* Check if there are any refreshes left */
+                        if(!appSettings.translationsLeft.refreshNeeded){
 
-                        if(response.text){
-                            await actions.setFieldValue("output", response.text)
+                            let response = await DeeplTranslate.translate({
+                                targetText: values.input,
+                                outputLanguage: outputLangSelection,
+                                targetLanguage: inputLangSelection
+                            })
+
+                            if(response.text && response.text.length > 3){
+                                await actions.setFieldValue("output", response.text)
+                                
+                                let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings);
+
+                                appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+                            } 
+                        } else
+                        if(appSettings.translationsLeft.translationsLeft > 0 ){
+
+                            let response = await DeeplTranslate.translate({
+                                targetText: values.input,
+                                outputLanguage: outputLangSelection,
+                                targetLanguage: inputLangSelection
+                            })
+
+                            if(response.text && response.text.length > 3){
+                                await actions.setFieldValue("output", response.text)
+                                
+                                let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings);
+
+                                appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+
+                                console.log(appSettings.translationsLeft)
+                            } 
+                        } else {
+
+                            setUpgradePrompt(true)
                         }
                     
                     }}
@@ -177,16 +235,48 @@ const TranslateVocab: React.FC = props=>{
                                     onBlur={async(e) => {
                                         handleBlur('input')(e)
 
-                                        let response = await DeeplTranslate.translate({
-                                            targetText: values.input,
-                                            outputLanguage: outputLangSelection,
-                                            targetLanguage: inputLangSelection
-                                        })
+                                        /* Check if there are any refreshes left */
 
 
-                                        if(response.text){
-                                            await setFieldValue("output", response.text)
+                                        if(!appSettings.translationsLeft.refreshNeeded){
+
+                                            let response = await DeeplTranslate.translate({
+                                                targetText: values.input,
+                                                outputLanguage: outputLangSelection,
+                                                targetLanguage: inputLangSelection
+                                            })
+
+                                            if(response.text && response.text.length > 3){
+                                                await setFieldValue("output", response.text)
+                                                
+                                                let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings)
+
+                                                appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+
+                                            } 
+                                        } else 
+                                        if(appSettings.translationsLeft.translationsLeft > 0 ){
+
+                                            let response = await DeeplTranslate.translate({
+                                                targetText: values.input,
+                                                outputLanguage: outputLangSelection,
+                                                targetLanguage: inputLangSelection
+                                            })
+
+                                            if(response.text && response.text.length > 3){
+                                                await setFieldValue("output", response.text)
+                                                
+                                                let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings)
+
+                                                appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+
+                                            } 
+                                        } else {
+
+                                            setUpgradePrompt(true)
                                         }
+
+                                        
                                       
                                     }}
                                 />
@@ -307,6 +397,9 @@ const TranslateVocab: React.FC = props=>{
                         </>
                     )}
                 </Formik>
+            
+            {/* upgrade prompt */}
+            {upgradePrompt ? <UpgradePrompt {...props} reason="20 Limit" setVisibleFunction={()=>{setUpgradePrompt(false)}}/> : null}
             <AdBanner/>
         </View>
     )

@@ -33,9 +33,16 @@ import Dropdown from 'app/shared/dropdown';
 import LocalDatabase from 'app/database/local_database';
 import { showMessage } from 'react-native-flash-message';
 
+import UpgradePrompt from 'app/premium/upgrade_overlay';
+
 
 
 const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
+
+    
+    /* Set upgrade prompt  */
+
+    const [upgradePrompt, setUpgradePrompt] = React.useState(false)
 
     const [currentUser] = React.useContext(CurrentUserContext)
 
@@ -92,7 +99,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
         <View style={{
             flex:1
         }}>
-            <UpgradeBanner/>
+            <UpgradeBanner {...props}/>
             <ScreenTemplate
                 screenTitle="Manage Projects"
             >
@@ -165,9 +172,29 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                        
                     }
 
-                    await AppSettings.addProject(currentUser, projectObject)
-                    setAppSettingsHandler(undefined,undefined,undefined, projectConfig)
-                    actions.resetForm()
+                    let projectLength = appSettings.projects.length
+
+                    if(projectLength >= 20){
+
+                        showMessage({
+                            type: "warning",
+                            message: "Maximum amount of projects reached"
+                        })
+
+
+                    } else 
+                    if (projectLength >= 10  && !appSettings.premium.premium){
+
+                        setUpgradePrompt(true)
+
+                    } else 
+                    if( projectLength < 10){
+
+                        await AppSettings.addProject(currentUser, projectObject)
+                        setAppSettingsHandler(undefined,undefined,undefined, projectConfig)
+                        actions.resetForm()
+                    }
+                
                     overlayNav()
                 }}
                 validationSchema={projectNameScheme}
@@ -297,6 +324,9 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                 </>)}
            
             </Formik>
+             {/* upgrade prompt */}
+             {upgradePrompt ? <UpgradePrompt {...props} reason="Project Limit" setVisibleFunction={()=>{setUpgradePrompt(false)}}/> : null}
+
         </View>
     )
 }

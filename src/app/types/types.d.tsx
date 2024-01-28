@@ -123,6 +123,23 @@ export type AppSettingsObject = {
     }
 
     projects?: Array<ProjectObject | null>
+
+    lastLoggedIn: string
+
+    premium: {
+        premium: boolean
+        endTime: string
+    }
+
+    gamesLeft: {
+        gamesLeft: number,
+        refreshBaseTime: string
+    }
+
+    translationsLeft: {
+        translationsLeft: number,
+        refreshBaseTime: string
+    }
 } 
 
 export type ProjectConfig<ProjectObject> ={

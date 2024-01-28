@@ -3,6 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import * as types from '@customTypes/types.d'
+import PremiumChecks from 'app/premium/premium_checks';
 
 /* App settings class object */
 class AppSettings {
@@ -23,9 +24,14 @@ class AppSettings {
                 if(allAppSettings[userName]){
     
                     /* If app settings already exists on user, just add login time and resolve promise */
-
                     
                     allAppSettings[userName].lastLoggedIn = new Date() //Set logged in time
+
+                    /*Set premium details*/
+                    allAppSettings[userName].premium = {
+                        premium: false,
+                        endTime: "15/02/2024"
+                    }
 
                     const stringifiedSettings = JSON.stringify(allAppSettings)
     
@@ -53,6 +59,26 @@ class AppSettings {
 
                     /* Set logged in time */
                     allAppSettings[userName].lastLoggedIn = new Date()
+
+                    /*Set premium details*/
+                    allAppSettings[userName].premium = {
+                        premium: false,
+                        endTime: "",
+                    }
+
+                    /* Games left */
+                    allAppSettings[userName].gamesLeft = {
+                        gamesLeft: 10,
+                        refreshBaseTime: "",
+                        refreshNeeded: false
+                    }
+
+                    /* Translations left */
+                    allAppSettings[userName].translationsLeft = {
+                        translationsLeft: 40,
+                        refreshBaseTime: "",
+                        refreshNeeded: false
+                    }
 
                     const stringifiedSettings = JSON.stringify(allAppSettings)
     
@@ -137,6 +163,166 @@ class AppSettings {
         }
     
     } 
+
+    static setGamesLeftDetails(userName: string, appSettings){
+
+        return new Promise(async(resolve, reject)=>{
+
+            try{
+
+                const appSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+    
+                const appSettings = JSON.parse(appSettingsRaw)
+
+                /* Check game details */
+
+                if(!appSettings[userName].gamesLeft.refreshNeeded){
+
+                    appSettings[userName].gamesLeft.refreshNeeded = true
+                }
+
+                appSettings[userName].gamesLeft.gamesLeft -= 1
+
+                const stringifiedSettings = JSON.stringify(appSettings)
+
+                await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
+                resolve(appSettings[userName])
+
+            } catch(e){
+
+                reject(e)
+            }
+        })
+    }
+
+    static refreshGamesLeft(userName: string, appSettings){
+
+        return new Promise(async(resolve, reject)=>{
+
+            try{
+
+                const appSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+    
+                const appSettings = JSON.parse(appSettingsRaw)
+
+                /* Check game details */
+
+                if(appSettings[userName].gamesLeft.refreshNeeded){
+
+                    appSettings[userName].gamesLeft.refreshNeeded = false
+
+                    
+                }
+
+                appSettings[userName].gamesLeft = {
+
+                    gamesLeft: 10,
+                    refreshBaseTime: "",
+                    refreshNeeded: false
+                    
+                }
+
+                const stringifiedSettings = JSON.stringify(appSettings)
+
+                await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
+                resolve(appSettings[userName])
+
+            } catch(e){
+
+                reject(e)
+            }
+        })
+    }
+
+    static setTranslationsLeftDetails(userName: string, appSettings){
+
+        return new Promise(async(resolve, reject)=>{
+
+            try{
+
+                const appSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+    
+                const appSettings = JSON.parse(appSettingsRaw)
+
+                /* Check game details */
+
+                if(!appSettings[userName].translationsLeft.refreshNeeded){
+
+                    appSettings[userName].translationsLeft.refreshNeeded = true
+
+                    let newStartTime = new Date()
+
+                    appSettings[userName].translationsLeft.refreshBaseTime = newStartTime
+
+                }
+
+                appSettings[userName].translationsLeft.translationsLeft -= 1
+
+                const stringifiedSettings = JSON.stringify(appSettings)
+
+                await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
+                resolve(appSettings[userName])
+
+            } catch(e){
+
+                reject(e)
+            }
+        })
+    }
+
+    static refreshTranslationsLeft(userName: string, appSettings){
+
+        return new Promise(async(resolve, reject)=>{
+
+            try{
+
+                const appSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+    
+                const appSettings = JSON.parse(appSettingsRaw)
+
+                /* Check game details */
+
+                if(appSettings[userName].translationsLeft.refreshNeeded){
+
+                    appSettings[userName].translationsLeft.refreshNeeded = false
+                    
+                }
+
+                if(appSettings.premium.premium){
+
+                    appSettings[userName].translationsLeft = {
+                        translationsLeft: 150,
+                        refreshBaseTime: "",
+                        refreshNeeded: false
+                    }
+
+                    
+                } else
+                if(!appSettings.premium.premium){
+
+                    appSettings[userName].translationsLeft = {
+                        translationsLeft: 40,
+                        refreshBaseTime: "",
+                        refreshNeeded: false
+                    }
+
+                }
+
+                const stringifiedSettings = JSON.stringify(appSettings)
+
+                await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
+                resolve(appSettings[userName])
+
+            } catch(e){
+
+                reject(e)
+            }
+        })
+    }
 
     static getDefaultAppSettings(userName: string){
 

@@ -236,37 +236,45 @@ const GameHome: React.FC = props=>{
                     }
                 ]}
             >
-                <View
-                    style={{
-                        width: windowDimensions.WIDTH,
-                        height: windowDimensions.HEIGHT*0.08,
-                        backgroundColor: "orange",
-                        marginTop: -windowDimensions.HEIGHT*0.04
-                    }}
-                >
-                    
-                    {/* Render turns left if not premium version */}
-                    <TouchableOpacity
+
+                {/* Render only if user is not premium user */}
+                {appSettings.premium.premium ? <></> : 
+                    <View
                         style={{
                             width: windowDimensions.WIDTH,
-                            height: windowDimensions.HEIGHT*0.075,
-                            alignItems: "center"
+                            height: windowDimensions.HEIGHT*0.08,
+                            backgroundColor: "orange",
+                            marginTop: -windowDimensions.HEIGHT*0.04
                         }}
                     >
+                        
+                        {/* Render turns left if not premium version */}
+                        <TouchableOpacity
+                            style={{
+                                width: windowDimensions.WIDTH,
+                                height: windowDimensions.HEIGHT*0.075,
+                                alignItems: "center"
+                            }}
 
-                        <Text
-                            style={CoreStyles.contentText}
-                        > You have {/* no of turns */} left. Your turns refresh in X</Text>
+                            onPress={()=>{
+                                props.navigation.navigate("Account")
+                            }}
+                        >
 
-                        <Text
-                             style={CoreStyles.contentText}
-                        > Upgrade to premium for unlimited turns</Text>
+                            <Text
+                                style={CoreStyles.contentText}
+                            > You have {/* no of turns */} left. Your turns refresh in X</Text>
 
-                        {/* Timer component */}
+                            <Text
+                                style={CoreStyles.contentText}
+                            > Upgrade to premium for unlimited turns</Text>
+
+                            {/* Timer component */}
 
 
-                    </TouchableOpacity>
-                </View>
+                        </TouchableOpacity>
+                    </View>
+                }
 
 
                 <ContentCard

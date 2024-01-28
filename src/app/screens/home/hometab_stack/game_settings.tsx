@@ -27,7 +27,7 @@ return (
 
         {/* render depending on upgrade status */}
 
-        <UpgradeBanner/>
+        <UpgradeBanner {...props}/>
         <ScreenTemplate screenTitle="Set Default Game Settings">
             <ContentCard cardStylings={customCardStylings}>
                 <View style={timeGamesSwitchRowStyle}>

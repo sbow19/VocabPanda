@@ -77,13 +77,10 @@ const ResultTable = props => {
 
             if(typeof deletedRowId === "number"){
 
-                let newResultRows = props.searchResults.filter(row => row.id != deletedRowId)
+                let newResultRows = resultRows.filter(row => row.id != deletedRowId)
 
                 setResultRows(newResultRows)
-
             }
-       
-
     }, [deletedRowId])
 
     

@@ -50,7 +50,7 @@ return (
         <View style={[CoreStyles.defaultScreen, {justifyContent: "flex-end", alignItems:"center"}]}>
 
             {/* Render based on upgrade status */}
-            <UpgradeBanner/>
+            <UpgradeBanner {...props}/>
 
             <ScreenTemplate screenTitle={`Welcome back, ${currentUser}`}>
                 <ContentCard cardStylings={customCardStylings}>
