@@ -179,6 +179,10 @@ class AppSettings {
                 if(!appSettings[userName].gamesLeft.refreshNeeded){
 
                     appSettings[userName].gamesLeft.refreshNeeded = true
+
+                    let newStartTime = new Date()
+
+                    appSettings[userName].gamesLeft.refreshBaseTime = newStartTime
                 }
 
                 appSettings[userName].gamesLeft.gamesLeft -= 1
@@ -298,7 +302,6 @@ class AppSettings {
                         refreshBaseTime: "",
                         refreshNeeded: false
                     }
-
                     
                 } else
                 if(!appSettings.premium.premium){

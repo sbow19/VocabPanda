@@ -96,10 +96,18 @@ const UpgradePrompt = props =>{
                                         
                                     break;
                             
-                                default:
+                                case "No Games":
 
-                                return(<></>)
-
+                                    return(
+                                    <>
+                                        <Text
+                                            style={CoreStyles.contentText}
+                                        >
+                                            No plays left. Upgrade to premium to have unlimited plays.
+                                        </Text>
+                                            
+                                    </>)
+                                        
                                     break;
                             }})()
                             }

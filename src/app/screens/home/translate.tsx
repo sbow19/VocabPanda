@@ -89,6 +89,10 @@ const TranslateVocab: React.FC = props=>{
     /* add to project overlay state  */
     const [overlayVisible, setOverlayVisible] = useState(false)
 
+    /* Check the current search term */
+
+    const currentSearchTerm = React.useRef("")
+
 
     const addToProjectHandler = async(input: string, output: string)=>{
 
@@ -158,44 +162,6 @@ const TranslateVocab: React.FC = props=>{
                         /* add to project */
                         setOverlayVisible(false)
 
-                        /* Check if there are any refreshes left */
-                        if(!appSettings.translationsLeft.refreshNeeded){
-
-                            let response = await DeeplTranslate.translate({
-                                targetText: values.input,
-                                outputLanguage: outputLangSelection,
-                                targetLanguage: inputLangSelection
-                            })
-
-                            if(response.text && response.text.length > 3){
-                                await actions.setFieldValue("output", response.text)
-                                
-                                let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings);
-
-                                appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
-                            } 
-                        } else
-                        if(appSettings.translationsLeft.translationsLeft > 0 ){
-
-                            let response = await DeeplTranslate.translate({
-                                targetText: values.input,
-                                outputLanguage: outputLangSelection,
-                                targetLanguage: inputLangSelection
-                            })
-
-                            if(response.text && response.text.length > 3){
-                                await actions.setFieldValue("output", response.text)
-                                
-                                let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings);
-
-                                appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
-
-                                console.log(appSettings.translationsLeft)
-                            } 
-                        } else {
-
-                            setUpgradePrompt(true)
-                        }
                     
                     }}
                     validationSchema={inputValidationSchema}
@@ -230,15 +196,27 @@ const TranslateVocab: React.FC = props=>{
                                     numberOfLines={4} 
                                     editable={true}
                                     value={values.input}
-                                    onChangeText={handleChange("input")}
+                                    onChangeText={
+                                        handleChange("input")
+                                    }
                                     onSubmit={handleSubmit}
                                     onBlur={async(e) => {
                                         handleBlur('input')(e)
 
+                                        /* short circuit when  */
+
+                                        if(values.input.length <= 3 || values.input === currentSearchTerm.current){
+
+                                            /**cancels translation logic */
+                                            return
+                                        }
+
+                                        currentSearchTerm.current = values.input // Set new term searched
+
                                         /* Check if there are any refreshes left */
 
-
                                         if(!appSettings.translationsLeft.refreshNeeded){
+
 
                                             let response = await DeeplTranslate.translate({
                                                 targetText: values.input,
@@ -246,7 +224,9 @@ const TranslateVocab: React.FC = props=>{
                                                 targetLanguage: inputLangSelection
                                             })
 
-                                            if(response.text && response.text.length > 3){
+                                           
+
+                                            if(response.text){
                                                 await setFieldValue("output", response.text)
                                                 
                                                 let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings)
@@ -263,7 +243,7 @@ const TranslateVocab: React.FC = props=>{
                                                 targetLanguage: inputLangSelection
                                             })
 
-                                            if(response.text && response.text.length > 3){
+                                            if(response.text){
                                                 await setFieldValue("output", response.text)
                                                 
                                                 let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings)
@@ -314,15 +294,30 @@ const TranslateVocab: React.FC = props=>{
                         
                         </ContentCard>
 
-                        <View style={[CoreStyles.defaultScreen, buttonWrapperStyle]}>                
-                                <AppButton 
-                                    customStyles={{width:120}} 
-                                    onPress={()=>setOverlayVisible(!overlayVisible)}
+                        <View style={[CoreStyles.defaultScreen, buttonWrapperStyle]}>   
+
+                                <CountdownCard/>
+
+                                <View
+                                    style={{
+                                        width: windowDimensions.WIDTH * 0.3,
+                                        height: 130,
+                                        margin: 0, 
+                                        padding: 0,
+                                    }}
                                 >
-                            
-                                    <Text style={CoreStyles.actionButtonText}>Add to project</Text>
-                                                        
-                                </AppButton>        
+                                    <AppButton 
+                                        customStyles={{width:120}} 
+                                        onPress={()=>setOverlayVisible(!overlayVisible)}
+                                    >
+                                
+                                        <Text style={CoreStyles.actionButtonText}>Add to project</Text>
+                                                            
+                                    </AppButton>    
+
+                                </View>
+
+                                    
                         </View>  
                         </ScreenTemplate>
 
@@ -405,6 +400,115 @@ const TranslateVocab: React.FC = props=>{
     )
 }
 
+function convertMilliseconds(milliseconds){
+
+    let hours = Math.floor(milliseconds / (60 * 1000 * 60))
+    let minutes = Math.floor((milliseconds % (60 * 1000 * 60)) / (1000*60))
+
+    let remainingString = `${hours} hours : ${minutes} minutes`
+
+    return remainingString
+}
+
+const CountdownCard = ()=>{
+
+    /* Current project list context */
+
+    const [appSettings, appSettingsHandler] = React.useContext(DefaultAppSettingsContext);
+
+    /* Timeleft */
+
+    const [timeLeftDisplay, setTimeLeftDisplay] = React.useState(null)
+
+    /* Timeleft on first referesh */
+
+    const timeLeftInterval = React.useRef("")
+
+    /* Timeleft string */
+
+    const [timeLeftString, setTimeLeftString] = React.useState("")
+
+    React.useMemo(()=>{
+
+        const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000
+
+        let translationRefreshBaseTime = new Date(appSettings.translationsLeft.refreshBaseTime)
+        let currentTime = new Date()
+
+        let timeElapsed = currentTime - translationRefreshBaseTime
+
+        if(timeElapsed < DAY_IN_MILLISECONDS){
+
+            let timeLeft = DAY_IN_MILLISECONDS - timeElapsed
+
+            let timeLeftConverted = convertMilliseconds(timeLeft)
+
+            setTimeLeftString(timeLeftConverted)
+
+            setTimeLeftDisplay(timeLeft)
+
+        } else {
+
+            setTimeLeftDisplay(null)
+        }
+ 
+    }, [appSettings])
+
+    React.useEffect(()=>{
+
+        console.log("useeffect")
+
+        if(timeLeftDisplay != null){
+
+            clearInterval(timeLeftInterval.current)
+
+            timeLeftInterval.current = setInterval(()=>{
+
+                setTimeLeftDisplay(prevTime => {
+
+                    let prevTimeString = new Date(prevTime)
+                    
+                    let newTime = prevTimeString - 1000
+
+                    let timeLeftConverted = convertMilliseconds(newTime)
+
+                    setTimeLeftString(timeLeftConverted)
+
+                    return newTime
+                
+                }    )
+
+                
+
+            }, 1000)
+        }
+    }, [appSettings])
+
+    return(<>
+
+        <View
+            style={{
+                width: windowDimensions.WIDTH * 0.5,
+                height: 130,
+                marginTop: 20, 
+                marginRight: 10,
+                padding: 0,
+                
+            }}
+        >
+            <Text
+                style={[CoreStyles.contentText, {lineHeight:14, fontSize:12}]}
+            >
+                You have {appSettings.translationsLeft.translationsLeft} translations left. 
+                {timeLeftDisplay != null ? ` Your translations refresh in \n${timeLeftString}.` : null}
+            </Text>
+            
+        </View>
+    
+    
+    </>)
+}
+
 const cardStyle: types.CustomCardStyles = {
 
     width: windowDimensions.WIDTH * 0.75,
@@ -424,9 +528,11 @@ const overlayStyle: ViewStyle = {
 }
 
 const buttonWrapperStyle: ViewStyle = {
-    width: (windowDimensions.WIDTH * 0.6),
-    marginTop: 20,
-    alignItems: "center"
+    width: (windowDimensions.WIDTH*0.8),
+     marginTop: 20,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-evenly",
 }
 
 const inputCardStylings: types.CustomCardStyles = {

@@ -186,11 +186,7 @@ const MainApp: React.FC = props=>{
         if(setsDefault==true){
             AppSettings.setDefaultSettings(currentUser, newSettings)
         }
-
-
-
         setAppSettings(newSettings)
-        
     }
 
     // Loads global variables such as datrabase objects and app settings once on sign in
@@ -292,7 +288,7 @@ const MainApp: React.FC = props=>{
                     let currentTime = new Date();
                     let refreshBaseTime = new Date(appSettings.gamesLeft.refreshBaseTime);
 
-                    let timeDifference = Math.abs(currentTime-refreshBaseTime)
+                    let timeDifference = currentTime-refreshBaseTime
                     
                     if(timeDifference > HOUR_IN_MILLISECONDS){
 
@@ -315,7 +311,7 @@ const MainApp: React.FC = props=>{
                     let currentTime = new Date();
                     let refreshBaseTime = new Date(appSettings.translationsLeft.refreshBaseTime);
 
-                    let timeDifference = Math.abs(currentTime-refreshBaseTime);
+                    let timeDifference = currentTime-refreshBaseTime;
 
                     if(timeDifference > DAY_IN_MILLISECONDS){
                         

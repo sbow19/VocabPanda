@@ -19,7 +19,7 @@ import windowDimensions from '@context/dimensions';
 
 import UpgradeBanner from 'app/shared/upgrade_banner';
 
-const GameSettings: React.FC = ({navigation})=>{
+const GameSettings: React.FC = (props)=>{
 
 
 return (

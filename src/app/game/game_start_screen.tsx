@@ -19,6 +19,9 @@ import Dropdown from 'app/shared/dropdown';
 import ProjectDropdown from 'app/shared/project_dropdown';
 import React from 'react';
 import LastActivity from 'app/context/last_activity';
+import AppSettings from 'app/storage/app_settings_storage';
+import CurrentUserContext from 'app/context/current_user';
+import UpgradePrompt from 'app/premium/upgrade_overlay';
 
 
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
@@ -29,7 +32,11 @@ const GameHome: React.FC = props=>{
 
     /* App settings */
 
-    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings, appSettingsHandler] = React.useContext(DefaultAppSettingsContext)
+
+    /* Current user context */
+
+    const [currentUser] = React.useContext(CurrentUserContext)
 
     /* Kast activity object context */
 
@@ -59,7 +66,9 @@ const GameHome: React.FC = props=>{
 
     const [project, setProject] = React.useState("")
 
-    /* Serialise last activity */
+    /* Set upgrade prompt  */
+
+    const [upgradePrompt, setUpgradePrompt] = React.useState(false)
 
 
     const getProjectIndex = ()=>{
@@ -123,105 +132,123 @@ const GameHome: React.FC = props=>{
 
 
    }, [props.route])
-    
-
-    const gameStart = ()=>{
-
-        if(props.route.params.gameMode === "Search Results" && gameMode === "Search Results"){
-
-            props.navigation.navigate("vocab game", {
-
-                timerOn: gameTimeronValue,
-                noOfTurns: gameSliderValue,
-                gameMode: "Search Results",
-                resultArray: props.route.params.resultArray,
-                project: ""
-            })
-
-            return
-        }
-
-        if(gameMode === "All Words"){
-
-            props.navigation.navigate("vocab game", {
-
-                timerOn: gameTimeronValue,
-                noOfTurns: gameSliderValue,
-                gameMode: "All Words",
-                resultArray: [],
-                project: ""
-            })
-
-            return
-        }
-
-        if (gameMode === "By Project") {
-
-            props.navigation.navigate("vocab game", {
-
-                timerOn: gameTimeronValue,
-                noOfTurns: gameSliderValue,
-                gameMode: "By Project",
-                resultArray: [],
-                project: project
-            })
-
-            return
-
-        }
-
-        if(gameMode === "Latest Activity" && lastActivityObject.lastActivity == true){
-
-            props.navigation.navigate("vocab game", {
-
-                timerOn: gameTimeronValue,
-                noOfTurns: gameSliderValue,
-                gameMode: "Latest Activity",
-                resultArray: [],
-                project: ""
-            })
-
-            return
-
-        }
-
-        if(gameMode === "Latest Activity" && lastActivityObject.lastActivity == false){
 
 
-            showMessage({
-                type: "info",
-                message: "No activity since last logged in"
-            })
-        }
+   const gameModeNavigate = ()=>{
 
-        if(gameMode === "Latest Activity - By Project"){
+    if(props.route.params.gameMode === "Search Results" && gameMode === "Search Results"){
 
-            props.navigation.navigate("vocab game", {
+        props.navigation.navigate("vocab game", {
 
-                timerOn: gameTimeronValue,
-                noOfTurns: gameSliderValue,
-                gameMode: "Latest Activity - By Project",
-                resultArray: props.route.params.resultArray,
-                project: ""
-            })
+            timerOn: gameTimeronValue,
+            noOfTurns: gameSliderValue,
+            gameMode: "Search Results",
+            resultArray: props.route.params.resultArray,
+            project: ""
+        })
 
-            return
-
-        }
-
-        if(gameMode === "Search Results"){
-
-            showMessage({
-                type: "info",
-                message: "No search results"
-            })
-
-            return
-
-        }
-        
+        return
     }
 
+    if(gameMode === "All Words"){
+
+        props.navigation.navigate("vocab game", {
+
+            timerOn: gameTimeronValue,
+            noOfTurns: gameSliderValue,
+            gameMode: "All Words",
+            resultArray: [],
+            project: ""
+        })
+
+        return
+    }
+
+    if (gameMode === "By Project") {
+
+        props.navigation.navigate("vocab game", {
+
+            timerOn: gameTimeronValue,
+            noOfTurns: gameSliderValue,
+            gameMode: "By Project",
+            resultArray: [],
+            project: project
+        })
+
+        return
+
+    }
+
+    if(gameMode === "Latest Activity" && lastActivityObject.lastActivity == true){
+
+        props.navigation.navigate("vocab game", {
+
+            timerOn: gameTimeronValue,
+            noOfTurns: gameSliderValue,
+            gameMode: "Latest Activity",
+            resultArray: [],
+            project: ""
+        })
+
+        return
+
+    }
+
+    if(gameMode === "Latest Activity" && lastActivityObject.lastActivity == false){
+
+
+        showMessage({
+            type: "info",
+            message: "No activity since last logged in"
+        })
+    }
+
+    if(gameMode === "Latest Activity - By Project"){
+
+        props.navigation.navigate("vocab game", {
+
+            timerOn: gameTimeronValue,
+            noOfTurns: gameSliderValue,
+            gameMode: "Latest Activity - By Project",
+            resultArray: props.route.params.resultArray,
+            project: ""
+        })
+
+        return
+
+    }
+
+    if(gameMode === "Search Results"){
+
+        showMessage({
+            type: "info",
+            message: "No search results"
+        })
+
+        return
+
+    }
+    
+}
+    
+
+    const gameStart = async()=>{
+
+        if(appSettings.gamesLeft.gamesLeft > 0 ){
+
+            let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
+
+            appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+
+            gameModeNavigate()
+
+        } else {
+
+            setUpgradePrompt(true)
+        }
+    }
+
+       
     return(
         <>
             <View
@@ -238,44 +265,7 @@ const GameHome: React.FC = props=>{
             >
 
                 {/* Render only if user is not premium user */}
-                {appSettings.premium.premium ? <></> : 
-                    <View
-                        style={{
-                            width: windowDimensions.WIDTH,
-                            height: windowDimensions.HEIGHT*0.08,
-                            backgroundColor: "orange",
-                            marginTop: -windowDimensions.HEIGHT*0.04
-                        }}
-                    >
-                        
-                        {/* Render turns left if not premium version */}
-                        <TouchableOpacity
-                            style={{
-                                width: windowDimensions.WIDTH,
-                                height: windowDimensions.HEIGHT*0.075,
-                                alignItems: "center"
-                            }}
-
-                            onPress={()=>{
-                                props.navigation.navigate("Account")
-                            }}
-                        >
-
-                            <Text
-                                style={CoreStyles.contentText}
-                            > You have {/* no of turns */} left. Your turns refresh in X</Text>
-
-                            <Text
-                                style={CoreStyles.contentText}
-                            > Upgrade to premium for unlimited turns</Text>
-
-                            {/* Timer component */}
-
-
-                        </TouchableOpacity>
-                    </View>
-                }
-
+                {appSettings.premium.premium ? <></> : <UpgradeBannerGame {...props}/>}
 
                 <ContentCard
                     cardStylings={customCardStyling}
@@ -332,6 +322,7 @@ const GameHome: React.FC = props=>{
                         height: windowDimensions.HEIGHT*0.08,
                         
                 }}>
+
                     <AppButton
                         onPress={gameStart}
                     >
@@ -342,6 +333,8 @@ const GameHome: React.FC = props=>{
                 </View>
 
             </View>
+            {/* upgrade prompt */}
+            {upgradePrompt ? <UpgradePrompt {...props} reason="No Games" setVisibleFunction={()=>{setUpgradePrompt(false)}}/> : null}
             <AdBanner/>
         </>
     )
@@ -368,6 +361,140 @@ const ProjectModeProject: React.FC = props =>{
                 />
             </View>
         </View>
+    )
+}
+
+function convertMilliseconds(milliseconds){
+
+    let minutes = Math.floor(milliseconds / (1000 * 60))
+    let seconds = Math.floor((milliseconds % (1000 * 60)) / (1000))
+
+    let remainingString = ` Your plays refresh in ${minutes} minutes : ${seconds} seconds.`
+
+    return remainingString
+}
+
+const UpgradeBannerGame = props =>{
+
+    /* App settings */
+
+    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext);
+
+    /* Timeleft */
+
+    const [timeLeftDisplay, setTimeLeftDisplay] = React.useState(null)
+
+    /* Timeleft on first referesh */
+
+    const timeLeftInterval = React.useRef("")
+
+    /* Timeleft string */
+
+    const [timeLeftString, setTimeLeftString] = React.useState("")
+
+    
+    React.useMemo(()=>{
+
+        const HOUR_IN_MILLISECONDS = 60 * 60 * 1000
+
+        let gamesRefreshBaseTime = new Date(appSettings.gamesLeft.refreshBaseTime)
+        let currentTime = new Date()
+
+        let timeElapsed = currentTime - gamesRefreshBaseTime
+
+        console.log(gamesRefreshBaseTime)
+
+        if(timeElapsed < HOUR_IN_MILLISECONDS){
+
+            let timeLeft = HOUR_IN_MILLISECONDS - timeElapsed
+
+            let timeLeftConverted = convertMilliseconds(timeLeft)
+
+            setTimeLeftString(timeLeftConverted)
+
+            setTimeLeftDisplay(timeLeft)
+
+        } else {
+
+            setTimeLeftDisplay(null)
+        }
+ 
+    }, [appSettings])
+
+    React.useEffect(()=>{
+
+        if(timeLeftDisplay != null){
+
+            clearInterval(timeLeftInterval.current)
+
+            timeLeftInterval.current = setInterval(()=>{
+
+                setTimeLeftDisplay(prevTime => {
+
+                    let prevTimeString = new Date(prevTime)
+                    
+                    let newTime = prevTimeString - 1000
+
+                    let timeLeftConverted = convertMilliseconds(newTime)
+
+                    setTimeLeftString(timeLeftConverted)
+
+                    return newTime
+                
+                }    )
+            }, 1000)
+        }
+    }, [appSettings])
+
+
+    return (
+        <View
+        style={{
+            width: windowDimensions.WIDTH,
+            height: windowDimensions.HEIGHT*0.08,
+            backgroundColor: "orange",
+            marginTop: -windowDimensions.HEIGHT*0.04,
+            justifyContent: "center"
+        }}
+    >
+        <TouchableOpacity
+            style={{
+                width: windowDimensions.WIDTH,
+                height: windowDimensions.HEIGHT*0.075,
+                alignItems: "center",
+                marginTop: 10
+                
+            }}
+
+            onPress={()=>{
+                props.navigation.navigate("Account")
+            }}
+        >
+
+            <Text
+                style={[
+                    CoreStyles.contentText,
+                    {lineHeight: 14}
+                ]}
+            > 
+                You have {appSettings.gamesLeft.gamesLeft} plays left.
+                {timeLeftDisplay ? timeLeftString : null} Upgrade to premium for unlimited turns.
+            </Text>
+
+            <Text
+                style={CoreStyles.contentText}
+            > 
+                
+            </Text>
+
+            {/* Timer component */}
+
+
+        </TouchableOpacity>
+        
+    </View>
+    
+
     )
 }
 
