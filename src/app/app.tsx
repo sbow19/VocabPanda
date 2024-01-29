@@ -57,6 +57,10 @@ const VocabPandaApp: React.FC = props => {
                 /* Sets object defining login details */
                 await AppLoginDetails.setInitial()
 
+                /* Set initial app default settings */
+
+                await AppSettings.setInitial()
+
                 /* Tests whether a database can be connected to */
 
                 await LocalDatabase.createTestDatabase().catch((e)=>{
@@ -193,6 +197,8 @@ const MainApp: React.FC = props=>{
         if(isLoading && currentUser){
             const appSettingsLoad = async ()=>{
 
+                /* Sets default app settings for new user */
+                await AppSettings.newSettings(currentUser)
                 
                  /* Async function to fetch last activity data */
     
@@ -216,11 +222,7 @@ const MainApp: React.FC = props=>{
 
                     const lastLoggedIn = await AppSettings.getLastLoggedInDate(currentUser)
 
-                    console.log(lastLoggedIn)
-
                     const lastActivityResultArray = await LocalDatabase.getLastActivity(currentUser, databaseObject.database, lastLoggedIn);
-
-                    console.log(lastActivityResultArray)
 
                     return lastActivityResultArray
 
@@ -250,9 +252,9 @@ const MainApp: React.FC = props=>{
                 if(downgradeToFree){
                     await AppSettings.downgradeToFree(currentUser)
                 }
+
+                await AppSettings.updateUserSettings(currentUser)
                 
-                /* Sets default app settings for new user */
-                await AppSettings.newSettings(currentUser)
 
                 const appSettings = await AppSettings.getDefaultAppSettings(currentUser)
 

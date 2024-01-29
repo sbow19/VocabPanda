@@ -395,7 +395,7 @@ const GameHome: React.FC = props=>{
             </View>
             {/* upgrade prompt */}
             {upgradePrompt ? <UpgradePrompt {...props} reason="No Games" setVisibleFunction={()=>{setUpgradePrompt(false)}}/> : null}
-            <AdBanner/>
+            {!appSettings.premium.premium ? <AdBanner/>:null}
         </>
     )
 }

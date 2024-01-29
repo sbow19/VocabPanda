@@ -91,7 +91,7 @@ const buttonContainerStyle: ViewStyle = {
 
     width: (windowDimensions.WIDTH *  0.9),
     height: (windowDimensions.HEIGHT *  0.10),
-    marginTop: 10,
+    marginTop: windowDimensions.HEIGHT*0.01,
     flexDirection: "row",
     backgroundColor: appColours.white,
     justifyContent: "space-evenly",

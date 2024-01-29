@@ -395,7 +395,7 @@ const TranslateVocab: React.FC = props=>{
             
             {/* upgrade prompt */}
             {upgradePrompt ? <UpgradePrompt {...props} reason="20 Limit" setVisibleFunction={()=>{setUpgradePrompt(false)}}/> : null}
-            <AdBanner/>
+            {!appSettings.premium.premium ? <AdBanner/>:null}
         </View>
     )
 }

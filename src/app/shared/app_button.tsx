@@ -12,6 +12,8 @@ import appColours from '@styles/app_colours';
 import shadowSettings from 'app/shared_styles/shadow_settings';
 import { Shadow } from 'react-native-shadow-2';
 import TabSwipeStatus from 'app/context/swipe_toggle';
+import windowDimensions from 'app/context/dimensions';
+import { Dimensions } from 'react-native';
 
 function parseProps(props: types.CustomButtonStylesProp){
 
@@ -57,8 +59,11 @@ const AppButton: React.FC<types.CustomButtonStylesProp> = props =>{
         <Shadow distance={!pressState ? shadowSettings.distance : 0} offset={shadowSettings.offset} sides={shadowSettings.sides} corners={
             shadowSettings.corners} startColor={appColours.black}>
                <TouchableOpacity style={[{
-                   height: 50, 
-                   width: 100, 
+                   height: (()=>{
+                        let {height} = Dimensions.get("window")
+                        return height*0.065
+                   })(), 
+                   width: windowDimensions.WIDTH*0.25, 
                    backgroundColor: appColours.lightGreen, 
                    borderRadius:20,
                    marginLeft: !pressState ? 0 : 2,

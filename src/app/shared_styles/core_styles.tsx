@@ -4,6 +4,7 @@ import { StyleSheet } from "react-native";
 import windowDimensions from "@context/dimensions";
 import appColours from "@styles/app_colours";
 import * as types from '@customTypes/types.d'
+import { Dimensions } from "react-native";
 
 const CoreStyles = StyleSheet.create({
     contentText: {
@@ -63,6 +64,7 @@ const CoreStyles = StyleSheet.create({
     mainHeaderStyles:
     {
         mainHeader: {
+            height: windowDimensions.HEIGHT*0.08,
             borderBottomColor: appColours.black,
             borderBottomWidth: 2,
             backgroundColor: appColours.darkGreen,
@@ -107,10 +109,14 @@ const CoreStyles = StyleSheet.create({
     drawerStyles:{
         drawerStyle: {
             backgroundColor: appColours.white,
-            width: 200,
+            width: windowDimensions.WIDTH*0.55,
             borderTopRightRadius: 10,
-            marginTop: ((windowDimensions.HEIGHT * 0.075) -30),
-            height: windowDimensions.HEIGHT* 0.965,
+            marginTop: ((windowDimensions.HEIGHT * 0.075)),
+            height: ()=>{
+                const {height} = Dimensions.get('window');
+
+                return height
+            },
             borderColor: appColours.black,
             borderWidth: 1.5
             
@@ -136,7 +142,12 @@ const CoreStyles = StyleSheet.create({
 
     homeTabNavBarStyles: {
         homeTabBarStyle:{
-            height: (windowDimensions.HEIGHT * 0.075 - 5),
+            height: (()=>{
+                const {height} = Dimensions.get('window');
+                let newHeight = height*0.07
+                return newHeight
+            })(),
+            backgroundColor: appColours.white
         },
         homeTabBarLabelStyle:{
             fontFamily: "Exo2-Black",
@@ -156,6 +167,7 @@ const CoreStyles = StyleSheet.create({
         homeTabBarItemStyle:{
             borderColor: appColours.blue,
             borderWidth: 2,
+            borderRadius: 10, 
             justifyContent: "center",
             backgroundColor: appColours.lightGreen,
             padding: 0,
@@ -171,7 +183,7 @@ const CoreStyles = StyleSheet.create({
 
     sliderStyle: {
         width: (windowDimensions.WIDTH * 0.5),
-        height: (windowDimensions.HEIGHT * 0.05)
+        height: (windowDimensions.HEIGHT * 0.03)
     },
 
     dropDownStyles: {

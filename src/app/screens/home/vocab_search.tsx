@@ -194,7 +194,7 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
                     
                         
                 </ScreenTemplate> 
-                <AdBanner/>
+                {!appSettings.premium.premium ? <AdBanner/>:null}
             </View>
 
     )

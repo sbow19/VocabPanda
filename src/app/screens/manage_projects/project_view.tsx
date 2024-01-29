@@ -219,7 +219,7 @@ const ProjectView: React.FC = props=>{
                 </View>
             </ScreenTemplate>
 
-            <AdBanner/>
+            {!appSettings.premium.premium ? <AdBanner/>:null}
 
             <Overlay
                 isVisible={optionsVisible}

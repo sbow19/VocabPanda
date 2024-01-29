@@ -187,7 +187,7 @@ const VocabPandaTextInput: React.FC<TextInputProps> = props =>{
 
 const additionalStyles:StyleProp<TextStyle> = {
     width: windowDimensions.WIDTH*0.6,
-    height: windowDimensions.HEIGHT*0.05,
+    height: windowDimensions.HEIGHT*0.06,
     borderRadius:5,
     borderColor: appColours.black,
     borderWidth:2,

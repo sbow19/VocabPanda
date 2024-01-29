@@ -74,7 +74,7 @@ const bottomViewContainerStyle: ViewStyle = {
 const customCardStylings: types.CustomCardStyles = {
 
     width: (windowDimensions.WIDTH * 0.9),
-    height: (windowDimensions.HEIGHT * 0.10),
+    height: (windowDimensions.HEIGHT * 0.1),
     alignItems: "center"
 
 }

@@ -31,7 +31,7 @@ const bottomTabScreenOptions:BottomTabNavigationOptions = {
 
     headerShown: false,
     tabBarStyle:{
-        height: (windowDimensions.HEIGHT*0.078),
+        height: (windowDimensions.HEIGHT*0.08),
         margin: 10,
         borderRadius: 30,
         elevation:5,
@@ -57,18 +57,18 @@ const bottomTabHomeScreenOptions:BottomTabNavigationOptions = {
         const color = !focused ? appColours.black: appColours.darkGreen
 
         return(
-            <MaterialIcon name={iconName} size={32} color={color}/>
+            <MaterialIcon name={iconName} size={29} color={color}/>
         )
     },
     tabBarLabelStyle: {
         fontFamily: "Exo2-Medium",
-        fontSize: 14
+        fontSize: 13
     },
     tabBarItemStyle: {
         margin: 2,
         borderBottomLeftRadius: 30,
         borderTopLeftRadius: 30,
-        height: 50
+        height: windowDimensions.HEIGHT*0.07
     },
 
 }
@@ -82,18 +82,18 @@ const bottomTabGameSettingsScreenOptions:BottomTabNavigationOptions = {
         const color = !focused ? appColours.black: appColours.darkGreen
 
         return(
-            <MaterialCommunityIcon name={iconName} size={32} color={color}/>
+            <MaterialCommunityIcon name={iconName} size={29} color={color}/>
         )
     },
     tabBarLabelStyle: {
         fontFamily: "Exo2-Medium",
-        fontSize:14
+        fontSize:13
     },
     tabBarItemStyle: {
         margin: 2,
         borderBottomRightRadius: 30,
         borderTopRightRadius: 30,
-        height: 50
+        height: windowDimensions.HEIGHT*0.07
     },
 }
 

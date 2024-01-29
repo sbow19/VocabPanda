@@ -105,26 +105,16 @@ class AppSettings {
     static async newSettings(userName: string){
 
         return new Promise(async(resolve,reject)=>{
-
-            try{
+    
+            try{ 
                 const allAppSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
 
                 const allAppSettings =  JSON.parse(allAppSettingsRaw)
 
-                if(allAppSettings[userName]){
-    
-                    /* If app settings already exists on user, just add login time and resolve promise */
-                    
-                    allAppSettings[userName].lastLoggedIn = new Date() //Set logged in time
-            
-                    const stringifiedSettings = JSON.stringify(allAppSettings)
-    
-                    await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+                if(!allAppSettings[userName]){
 
-                    resolve("User exists")
-    
-                } else if (!allAppSettings[userName]) {
-    
+                    let allAppSettings = {};
+        
                     /* If no app settings exist on user, set default settings on user */
 
                     allAppSettings[userName] = {} //Create new settings object on user
@@ -165,23 +155,75 @@ class AppSettings {
                     }
 
                     const stringifiedSettings = JSON.stringify(allAppSettings)
-    
+
                     await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
 
                     resolve("User does not exist")
+                } else {
+                    resolve("User already exists")
                 }
-    
-            } catch(e){
 
-                /* When app first loaded, object set in storage marked to contain app settings */
-                
-                let newGame = JSON.stringify({})
+            }catch(e){
 
-                await AsyncStorage.setItem("allDefaultSettings", newGame)
-                reject("No user settings")
+                reject(e)
+
             }
         })
-       
+    }
+
+static async setInitial(){
+    return new Promise(async(resolve, reject)=>{
+
+        try{
+            const allAppSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+
+            const allAppSettings =  JSON.parse(allAppSettingsRaw)
+
+            if(!allAppSettings){
+
+                let allDefaultSettingsObject = {}
+
+                const stringifiedSettings = JSON.stringify(allDefaultSettingsObject)
+
+                await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
+                resolve("User does not exist")
+
+            } else {
+                resolve("Settings already created")
+            }
+        } catch(e){
+            reject(e)
+        }
+
+
+    })
+}
+
+    static async updateUserSettings(userName: string){
+        return new Promise(async(resolve, reject)=>{
+
+            try{
+                const allAppSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+
+                const allAppSettings =  JSON.parse(allAppSettingsRaw)
+
+                if(allAppSettings[userName]){
+    
+                    /* If app settings already exists on user, just add login time and resolve promise */
+                    
+                    allAppSettings[userName].lastLoggedIn = new Date() //Set logged in time
+            
+                    const stringifiedSettings = JSON.stringify(allAppSettings)
+    
+                    await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
+                    resolve("User exists")
+                }
+            } catch(e){
+                reject(e)
+            }
+        })
     }
 
     static async getLastLoggedInDate(userName: string){
@@ -193,6 +235,8 @@ class AppSettings {
                 const allAppSettings =  JSON.parse(allAppSettingsRaw)
 
                 const lastLoggedIn = allAppSettings[userName].lastLoggedIn
+
+
 
                 resolve(lastLoggedIn)
             } catch(e){

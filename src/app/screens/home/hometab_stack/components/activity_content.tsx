@@ -29,7 +29,7 @@ const ActivityContent: React.FC = props=>{
 
             <View
                 style={{
-                    height: "18%",
+                    height: "21%",
                     width: "95%"
                 }}
             
@@ -37,7 +37,8 @@ const ActivityContent: React.FC = props=>{
                 <Text
                     style={[
                         CoreStyles.contentText,
-                        {lineHeight: 20}
+                        {lineHeight: 20,
+                        fontSize: 14}
                     ]}
                 > 
                     You've been busy {currentUser}! Here is a summary of your activity since you last logged in

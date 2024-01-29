@@ -13,5 +13,7 @@ const windowDimensions: types.WindowDimensions = {
 
 }
 
+/*  Add windows dimensions premium vs free at start up */
+
 
 export default windowDimensions;

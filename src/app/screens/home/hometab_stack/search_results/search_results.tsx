@@ -12,8 +12,11 @@ import windowDimensions from 'app/context/dimensions';
 import SearchResultTable from './results_table';
 import AdBanner from 'app/shared/ad_banner';
 import AppButton from 'app/shared/app_button';
+import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 const SearchResults: React.FC = props=>{
+
+    const [appSettings] = React.useContext(DefaultAppSettingsContext)
 
     const gameNav = ()=>{
 
@@ -121,7 +124,7 @@ const SearchResults: React.FC = props=>{
             
         </View>
 
-        <AdBanner/>
+        {!appSettings.premium.premium ? <AdBanner/>:null}
         </>
     )
 }

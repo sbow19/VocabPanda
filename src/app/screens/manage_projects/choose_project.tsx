@@ -145,7 +145,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
                 
             </ScreenTemplate>
-            <AdBanner/>
+            {!appSettings.premium.premium ? <AdBanner/>:null}
 
             <Formik
                 initialValues={{projectName: ""}}
