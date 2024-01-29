@@ -12,6 +12,96 @@ class AppSettings {
 
     }
 
+    static async upgradeToPremium(userName: string, endTime: string){
+
+        return new Promise(async(resolve,reject)=>{
+
+            try{
+                const allAppSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+
+                const allAppSettings =  JSON.parse(allAppSettingsRaw)
+
+                if(allAppSettings[userName]){
+    
+                    /* If app settings already exists on user, just add login time and resolve promise */
+                    
+                    allAppSettings[userName].gamesLeft = 
+                    {
+                        gamesLeft: 10,
+                        refreshBaseTime: "",
+                        refreshNeeded: false
+                    }
+
+                    allAppSettings[userName].translationsLeft = 
+                    {
+                        translationsLeft: 120,
+                        refreshBaseTime: "",
+                        refreshNeeded: false
+                    }
+
+                    /*Set premium details*/
+                    allAppSettings[userName].premium = {
+                        premium: true,
+                        endTime: endTime
+                    }
+
+                    const stringifiedSettings = JSON.stringify(allAppSettings)
+    
+                    await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
+                    resolve("User exists")
+                }
+            }catch(e){
+                reject(e)
+            }
+    })
+}
+
+    static async downgradeToFree(userName: string){
+
+        return new Promise(async(resolve,reject)=>{
+
+            try{
+                const allAppSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
+
+                const allAppSettings =  JSON.parse(allAppSettingsRaw)
+
+                if(allAppSettings[userName]){
+    
+                    /* If app settings already exists on user, just add login time and resolve promise */
+                    
+                    allAppSettings[userName].gamesLeft = 
+                    {
+                        gamesLeft: 10,
+                        refreshBaseTime: "",
+                        refreshNeeded: false
+                    }
+
+                    allAppSettings[userName].translationsLeft = 
+                    {
+                        translationsLeft: 40,
+                        refreshBaseTime: "",
+                        refreshNeeded: false
+                    }
+
+                    /*Set premium details*/
+                    allAppSettings[userName].premium = {
+                        premium: false,
+                        endTime: ""
+                    }
+
+                    const stringifiedSettings = JSON.stringify(allAppSettings)
+    
+                    await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
+
+                    resolve("User exists")
+                }
+            }catch(e){
+                reject(e)
+            }
+    })
+}
+
     static async newSettings(userName: string){
 
         return new Promise(async(resolve,reject)=>{
@@ -26,13 +116,7 @@ class AppSettings {
                     /* If app settings already exists on user, just add login time and resolve promise */
                     
                     allAppSettings[userName].lastLoggedIn = new Date() //Set logged in time
-
-                    /*Set premium details*/
-                    allAppSettings[userName].premium = {
-                        premium: false,
-                        endTime: "15/02/2024"
-                    }
-
+            
                     const stringifiedSettings = JSON.stringify(allAppSettings)
     
                     await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
@@ -430,6 +514,7 @@ class AppSettings {
         })    
     }
 }
+
 
 
 export default AppSettings

@@ -48,7 +48,7 @@ const ProjectView: React.FC = props=>{
 
     /* Get user database context */
 
-    const [databaseObject, setDatabaseObject] = React.useContext(UserDatabaseContext)
+    const [databaseObject, setDatabaseObject] = React.useContext(UserDatabaseContext);
 
 
     React.useEffect(() => {
@@ -146,7 +146,10 @@ const ProjectView: React.FC = props=>{
                     style={customCardStyling}
                 >
 
-                    <ResultTable {...props} searchResults={props.route.params.resultArray}/>
+                    <ResultTable 
+                    {...props} 
+                    searchResults={props.route.params.resultArray} 
+                    />
 
                 </View>
 

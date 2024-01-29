@@ -16,6 +16,8 @@ import FullTextView from 'app/shared/view_full_text';
 import EditTextView from './components/edit_text_overlay';
 import EditTextContext from 'app/context/edit_text_context';
 
+import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
+
 type FullTextObject = {
     target_language: string,
     target_language_lang: string,
@@ -70,20 +72,67 @@ const ResultTable = props => {
 
     const [deletedRowId, setDeletedRowId] = React.useState("")
 
+    /* All search results provided by project view */
+
     const [resultRows, setResultRows] = React.useState(props.searchResults)
+
+    /* Displaye result rows */
+
+    const [displayedResultRows, setDisplayedResultRows] = React.useState([])
+
+
+    /* Set page number to be displayed on table */
+
+    const [pageNumber, setPageNumber] = React.useState(1);
+
+    /* No of pages */
+
+    const noOfPages = React.useRef(1)
+
+    /* set the no of pages*/
+
+    React.useMemo(()=>{
+
+        let resultRowsLength = resultRows.length;
+
+        noOfPages.current = Math.floor(resultRowsLength / 15) + 1 // Max number of rows displayed is 15
+
+    }, [resultRows])
 
 
     React.useEffect(()=>{
 
-            if(typeof deletedRowId === "number"){
+        let displayedRowsStartIndex = (pageNumber * 15) - 15
+        let displayedRowsEndIndex = (pageNumber * 15)
+        let displayedRows = resultRows.slice(displayedRowsStartIndex, displayedRowsEndIndex)
+        
+        let listLength = displayedRows.length
+        let resultRowsComp = []
 
-                let newResultRows = resultRows.filter(row => row.id != deletedRowId)
 
-                setResultRows(newResultRows)
-            }
+        for(let i=0; i < listLength ; i++){
+
+            let resultRow = displayedRows[i]
+
+            resultRowsComp.push(<RowTemplate {...props} key={i} resultRow={resultRow}/>)
+        }
+        setDisplayedResultRows(resultRowsComp)
+        
+
+    }, [pageNumber, resultRows])
+
+
+    React.useEffect(()=>{
+
+        if(typeof deletedRowId === "number"){
+
+            let newResultRows = resultRows.filter(row => row.id != deletedRowId)
+
+            setResultRows(newResultRows)
+            
+        }
     }, [deletedRowId])
 
-    
 
     return (
 
@@ -142,28 +191,100 @@ const ResultTable = props => {
                     <View onStartShouldSetResponder={()=>true}>
                         <Table>
                             {/* Results displayed here in rows */}
-                            {
-                            (()=>{
-                                
-                                let listLength = resultRows.length
-                                let resultRowsComp = []
-
-                                for(let i=0; i < listLength ; i++){
-
-                                    let resultRow = resultRows[i]
-
-                                    resultRowsComp.push(<RowTemplate {...props} key={i} resultRow={resultRow}/>)
-
-                                }
-
-                                return resultRowsComp
-                            
-                            })()
-                        }
+                            {displayedResultRows}
                         </Table>
                         
                     </View>
                 </ScrollView>
+
+                {/* Page number for results */}
+                <View
+                    style={{
+                        width: "100%",
+                        height: windowDimensions.HEIGHT* 0.075,
+                        borderColor: appColours.black,
+                        borderWidth: 2,
+                        borderRadius: 10,
+                        flexDirection: "row",
+                        backgroundColor: appColours.paleGreen
+                    }}
+                >
+                    <View
+                        style={{
+                            width: "25%",
+                            height: windowDimensions.HEIGHT* 0.07,
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: appColours.lightGreen,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: 40,
+                                height: "95%",
+                                width: "55%"
+                            }}
+                            onPress={()=>{
+                                if(pageNumber > 1){
+                                    setPageNumber(prevNum => prevNum - 1)
+                                }
+                            }}
+                            
+                        >
+                            <MaterialIcon name='keyboard-arrow-left' size={40}/>
+                        </TouchableOpacity>
+
+                    </View>
+                    <View
+                        style={{
+                            width: "50%",
+                            height: windowDimensions.HEIGHT* 0.07,
+                            alignItems: "center",
+                            justifyContent: "center"
+                        }}
+                    >
+                        <View>
+                            <Text
+                                style={CoreStyles.backButtonText}
+                            >
+                                Page {pageNumber} / {noOfPages.current}
+
+                            </Text>
+
+                        </View>
+
+                    </View>
+                    <View
+                        style={{
+                            width: "25%",
+                            height: windowDimensions.HEIGHT* 0.07,
+                            alignItems: "center",
+                            justifyContent: "center"
+                        }}
+                    >
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: appColours.lightGreen,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: 40,
+                                height: "95%",
+                                width: "55%"
+                            }}
+                            onPress={()=>{
+                                if(pageNumber < noOfPages.current){
+                                    setPageNumber(prevNum => prevNum + 1)
+                                }
+                            }}
+                        >
+                            <MaterialIcon name='keyboard-arrow-right' size={40}/>
+                        </TouchableOpacity>
+
+                    </View>
+
+                </View>
                 
             </View>
 
@@ -201,7 +322,9 @@ const bodyWrapper: ViewStyle = {
     height: windowDimensions.HEIGHT * 0.54,
     width: windowDimensions.WIDTH * 0.98,
     borderColor: "black",
-    borderWidth: 2
+    borderWidth: 2,
+    borderBottomEndRadius: 12,
+    borderBottomStartRadius: 12
 }
 
 const wrapperStyle: ViewStyle = {

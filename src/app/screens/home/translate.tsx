@@ -478,8 +478,6 @@ const CountdownCard = ()=>{
                 
                 }    )
 
-                
-
             }, 1000)
         }
     }, [appSettings])

@@ -26,6 +26,8 @@ import UpgradePrompt from 'app/premium/upgrade_overlay';
 
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 import { showMessage } from 'react-native-flash-message';
+import UserDatabaseContext from 'app/context/current_user_database';
+import LocalDatabase from 'app/database/local_database';
 
 const GameHome: React.FC = props=>{
 
@@ -33,6 +35,10 @@ const GameHome: React.FC = props=>{
     /* App settings */
 
     const [appSettings, appSettingsHandler] = React.useContext(DefaultAppSettingsContext)
+
+    /* dtatabase object  */
+
+    const [databaseObject] =  React.useContext(UserDatabaseContext)
 
     /* Current user context */
 
@@ -134,9 +140,13 @@ const GameHome: React.FC = props=>{
    }, [props.route])
 
 
-   const gameModeNavigate = ()=>{
+   const gameModeNavigate = async()=>{
 
-    if(props.route.params.gameMode === "Search Results" && gameMode === "Search Results"){
+    if(props.route.params.gameMode === "Search Results" && gameMode === "Search Results" && props.route.params.resultArray.length > 0){
+
+        let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
+
+        appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
 
         props.navigation.navigate("vocab game", {
 
@@ -150,36 +160,87 @@ const GameHome: React.FC = props=>{
         return
     }
 
-    if(gameMode === "All Words"){
+    else if(props.route.params.gameMode === "Search Results" && gameMode === "Search Results" && props.route.params.resultArray.length === 0){
 
-        props.navigation.navigate("vocab game", {
-
-            timerOn: gameTimeronValue,
-            noOfTurns: gameSliderValue,
-            gameMode: "All Words",
-            resultArray: [],
-            project: ""
+        showMessage({
+            type: "info",
+            message: "No search results"
         })
 
         return
+
+    }
+
+    if(gameMode === "All Words"){
+
+        let allWords = await LocalDatabase.getAll(databaseObject.currentUser, databaseObject.database)
+
+        if(allWords.length === 0){
+            showMessage({
+                type: "info",
+                message: "No entries made yet"
+            })
+
+            return
+
+        } else {
+
+            let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
+
+            appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+
+            props.navigation.navigate("vocab game", {
+
+                timerOn: gameTimeronValue,
+                noOfTurns: gameSliderValue,
+                gameMode: "All Words",
+                resultArray: [],
+                project: ""
+            })
+    
+            return
+
+        }
     }
 
     if (gameMode === "By Project") {
 
-        props.navigation.navigate("vocab game", {
+        let projectWords = await LocalDatabase.getProjectEntries(databaseObject, project)
 
-            timerOn: gameTimeronValue,
-            noOfTurns: gameSliderValue,
-            gameMode: "By Project",
-            resultArray: [],
-            project: project
-        })
+        console.log(projectWords)
 
-        return
+        if(projectWords.length === 0){
+            showMessage({
+                type: "info",
+                message: "No entries made yet"
+            })
 
+            return
+
+        } else {
+
+            let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
+
+            appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+
+            props.navigation.navigate("vocab game", {
+
+                timerOn: gameTimeronValue,
+                noOfTurns: gameSliderValue,
+                gameMode: "By Project",
+                resultArray: [],
+                project: project
+            })
+    
+            return
+        }
     }
 
     if(gameMode === "Latest Activity" && lastActivityObject.lastActivity == true){
+
+        let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
+
+        appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
 
         props.navigation.navigate("vocab game", {
 
@@ -201,9 +262,15 @@ const GameHome: React.FC = props=>{
             type: "info",
             message: "No activity since last logged in"
         })
+
+        return
     }
 
     if(gameMode === "Latest Activity - By Project"){
+
+        let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
+
+        appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
 
         props.navigation.navigate("vocab game", {
 
@@ -224,21 +291,14 @@ const GameHome: React.FC = props=>{
             type: "info",
             message: "No search results"
         })
-
         return
-
     }
     
 }
     
-
     const gameStart = async()=>{
 
         if(appSettings.gamesLeft.gamesLeft > 0 ){
-
-            let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
-
-            appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
 
             gameModeNavigate()
 

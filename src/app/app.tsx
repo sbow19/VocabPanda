@@ -46,8 +46,6 @@ const VocabPandaApp: React.FC = props => {
 
     const currentUserSet = [currentUser, setCurrentUser] 
 
-
-
     React.useEffect(()=>{
 
         const onStartUpLoad = async()=>{
@@ -192,7 +190,7 @@ const MainApp: React.FC = props=>{
     // Loads global variables such as datrabase objects and app settings once on sign in
     React.useEffect(()=>{
 
-        if(isLoading){
+        if(isLoading && currentUser){
             const appSettingsLoad = async ()=>{
 
                 
@@ -208,8 +206,6 @@ const MainApp: React.FC = props=>{
                     - dropping of internet connection mid-update
                 
                 */
-                /* Sets default app settings for new user */
-                await AppSettings.newSettings(currentUser)
 
                 /* Opening database and creating new table */
                 const lastActivityResultArray = await LocalDatabase.openDatabase(currentUser).then(async(databaseObject)=>{
@@ -220,7 +216,11 @@ const MainApp: React.FC = props=>{
 
                     const lastLoggedIn = await AppSettings.getLastLoggedInDate(currentUser)
 
+                    console.log(lastLoggedIn)
+
                     const lastActivityResultArray = await LocalDatabase.getLastActivity(currentUser, databaseObject.database, lastLoggedIn);
+
+                    console.log(lastActivityResultArray)
 
                     return lastActivityResultArray
 
@@ -234,6 +234,25 @@ const MainApp: React.FC = props=>{
                     console.log("Failed to open database")
                     console.log(e)
                 })
+
+                /* Check for premium update */
+
+                let upgradeToPremium = true
+
+                if(upgradeToPremium){
+                    await AppSettings.upgradeToPremium(currentUser, "15/02/2024")
+                }
+
+                /* Check for downgrade */
+
+                let downgradeToFree = false
+
+                if(downgradeToFree){
+                    await AppSettings.downgradeToFree(currentUser)
+                }
+                
+                /* Sets default app settings for new user */
+                await AppSettings.newSettings(currentUser)
 
                 const appSettings = await AppSettings.getDefaultAppSettings(currentUser)
 
@@ -264,7 +283,7 @@ const MainApp: React.FC = props=>{
             appSettingsLoad()    
         }
 
-    }, [])
+    }, [currentUser])
 
 
     const gamesLeftInterval = React.useRef("")
