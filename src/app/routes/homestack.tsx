@@ -42,7 +42,7 @@ const HomeStack: React.FC = props=>{
 }
 
 const DefaultTabStyles: MaterialTopTabNavigationOptions = {
-    tabBarGap: 5,
+    tabBarGap: 1,
     tabBarBounces: true,
     tabBarStyle: CoreStyles.homeTabNavBarStyles.homeTabBarStyle,
     tabBarLabelStyle: CoreStyles.homeTabNavBarStyles.homeTabBarLabelStyle,

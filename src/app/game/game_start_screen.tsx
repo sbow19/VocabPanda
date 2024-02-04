@@ -2,7 +2,8 @@
 
 import {
     View,
-    Text
+    Text,
+    Dimensions
 } from 'react-native'
 
 import * as types from '@customTypes/types.d'
@@ -311,6 +312,8 @@ const GameHome: React.FC = props=>{
        
     return(
         <>
+            {/* Render only if user is not premium user */}
+            {appSettings.premium.premium ? <></> : <UpgradeBannerGame {...props}/>}
             <View
                 style={[
                     CoreStyles.defaultScreen,
@@ -323,10 +326,6 @@ const GameHome: React.FC = props=>{
                     }
                 ]}
             >
-
-                {/* Render only if user is not premium user */}
-                {appSettings.premium.premium ? <></> : <UpgradeBannerGame {...props}/>}
-
                 <ContentCard
                     cardStylings={customCardStyling}
                 >
@@ -513,8 +512,12 @@ const UpgradeBannerGame = props =>{
             width: windowDimensions.WIDTH,
             height: windowDimensions.HEIGHT*0.08,
             backgroundColor: "orange",
-            marginTop: -windowDimensions.HEIGHT*0.04,
-            justifyContent: "center"
+            // marginTop: (()=>{
+            //     let {height} = Dimensions.get("window")
+            //     return height
+            // })(),
+            justifyContent: "center",
+            position: "relative"
         }}
     >
         <TouchableOpacity

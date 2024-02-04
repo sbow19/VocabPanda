@@ -59,10 +59,7 @@ const AppButton: React.FC<types.CustomButtonStylesProp> = props =>{
         <Shadow distance={!pressState ? shadowSettings.distance : 0} offset={shadowSettings.offset} sides={shadowSettings.sides} corners={
             shadowSettings.corners} startColor={appColours.black}>
                <TouchableOpacity style={[{
-                   height: (()=>{
-                        let {height} = Dimensions.get("window")
-                        return height*0.065
-                   })(), 
+                   height: windowDimensions.HEIGHT*0.065, 
                    width: windowDimensions.WIDTH*0.25, 
                    backgroundColor: appColours.lightGreen, 
                    borderRadius:20,

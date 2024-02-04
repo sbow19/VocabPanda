@@ -7,7 +7,8 @@ import {
     View,
     Text, 
     TextStyle,
-    ViewStyle
+    ViewStyle,
+    Dimensions
 } from 'react-native';
 import Dropdown from 'app/shared/dropdown';
 import ProjectDropdown from 'app/shared/project_dropdown';
@@ -526,8 +527,8 @@ const overlayStyle: ViewStyle = {
 }
 
 const buttonWrapperStyle: ViewStyle = {
+    height: windowDimensions.HEIGHT * 0.02,
     width: (windowDimensions.WIDTH*0.8),
-     marginTop: 20,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-evenly",
@@ -536,12 +537,19 @@ const buttonWrapperStyle: ViewStyle = {
 const inputCardStylings: types.CustomCardStyles = {
     width: (windowDimensions.WIDTH *  0.9),
     height: (windowDimensions.HEIGHT * 0.23),
-    marginBottom: 20
+    marginBottom: (()=>{
+        let {height} = Dimensions.get("window")
+        return height*0.02
+    })()
 }
 
 const outputCardStylings: types.CustomCardStyles = {
     width: (windowDimensions.WIDTH *  0.9),
-    height: (windowDimensions.HEIGHT * 0.23)
+    height: (windowDimensions.HEIGHT * 0.23),
+    marginBottom: (()=>{
+        let {height} = Dimensions.get("window")
+        return height*0.06
+    })()
 };
 
 const customInputStyle:TextStyle = {

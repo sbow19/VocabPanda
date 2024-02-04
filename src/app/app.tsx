@@ -239,7 +239,7 @@ const MainApp: React.FC = props=>{
 
                 /* Check for premium update */
 
-                let upgradeToPremium = true
+                let upgradeToPremium = false
 
                 if(upgradeToPremium){
                     await AppSettings.upgradeToPremium(currentUser, "15/02/2024")
@@ -247,7 +247,7 @@ const MainApp: React.FC = props=>{
 
                 /* Check for downgrade */
 
-                let downgradeToFree = false
+                let downgradeToFree = true
 
                 if(downgradeToFree){
                     await AppSettings.downgradeToFree(currentUser)

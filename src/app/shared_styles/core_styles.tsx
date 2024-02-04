@@ -35,7 +35,7 @@ const CoreStyles = StyleSheet.create({
     },
 
     actionButtonText: {
-        fontSize: 16,
+        fontSize: 14,
         fontFamily: "Exo2-Bold",
         color: appColours.white
     },
@@ -64,7 +64,10 @@ const CoreStyles = StyleSheet.create({
     mainHeaderStyles:
     {
         mainHeader: {
-            height: windowDimensions.HEIGHT*0.08,
+            height: (()=>{
+                let{height} = Dimensions.get("window")
+                return  height *0.08
+            })(),
             borderBottomColor: appColours.black,
             borderBottomWidth: 2,
             backgroundColor: appColours.darkGreen,
@@ -147,7 +150,7 @@ const CoreStyles = StyleSheet.create({
                 let newHeight = height*0.07
                 return newHeight
             })(),
-            backgroundColor: appColours.white
+            backgroundColor: appColours.paleGreen
         },
         homeTabBarLabelStyle:{
             fontFamily: "Exo2-Black",
@@ -165,13 +168,18 @@ const CoreStyles = StyleSheet.create({
         },
      
         homeTabBarItemStyle:{
-            borderColor: appColours.blue,
+            borderColor: appColours.black,
             borderWidth: 2,
             borderRadius: 10, 
             justifyContent: "center",
             backgroundColor: appColours.lightGreen,
             padding: 0,
             margin: 0,
+            height: (()=>{
+                const {height} = Dimensions.get('window');
+                let newHeight = height*0.065
+                return newHeight
+            })(),
             
         },
         

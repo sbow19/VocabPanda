@@ -90,12 +90,12 @@ const customCardStylings: types.CustomButtonStyles = {
 const buttonContainerStyle: ViewStyle = {
 
     width: (windowDimensions.WIDTH *  0.9),
-    height: (windowDimensions.HEIGHT *  0.10),
-    marginTop: windowDimensions.HEIGHT*0.01,
+    height: (windowDimensions.HEIGHT *  0.075),
+    marginTop: windowDimensions.HEIGHT*0.015,
     flexDirection: "row",
     backgroundColor: appColours.white,
     justifyContent: "space-evenly",
-    alignItems: "center"
+    alignItems: "flex-start"
 
 }
 

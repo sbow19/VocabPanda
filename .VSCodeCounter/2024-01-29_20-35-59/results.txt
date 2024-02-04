@@ -1,0 +1,133 @@
+Date : 2024-01-29 20:35:59
+Directory : c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src
+Total : 73 files,  7862 codes, 359 comments, 3084 blanks, all 11305 lines
+
+Languages
++----------------+------------+------------+------------+------------+------------+
+| language       | files      | code       | comment    | blank      | total      |
++----------------+------------+------------+------------+------------+------------+
+| TypeScript JSX |         72 |      7,861 |        359 |      3,084 |     11,304 |
+| JSON           |          1 |          1 |          0 |          0 |          1 |
++----------------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                        | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                           |         73 |      7,862 |        359 |      3,084 |     11,305 |
+| app                                                                                                                         |         72 |      7,861 |        359 |      3,084 |     11,304 |
+| app (Files)                                                                                                                 |          1 |        199 |         38 |        143 |        380 |
+| app\api                                                                                                                     |          2 |         65 |          3 |         24 |         92 |
+| app\context                                                                                                                 |         11 |         73 |         12 |         52 |        137 |
+| app\database                                                                                                                |          1 |        264 |          1 |        111 |        376 |
+| app\game                                                                                                                    |          5 |      1,192 |         86 |        505 |      1,783 |
+| app\game (Files)                                                                                                            |          4 |      1,020 |         57 |        382 |      1,459 |
+| app\game\game _logic                                                                                                        |          1 |        172 |         29 |        123 |        324 |
+| app\premium                                                                                                                 |          2 |        163 |          5 |         47 |        215 |
+| app\routes                                                                                                                  |          4 |        229 |          6 |         88 |        323 |
+| app\screens                                                                                                                 |         25 |      3,755 |        140 |      1,305 |      5,200 |
+| app\screens\about                                                                                                           |          1 |         44 |          1 |         25 |         70 |
+| app\screens\account                                                                                                         |          1 |        377 |         19 |        113 |        509 |
+| app\screens\home                                                                                                            |         12 |      1,625 |         59 |        601 |      2,285 |
+| app\screens\home (Files)                                                                                                    |          2 |        571 |         25 |        256 |        852 |
+| app\screens\home\hometab_stack                                                                                              |         10 |      1,054 |         34 |        345 |      1,433 |
+| app\screens\home\hometab_stack (Files)                                                                                      |          3 |        216 |          8 |         84 |        308 |
+| app\screens\home\hometab_stack\components                                                                                   |          2 |         83 |          2 |         31 |        116 |
+| app\screens\home\hometab_stack\search_results                                                                               |          3 |        527 |         17 |        143 |        687 |
+| app\screens\home\hometab_stack\table                                                                                        |          2 |        228 |          7 |         87 |        322 |
+| app\screens\login                                                                                                           |          5 |        535 |         13 |        176 |        724 |
+| app\screens\login (Files)                                                                                                   |          4 |        472 |         12 |        151 |        635 |
+| app\screens\login\components                                                                                                |          1 |         63 |          1 |         25 |         89 |
+| app\screens\manage_projects                                                                                                 |          6 |      1,174 |         48 |        390 |      1,612 |
+| app\screens\manage_projects (Files)                                                                                         |          4 |        943 |         35 |        325 |      1,303 |
+| app\screens\manage_projects\components                                                                                      |          2 |        231 |         13 |         65 |        309 |
+| app\shared                                                                                                                  |         15 |      1,016 |         28 |        379 |      1,423 |
+| app\shared_styles                                                                                                           |          3 |        237 |          3 |         54 |        294 |
+| app\storage                                                                                                                 |          2 |        506 |         36 |        329 |        871 |
+| app\types                                                                                                                   |          1 |        162 |          1 |         47 |        210 |
+| assets                                                                                                                      |          1 |          1 |          0 |          0 |          1 |
+| assets\icons                                                                                                                |          1 |          1 |          0 |          0 |          1 |
+| assets\icons\AppIcons                                                                                                       |          1 |          1 |          0 |          0 |          1 |
+| assets\icons\AppIcons\Assets.xcassets                                                                                       |          1 |          1 |          0 |          0 |          1 |
+| assets\icons\AppIcons\Assets.xcassets\AppIcon.appiconset                                                                    |          1 |          1 |          0 |          0 |          1 |
++-----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| filename                                                                                                                    | language       | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\api\last_activity_data.tsx                                         | TypeScript JSX |          0 |          0 |          1 |          1 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\api\translation_call.tsx                                           | TypeScript JSX |         65 |          3 |         23 |         91 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\app.tsx                                                            | TypeScript JSX |        199 |         38 |        143 |        380 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\current_user.tsx                                           | TypeScript JSX |          3 |          1 |          3 |          7 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\current_user_database.tsx                                  | TypeScript JSX |          3 |          1 |          3 |          7 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\default_app_settings_context.tsx                           | TypeScript JSX |         12 |          1 |          8 |         21 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\dimensions.tsx                                             | TypeScript JSX |          8 |          2 |          9 |         19 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\edit_text_context.tsx                                      | TypeScript JSX |          9 |          1 |          6 |         16 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\last_activity.tsx                                          | TypeScript JSX |          3 |          1 |          3 |          7 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\loading.tsx                                                | TypeScript JSX |          4 |          1 |          3 |          8 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\loggedIn.tsx                                               | TypeScript JSX |          4 |          1 |          3 |          8 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\options_context.tsx                                        | TypeScript JSX |          8 |          1 |          4 |         13 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\swipe_toggle.tsx                                           | TypeScript JSX |          4 |          1 |          3 |          8 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\context\view_full_text_context.tsx                                 | TypeScript JSX |         15 |          1 |          7 |         23 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\database\local_database.tsx                                        | TypeScript JSX |        264 |          1 |        111 |        376 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\game\game _logic\game_logic.tsx                                    | TypeScript JSX |        172 |         29 |        123 |        324 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\game\game_start_screen.tsx                                         | TypeScript JSX |        385 |         21 |        203 |        609 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\game\gamestack.tsx                                                 | TypeScript JSX |        104 |          2 |         24 |        130 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\game\loading_screen .tsx                                           | TypeScript JSX |         34 |          1 |         11 |         46 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\game\vocabgame.tsx                                                 | TypeScript JSX |        497 |         33 |        144 |        674 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\premium\premium_checks.tsx                                         | TypeScript JSX |         28 |          1 |         12 |         41 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\premium\upgrade_overlay.tsx                                        | TypeScript JSX |        135 |          4 |         35 |        174 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\routes\drawer.tsx                                                  | TypeScript JSX |        143 |          3 |         56 |        202 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\routes\homestack.tsx                                               | TypeScript JSX |         39 |          1 |         13 |         53 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\routes\login_stack.tsx                                             | TypeScript JSX |         19 |          1 |          9 |         29 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\routes\manage_projects_stack.tsx                                   | TypeScript JSX |         28 |          1 |         10 |         39 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\about\about.tsx                                            | TypeScript JSX |         44 |          1 |         25 |         70 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\account\account.tsx                                        | TypeScript JSX |        377 |         19 |        113 |        509 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\components\activity_content.tsx         | TypeScript JSX |         48 |          1 |         14 |         63 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\components\default_content.tsx          | TypeScript JSX |         35 |          1 |         17 |         53 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\game_settings.tsx                       | TypeScript JSX |         75 |          2 |         28 |        105 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\homebottomtab.tsx                       | TypeScript JSX |         74 |          1 |         26 |        101 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\homescreen.tsx                          | TypeScript JSX |         67 |          5 |         30 |        102 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\search_results\results_row.tsx          | TypeScript JSX |        188 |          6 |         54 |        248 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\search_results\results_table.tsx        | TypeScript JSX |        224 |         10 |         65 |        299 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\search_results\search_results.tsx       | TypeScript JSX |        115 |          1 |         24 |        140 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\table\row_template_home.tsx             | TypeScript JSX |        107 |          2 |         35 |        144 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\hometab_stack\table\table_template_home.tsx           | TypeScript JSX |        121 |          5 |         52 |        178 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\translate.tsx                                         | TypeScript JSX |        411 |         21 |        184 |        616 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\home\vocab_search.tsx                                      | TypeScript JSX |        160 |          4 |         72 |        236 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\login\components\signupscreen_template.tsx                 | TypeScript JSX |         63 |          1 |         25 |         89 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\login\create_account.tsx                                   | TypeScript JSX |        223 |          9 |         67 |        299 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\login\loading_screen.tsx                                   | TypeScript JSX |         30 |          1 |         12 |         43 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\login\login_hub.tsx                                        | TypeScript JSX |         64 |          1 |         24 |         89 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\login\login_screen.tsx                                     | TypeScript JSX |        155 |          1 |         48 |        204 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\manage_projects\choose_project.tsx                         | TypeScript JSX |        284 |          6 |        102 |        392 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\manage_projects\components\edit_text_overlay.tsx           | TypeScript JSX |        134 |          1 |         29 |        164 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\manage_projects\components\options_overlay.tsx             | TypeScript JSX |         97 |         12 |         36 |        145 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\manage_projects\project_row_template.tsx                   | TypeScript JSX |        164 |          4 |         51 |        219 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\manage_projects\project_table_template.tsx                 | TypeScript JSX |        253 |         13 |         86 |        352 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\screens\manage_projects\project_view.tsx                           | TypeScript JSX |        242 |         12 |         86 |        340 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\ad_banner.tsx                                               | TypeScript JSX |         30 |          1 |         13 |         44 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\app_button.tsx                                              | TypeScript JSX |         73 |          1 |         29 |        103 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\app_overlay.tsx                                             | TypeScript JSX |         26 |          2 |         13 |         41 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\content_card.tsx                                            | TypeScript JSX |         31 |          1 |         13 |         45 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\dropdown.tsx                                                | TypeScript JSX |        122 |          4 |         47 |        173 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\flash_messages.tsx                                          | TypeScript JSX |          0 |          0 |          1 |          1 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\homescreen_template.tsx                                     | TypeScript JSX |         63 |          1 |         18 |         82 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\languages_list.tsx                                          | TypeScript JSX |         40 |          1 |          7 |         48 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\main_header.tsx                                             | TypeScript JSX |         60 |          1 |         24 |         85 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\project_dropdown.tsx                                        | TypeScript JSX |        133 |          9 |         61 |        203 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\slider.tsx                                                  | TypeScript JSX |         61 |          1 |         32 |         94 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\switch.tsx                                                  | TypeScript JSX |         52 |          1 |         32 |         85 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\text_input.tsx                                              | TypeScript JSX |        152 |          1 |         47 |        200 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\upgrade_banner.tsx                                          | TypeScript JSX |         39 |          3 |         11 |         53 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared\view_full_text.tsx                                          | TypeScript JSX |        134 |          1 |         31 |        166 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared_styles\app_colours.tsx                                      | TypeScript JSX |         11 |          1 |          4 |         16 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared_styles\core_styles.tsx                                      | TypeScript JSX |        207 |          1 |         45 |        253 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\shared_styles\shadow_settings.tsx                                  | TypeScript JSX |         19 |          1 |          5 |         25 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\storage\app_settings_storage.tsx                                   | TypeScript JSX |        335 |         17 |        212 |        564 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\storage\user_profile_details.tsx                                   | TypeScript JSX |        171 |         19 |        117 |        307 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\app\types\types.d.tsx                                                  | TypeScript JSX |        162 |          1 |         47 |        210 |
+| c:\Users\lenovo\Desktop\Prog\js\react\VocabPanda\src\assets\icons\AppIcons\Assets.xcassets\AppIcon.appiconset\Contents.json | JSON           |          1 |          0 |          0 |          1 |
+| Total                                                                                                                       |                |      7,862 |        359 |      3,084 |     11,305 |
++-----------------------------------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
