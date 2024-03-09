@@ -4,8 +4,6 @@ import { languageObject } from "app/types/types.d";
 
 class DeeplTranslate{
 
-    //No constructor necessary
-
     constructor(){};
 
     static #changeLanguageValue(target_lang: string, output_lang:string){

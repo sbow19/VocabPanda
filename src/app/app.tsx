@@ -17,7 +17,7 @@ import CurrentUserContext from './context/current_user';
 import LoadingScreen from '@screens/login/loading_screen';
 import LoginStack from 'app/routes/login_stack';
 
-import FlashMessage from 'react-native-flash-message';
+import FlashMessage, { showMessage } from 'react-native-flash-message';
 import CoreStyles from './shared_styles/core_styles';
 
 import AppSettings from './storage/app_settings_storage';
@@ -27,6 +27,9 @@ import AppLoginDetails from './storage/user_profile_details';
 import LocalDatabase from './database/local_database';
 import UserDatabaseContext from './context/current_user_database';
 import { SQLiteDatabase } from 'react-native-sqlite-storage';
+
+import axios from 'axios';
+import BackendAPI from 'app/api/backend';
 
 
 const MainAppContainer = createNativeStackNavigator()
@@ -52,25 +55,40 @@ const VocabPandaApp: React.FC = props => {
 
             if(isLoading){
 
-            
+                try{
+                    
                
-                /* Sets object defining login details */
-                await AppLoginDetails.setInitial()
+                    /* Sets object defining login details */
+                    await AppLoginDetails.setInitial()
 
-                /* Set initial app default settings */
+                    /* Set initial app default settings in storage*/
+                    await AppSettings.setInitial()
 
-                await AppSettings.setInitial()
+                    /*Set global headers for HTTP requests and obtain API key for device*/
+                    await BackendAPI.setGlobalHeaders();  
 
-                /* Tests whether a database can be connected to */
+                    /* Tests whether a database can be connected to */
 
-                await LocalDatabase.createTestDatabase().catch((e)=>{
+                    await LocalDatabase.createTestDatabase().catch((e)=>{
 
-                    console.log("Connection to database failed")
-                    console.log(e)
-                })
+                        console.log("Connection to database failed")
+                        console.log(e)
+                    })
+        
+                    setIsLoading(false);
 
-    
-                setIsLoading(false);
+                }catch(err){
+
+                    //Error while loading application
+                    console.log(err);
+
+                    //Show error depending on type of error which occured.
+                    showMessage({
+                        type: "warning",
+                        message: "Error while loading"
+                    })
+            
+                }
             }
         }
 
