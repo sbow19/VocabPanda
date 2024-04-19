@@ -11,19 +11,26 @@ import {
     Text
 } from "react-native"
 import AppButton from "app/shared/app_button"
-import windowDimensions from "app/context/dimensions"
+import windowDimensions from "app/context/dimensions";
+
+import FlashMessage, {showMessage} from "react-native-flash-message"
+
+import InternetStatus from 'app/context/internet'
+import React from 'react'
 
 const LoginHub: React.FC = props=>{
 
     const signInNav = ()=>{
 
-        props.navigation.navigate("login")
+        props.navigation.navigate("login");
     }
 
     const createAccountNav = ()=>{
 
-        props.navigation.navigate("create account")
-    }
+        props.navigation.navigate("create account");
+    };
+
+    const [isOnline] = React.useContext(InternetStatus);
 
     return(
         <>
@@ -49,9 +56,25 @@ const LoginHub: React.FC = props=>{
                 >
                     <AppButton
                         customStyles={createAccountButtonStyles}
-                        onPress={createAccountNav}
-                    >
+                        onPress={()=>{
+                            
+                            //Show error message if no internet connection
 
+                            if(!isOnline){
+
+                                showMessage(
+                                    {
+                                        type: "info",
+                                        message: "Cannot create account when not connected to the internet"
+                                    }
+                                );
+
+                            } else if (isOnline){
+                                createAccountNav()
+                            };
+                        }
+                    }
+                    >
                         <Text
                             style={[CoreStyles.actionButtonText, {color: appColours.black}]}
                         >
@@ -63,6 +86,17 @@ const LoginHub: React.FC = props=>{
 
 
             </SignInTemplate>
+            <FlashMessage 
+                    position="center"
+                    animationDuration={100}
+                    duration={1000}
+                    titleStyle={CoreStyles.contentText}
+                    style={
+                        {
+                            zIndex: 99
+                        }
+                    }
+            />
         </>
     )
 }

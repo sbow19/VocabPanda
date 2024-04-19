@@ -8,6 +8,10 @@ import windowDimensions from "app/context/dimensions"
 import * as yup from 'yup'
 import { showMessage } from "react-native-flash-message"
 
+import InternetStatus from "app/context/internet"
+
+import React from "react"
+
 import {
     View,
     ViewStyle,
@@ -48,6 +52,8 @@ const createAccountSchema = yup.object({
 
 const CreateAccount: React.FC = props=>{
 
+    const [isOnline] = React.useContext(InternetStatus);
+
     return(
         <TouchableOpacity
             onPress={()=>Keyboard.dismiss()}
@@ -63,6 +69,16 @@ const CreateAccount: React.FC = props=>{
                             Check email and username in the local storage to see whether there is already an account,
                             -   Must have internet to create an account to check email and usernames
                         */
+
+                        if(!isOnline){
+                            showMessage({
+                                type: "warning",
+                                message: "Internet required to create account.",
+                            })
+
+                            return
+
+                        }
 
                         /* If no email and username in local storage, then prompt user to connect to web */
 
@@ -254,7 +270,6 @@ const CreateAccount: React.FC = props=>{
                                         customStyles={{backgroundColor:appColours.darkGreen}}
                                         onPress={()=>{
                                             handleSubmit()
-                
                                         }}
                                     >
                                         <Text style={CoreStyles.actionButtonText}>Submit</Text>

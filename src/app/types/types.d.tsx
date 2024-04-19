@@ -208,3 +208,8 @@ export type GameSettingsObject = {
     resultArray: Array<any>
     project: string
 }
+
+export type CreateAccountCall = {
+
+    
+}

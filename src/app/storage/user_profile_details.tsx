@@ -2,6 +2,8 @@
 
 import EncryptedStorage from "react-native-encrypted-storage";
 import AppSettings from "./app_settings_storage";
+import NetInfo from "@react-native-community/netinfo";
+import BackendAPI from "app/api/backend";
 
 class AppLoginDetails {
 
@@ -59,7 +61,7 @@ class AppLoginDetails {
 
 
         })
-    }
+    };
 
     static checkLoginDetails = (email:string, username:string)=>{
 
@@ -148,7 +150,7 @@ class AppLoginDetails {
                 reject(e)
             }
         })
-    }
+    };
 
     static setInitial = ()=>{
 
@@ -156,33 +158,112 @@ class AppLoginDetails {
 
             try{
 
-                let usersDetailsRaw = await EncryptedStorage.getItem('users')
-    
-                if(!usersDetailsRaw){
-    
-                    let usersDetails = {}
-                    await EncryptedStorage.setItem('users',
-                    
-                    JSON.stringify(usersDetails)
-                    )
+                let usersDetailsRaw = await EncryptedStorage.getItem('users');
 
-                    resolve(null)
+                let usersDetails = JSON.parse(usersDetailsRaw);
+
+                console.log(usersDetails)
+
+                //Check for internet connection
+
+                const isOnline = await NetInfo.fetch().then(state=>{
+
+                    return state.isConnected;
+                });
+
+                //Testing backend API key generatio
+    
+                if(!usersDetailsRaw && isOnline){
+
+                    //Where user device has no data and is connected to internet, api key requewst made
+
+                    const APIKey = await BackendAPI.requestAPIKey();
+
+                    console.log(APIKey)
+
+                    if(!APIKey){
+                        const error = "Backend error generating API key."
+                        throw error;
+                    };
+
+   
+                    const usersDetails = {
+                        "api-key": APIKey
+                    };
+
+                    await EncryptedStorage.setItem('users',
+                        JSON.stringify(usersDetails)
+                    );
+
+                    //Once API key set in local storage  we need to re add the global headers
+
+                    await BackendAPI.setGlobalHeaders();
+
+                    resolve(null);
+                    return
+
+                } else if (!usersDetailsRaw && !isOnline){
+
+                    const error = "User must be online before starting app.";
+                    throw error
+
+                } else if (usersDetailsRaw){
+
+                    //Check if API key exists
+
+                    const resultObject = await AppLoginDetails.checkAPIKey();
+                    
+                    if(!resultObject.APIKeyExists && !isOnline){
+
+                        throw "Cannot start without internet connection."
+
+                    } else if (!resultObject.APIKeyExists && isOnline){
+
+                        //Where user device has no data and is connected to internet, api key requewst made
+
+                        const APIKeyRequestResponse = await BackendAPI.requestAPIKey();
+
+                        if(!APIKeyRequestResponse){
+                            const error = "Backend error generating API key."
+                            throw error;
+                        };
+
+                        usersDetails["api-key"] = APIKeyRequestResponse.APIKey
+                        
+
+                        await EncryptedStorage.setItem('users',
+                            JSON.stringify(usersDetails)
+                        );
+
+                        //Once API key set in local storage  we need to re add the global headers
+                        await BackendAPI.setGlobalHeaders();
+
+                        resolve(null);
+                        return
+
+                    } else if (resultObject.APIKeyExists){
+                        
+                        resolve(null);
+                        return
+                    }
+
                 }
             
-                resolve(null)
+            
             }catch(e){
-                console.log(e)
-                resolve(e)
+                console.log(e);
+                const AddLocalUserDetailsError = new Error(
+                    "Error creating local storage for user details."
+                ).stack;
+                
+                reject(AddLocalUserDetailsError);
             }
-
-
-
         })
 
         /* Check whether there is a users object set in storage. If not, then add to users object to storage*/
 
         
-    }
+    };
       
     static setLoginDetails = (email:string, username:string, password: string)=>{
 
@@ -302,6 +383,124 @@ class AppLoginDetails {
             }
         })
     }      
+
+    static checkAPIKey = async ()=>{
+
+        return new Promise(async(resolve, reject)=>{
+
+            const resultObject = {
+                APIKeyExists: false,
+                message: ""
+            };
+
+            try{
+    
+                /* delete user profile */
+                let usersDetailsRaw = await EncryptedStorage.getItem('users')
+    
+                let usersDetails = JSON.parse(usersDetailsRaw);
+
+                const keys = Object.keys(usersDetails);
+
+                //Check that API key exists
+
+
+
+                if(keys.includes("api-key")){
+                    /* Check if inputted password matches password in database */
+
+                    const APIKey = usersDetails["api-key"];
+
+                    if(!APIKey){
+
+                        resultObject.APIKeyExists = false;
+                        resultObject.message = "No API key exists. Generating API key";
+
+                        resolve(resultObject);
+                        return
+
+                    } else if (APIKey) {
+
+                        resultObject.APIKeyExists = true;
+                        resultObject.message = "API key exists";
+
+                        resolve(resultObject);
+                        return
+
+                    }
+
+                }else{
+
+                    /* Else resolve promise here with password match error */
+
+                    resultObject.message = "No API key exists"
+                    resolve(resultObject);
+                }
+
+            }catch(e){
+    
+                resultObject.message = "Error checking API Key" + JSON.stringify(e);
+                reject(resultObject)
+    
+            }
+        })
+    }     
+    
+    static getAPIKey = async ()=>{
+
+        return new Promise(async(resolve)=>{
+
+            const resultObject = {
+                APIKey: "",
+                message: ""
+            };
+
+            try{
+    
+                /* delete user profile */
+                let usersDetailsRaw = await EncryptedStorage.getItem('users')
+    
+                let usersDetails = JSON.parse(usersDetailsRaw);
+
+                //Check that API key exists
+
+                if("api-key" in Object.keys(usersDetails)){
+                    /* Check if inputted password matches password in database */
+
+                    const APIKey = usersDetails["api-key"];
+
+                    if(!APIKey){
+
+                        resultObject.APIKey = "";
+                        resultObject.message = "No API key exists";
+
+                        resolve(resultObject);
+
+                    } else {
+
+                        resultObject.APIKey = APIKey;
+                        resultObject.message = "API key exists";
+
+                        resolve(resultObject);
+
+                    }
+
+                }else{
+
+                    /* Else resolve promise here with password match error */
+
+                    resultObject.message = "Passwords do not match"
+                    resolve(resultObject)
+                }
+
+            }catch(e){
+    
+                resultObject.message = "No API key exists"
+                resolve(resultObject)
+    
+            }
+        })
+    }     
 }
 
 export default AppLoginDetails

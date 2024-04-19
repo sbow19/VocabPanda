@@ -14,8 +14,6 @@ import * as types from '@customTypes/types.d'
 
 const SignInTemplate: React.FC<types> = props=>{
 
-
-
     return(
         <>
         <StatusBar backgroundColor={appColours.lightGreen} barStyle="dark-content"/>

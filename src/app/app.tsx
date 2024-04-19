@@ -31,6 +31,8 @@ import { SQLiteDatabase } from 'react-native-sqlite-storage';
 import axios from 'axios';
 import BackendAPI from 'app/api/backend';
 
+import InternetStatus from './context/internet';
+import NetInfo from "@react-native-community/netinfo";
 
 const MainAppContainer = createNativeStackNavigator()
 
@@ -43,6 +45,12 @@ const VocabPandaApp: React.FC = props => {
 
     const [isLoading, setIsLoading] = React.useContext(LoadingStatus);
 
+    /* Internet Status */
+
+    const [isOnline, setIsOnline] = React.useState();
+
+    const isOnlineSet = [isOnline, setIsOnline]
+
     /* Current user state */
 
     const [currentUser, setCurrentUser] = React.useState("")
@@ -54,28 +62,49 @@ const VocabPandaApp: React.FC = props => {
         const onStartUpLoad = async()=>{
 
             if(isLoading){
-
                 try{
-                    
-               
-                    /* Sets object defining login details */
-                    await AppLoginDetails.setInitial()
 
-                    /* Set initial app default settings in storage*/
-                    await AppSettings.setInitial()
+                    /*
+                        Configures local database on the first load 
+                    */
 
-                    /*Set global headers for HTTP requests and obtain API key for device*/
-                    await BackendAPI.setGlobalHeaders();  
+                    //Set global headers in database
+
+                    await BackendAPI.setGlobalHeaders();
+
+                    /* Sets object defining login details and API key in local storage*/
+                    await AppLoginDetails.setInitial();
+
+                    /* Set initial app default settings in local storage*/
+                    await AppSettings.setInitial();
 
                     /* Tests whether a database can be connected to */
+                    await LocalDatabase.createTestDatabase().catch(
+                        error=>{
+                            throw new Error(error)
+                        }
+                    );
 
-                    await LocalDatabase.createTestDatabase().catch((e)=>{
+                    /*
+                        Check for internet connection
+                    */
+                    
+                    const isUserOnline = await NetInfo.fetch();
 
-                        console.log("Connection to database failed")
-                        console.log(e)
-                    })
-        
+                    setIsOnline(isUserOnline);
+
+                    /*
+                        Set event listener for internet connection
+                    */
+
+                    NetInfo.addEventListener(state=>{
+                        setIsOnline(state.isConnected);
+                    });
+
+            
+                    //If all loading actions completed successfully, then no issues.
                     setIsLoading(false);
+
 
                 }catch(err){
 
@@ -94,11 +123,12 @@ const VocabPandaApp: React.FC = props => {
 
         onStartUpLoad()
         
-    }, [isLoggedIn])
+    }, [isLoggedIn]);
 
     
     return(
-    
+
+        <InternetStatus.Provider value={isOnlineSet}>
         <CurrentUserContext.Provider value={currentUserSet}>
             <NavigationContainer>
                 {(()=>{
@@ -129,6 +159,7 @@ const VocabPandaApp: React.FC = props => {
                     }
                 />
         </CurrentUserContext.Provider>
+        </InternetStatus.Provider>
     )
 
 }
