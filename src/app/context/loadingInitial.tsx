@@ -3,6 +3,6 @@
 import { createContext } from "react";
 import * as types from '@customTypes/types.d'
 
-const LoadingStatus = createContext("");
+const LoadingStatusInitial = createContext("");
 
-export default LoadingStatus;
+export default LoadingStatusInitial;

@@ -24,9 +24,8 @@ import CurrentUserContext from 'app/context/current_user';
 import { showMessage } from 'react-native-flash-message';
 
 import * as yup from 'yup'
-import AppLoginDetails from 'app/storage/user_profile_details';
+import UserDetails from 'app/database/user_profile_details';
 
-import UserDatabaseContext from 'app/context/current_user_database';
 import LocalDatabase from 'app/database/local_database';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
@@ -52,11 +51,11 @@ const Account: React.FC = props=>{
 
     /* Get sign in context here */
 
-    const [isLoggedIn, setIsLoggedIn] = React.useContext(LoggedInStatus)
+    const [, setIsLoggedIn] = React.useContext(LoggedInStatus)
 
     /* App settings */
 
-    const [appSettings] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
 
 
     /* Password overlay visible state */
@@ -72,10 +71,6 @@ const Account: React.FC = props=>{
     /* Delete account error message */
 
     const [errorMessageVisible, setErrorMessageVisible] = React.useState("")
-
-    /* User database context */
-
-    const [databaseObject, setMyDatabaseObject] = React.useContext(UserDatabaseContext)
 
 
     /* Triggers on sign out */
@@ -93,8 +88,9 @@ const Account: React.FC = props=>{
                     text: "Sign out",
                     onPress: ()=>{
                         /* trigger sign out procedure */
-                        setIsLoggedIn(false)
-                        setCurrentUser("")
+                        setIsLoggedIn(false);
+                        setCurrentUser("");
+                        setAppSettings({});
                     }
                 }
             ],
@@ -184,7 +180,7 @@ const Account: React.FC = props=>{
                     <>
                         <View>
                             <Text style={CoreStyles.contentText}> 
-                                You are currently using the free version of Vocab Panda. For unlimited flashcard turns and more vocab storage, you can upgrade to premium for £3.49!
+                                You are currently using the free version of Vocab Panda. For unlimited flashcard turns, translations, and more vocab storage, you can upgrade to premium for £7.99 per month!
                             </Text>
                         </View>
                         <View
@@ -238,14 +234,14 @@ const Account: React.FC = props=>{
                             
                             /* Call change password function in default settings class */
                             
-                            let result = await AppLoginDetails.changePassword(values.password, currentUser)
+                            const result: types.ChangePasswordResponse = await UserDetails.changePassword(values.password, currentUser);
 
                             showMessage({
-                                message: result,
+                                message: result.changeMessage,
                                 type: "info"
                             })
 
-                            setPasswordOverlay(false)
+                            setPasswordOverlay(false);
                         }}
                     >
 
@@ -331,15 +327,12 @@ const Account: React.FC = props=>{
                     initialValues={{password: ""}}
                     onSubmit={async (values, actions)=>{
 
-                        
-                        let results = await AppLoginDetails.deleteAccount(currentUser, values.password);
+                        const results: types.DeleteAccountResponseObject = await UserDetails.deleteAccount(currentUser, values.password);
                        
                         if(results.deletionSuccessful == true){
-
-                            await LocalDatabase.deleteTable(currentUser, databaseObject.database)
                            
-                            setIsLoggedIn(false)
-                            setCurrentUser("")
+                            setIsLoggedIn(false);
+                            setCurrentUser("");
                             showMessage({
                                 message: "Account deleted",
                                 type: "info"

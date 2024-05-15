@@ -11,14 +11,15 @@ import React, { useContext } from 'react';
 import FullTextContext from 'app/context/view_full_text_context';
 
 import {default as SimpleIcon} from 'react-native-vector-icons/SimpleLineIcons'
+import EditTextContext from 'app/context/edit_text_context';
 
 const RowTemplate: React.FC = props=>{
 
-    const optionsObject = useContext(OptionsOverlayContext)
+    const optionsObject = useContext(OptionsOverlayContext);
 
-    const fullTextOverlayObject = useContext(FullTextContext)
+    const fullTextOverlayObject = useContext(FullTextContext);
 
-    /* Results row */
+    const editTextOverlayObject = useContext(EditTextContext);
 
     const resultRow = props.resultRow
 
@@ -37,8 +38,13 @@ const RowTemplate: React.FC = props=>{
                 }}
 
                 onPress={()=>{
-                    optionsObject.setCurrentEntryId(resultRow.id)
-                    optionsObject.setOptionsOverlayVisible(!optionsObject.visible)
+
+                    optionsObject.setCurrentEntryId(resultRow["entry_id"]) //
+                    optionsObject.setOptionsOverlayVisible(!optionsObject.visible)//
+
+                    //Set edit entries row
+                    editTextOverlayObject.setEntryToEdit(resultRow);
+                    
                 }}
                 
             >
@@ -61,12 +67,13 @@ const RowTemplate: React.FC = props=>{
                 onPress={()=>{
                     /* Set full text content */
 
+
                     fullTextOverlayObject.setFullText({
 
-                        target_language: resultRow.target_language,
-                        target_language_lang: resultRow.target_language_lang,
-                        output_language: resultRow.output_language,
-                        output_language_lang: resultRow.output_language_lang
+                        target_language: resultRow["target_language_text"],
+                        target_language_lang: resultRow["target_language"],
+                        output_language: resultRow["output_language_text"],
+                        output_language_lang: resultRow["output_language"]
 
                     })
 
@@ -92,7 +99,7 @@ const RowTemplate: React.FC = props=>{
                             ]}
                     >
                          {
-                            `(${resultRow.target_language_lang}):\n${resultRow.target_language}`
+                            `(${resultRow.target_language}):\n${resultRow.target_language_text}`
                         }
                     </Text>
                 </View>
@@ -116,10 +123,10 @@ const RowTemplate: React.FC = props=>{
 
                      fullTextOverlayObject.setFullText({
 
-                        target_language: resultRow.target_language,
-                        target_language_lang: resultRow.target_language_lang,
-                        output_language: resultRow.output_language,
-                        output_language_lang: resultRow.output_language_lang
+                        target_language: resultRow["target_language_text"],
+                        target_language_lang: resultRow["target_language"],
+                        output_language: resultRow["output_language_text"],
+                        output_language_lang: resultRow["output_language"]
 
                     })
 
@@ -144,7 +151,7 @@ const RowTemplate: React.FC = props=>{
                             ]}
                     >
                         { 
-                            `(${resultRow.output_language_lang}):\n${resultRow.output_language}`
+                            `(${resultRow.output_language}):\n${resultRow.output_language_text}`
                         }
                     </Text>
                 </View>

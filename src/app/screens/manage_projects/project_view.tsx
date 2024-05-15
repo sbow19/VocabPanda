@@ -20,23 +20,21 @@ import appColours from 'app/shared_styles/app_colours';
 import { Overlay } from '@rneui/base';
 
 import CurrentUserContext from 'app/context/current_user';
-import AppSettings from 'app/storage/app_settings_storage';
+import UserContent from 'app/database/user_content';
 
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 import ResultTable from "./project_table_template"
-import LocalDatabase from 'app/database/local_database';
-import UserDatabaseContext from 'app/context/current_user_database';
 
 const ProjectView: React.FC = props=>{
 
     /* Current user context */
 
-    const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
+    const [currentUser,] = React.useContext(CurrentUserContext)
 
     /* default settings  */
 
-    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
 
     /* Options Overlay state */
 
@@ -45,10 +43,6 @@ const ProjectView: React.FC = props=>{
     /* Get project name */
 
     const project = props.route.params.project;
-
-    /* Get user database context */
-
-    const [databaseObject, setDatabaseObject] = React.useContext(UserDatabaseContext);
 
 
     React.useEffect(() => {
@@ -78,7 +72,6 @@ const ProjectView: React.FC = props=>{
     const nav = ()=>{
 
         props.navigation.navigate("game", {
-
             screen: "game home",
             params: {
                 reDirectContent: true,
@@ -104,22 +97,13 @@ const ProjectView: React.FC = props=>{
                 {
                     text: "Delete Project",
                     onPress: async ()=>{
-                        console.log("Delete project logic")
 
-                        await AppSettings.deleteProject(currentUser, project)
+                        //Delete project from database - CHECK IF CASCADES TO ENTRIES CORRECTLY
+                        await UserContent.deleteProject(currentUser, project)
 
-                        /*Projectconfig object*/
+                        /*Remove project from default settings - all dropdowns*/
 
-                        const projectConfig: ProjectConfig<string> = {
-                            mode: "delete",
-                            project: project
-                        }
-
-                        setAppSettings(undefined, undefined, undefined, projectConfig)
-
-                        //Add delete words from database logic
-
-                        await LocalDatabase.deleteProject(currentUser, databaseObject.database, project)
+                        setAppSettingsHandler(project, "removeProject")
 
                         props.navigation.reset(({
                             index:0,

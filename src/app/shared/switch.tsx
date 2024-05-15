@@ -11,14 +11,32 @@ const parseProps = props=>{
 
     customProps = {
 
-        onPress: ()=>{}
+        onPress: ()=>{},
+        defaultValue: 0,
+        setsDefault: false,
+        switchType: ""
 
-    }
+    };
 
     if(props.onPress){
 
         customProps.onPress = props.onPress
         
+    }
+
+    if(props.defaultValue === true || props.defaultValue === false){
+
+        customProps.defaultValue = props.defaultValue;
+    }
+
+    if(props.setsDefault === true || props.setsDefault === false){
+
+        customProps.setsDefault = props.setsDefault; 
+    }
+
+    if(props.switchType){
+
+        customProps.switchType = props.switchType;
     }
 
     return customProps
@@ -29,13 +47,24 @@ const AppSwitch:React.FC = props =>{
 
     const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
 
-    const [myLocalSetting, setMyLocalSetting] = React.useState<boolean>(false)
+    const [myLocalSetting, setMyLocalSetting] = React.useState<boolean>(false);
 
-    const customProps = parseProps(props)
+
+    const customProps = parseProps(props);
 
     React.useEffect(()=>{
 
-        setMyLocalSetting(appSettings.gameSettings.timerOn)
+        let switchVal;
+
+        if(appSettings.userSettings.timerOn === 0){
+
+            switchVal = false;
+
+        }else if (appSettings.userSettings.timerOn === 1){
+
+            switchVal = true;
+        } 
+        setMyLocalSetting(switchVal);
 
     }, [])
   
@@ -43,19 +72,20 @@ const AppSwitch:React.FC = props =>{
     
     <>
         <Switch
-            value={props.setsDefault != true ? myLocalSetting : appSettings.gameSettings.timerOn}
+            value={myLocalSetting}
             onValueChange={
                 (val)=>{
 
-                    if(props.setsDefault == true){
+                    if(customProps.setsDefault == true){
 
-                        setAppSettingsHandler(val, "", props.setsDefault)
+                        setAppSettingsHandler(val, customProps.switchType); //Sets default switch value in database
 
-                        setMyLocalSetting(!myLocalSetting)
+                        setMyLocalSetting(val);
+                        
 
                     } else {
 
-                        setMyLocalSetting(!myLocalSetting);
+                        setMyLocalSetting(val);
 
                     }
 

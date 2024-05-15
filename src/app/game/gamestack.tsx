@@ -113,6 +113,9 @@ const SettingsHeader: React.FC = props =>{
                         borderRadius: 3
                     
                     }}
+                    onPress={()=>{
+                        props.navigation.navigate("Account")
+                    }}
                 >
                     <FontAwesome5Icon name="info-circle" size={28} color={appColours.black}/>
                 </TouchableOpacity>

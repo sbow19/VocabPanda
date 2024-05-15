@@ -66,7 +66,7 @@ const ProjectDropdown: React.FC<types.CustomDropDownProps> = props=>{
 
     /* Dropdown state*/
 
-    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings] = React.useContext(DefaultAppSettingsContext)
 
     /* Dropdown state */
 

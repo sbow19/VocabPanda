@@ -16,12 +16,31 @@ const parseProps = props=>{
 
     customProps = {
 
-        onPress: ()=>{}
+        onPress: ()=>{},
+        defaultValue: 0,
+        setsDefault: false,
+        sliderType: ""
     }
 
     if(props.onPress){
         customProps.onPress = props.onPress
     }
+
+    if(props.defaultValue === true || props.defaultValue === false){
+
+        customProps.defaultValue = props.defaultValue;
+    }
+
+    if(props.setsDefault === true || props.setsDefault === false){
+
+        customProps.setsDefault = props.setsDefault; 
+    }
+
+    if(props.sliderType){
+
+        customProps.sliderType = props.sliderType;
+    }
+
 
     return customProps
 
@@ -39,7 +58,7 @@ const AppSlider:React.FC = props=>{
 
     React.useEffect(()=>{
 
-        setLocalSliderValue(appSettings.gameSettings.noOfTurns)
+        setLocalSliderValue(appSettings.userSettings.noOfTurns); //
 
     }, [])
 
@@ -51,7 +70,7 @@ const AppSlider:React.FC = props=>{
 
                 <Text style={[{color:appColours.black, fontSize:18}, CoreStyles.contentText]}>
                     
-                    {props.setsDefault != true ? localSliderValue : appSettings.gameSettings.noOfTurns}
+                    {localSliderValue}
                 
                 </Text>
 
@@ -64,14 +83,14 @@ const AppSlider:React.FC = props=>{
                     minimumValue={5}
                     onValueChange={val=>{
                         
-                        if(props.setsDefault == true){
-                            setAppSettingsHandler(null, val, props.setsDefault)
+                        if(customProps.setsDefault == true){
+                            setAppSettingsHandler(val, "noOfTurns")
                             setLocalSliderValue(val)
                         } else {
                             setLocalSliderValue(val)
                         }
 
-                        if(props.onPress){
+                        if(customProps.onPress){
 
                             customProps.onPress(val)
                         }
@@ -83,7 +102,7 @@ const AppSlider:React.FC = props=>{
                     minimumTrackTintColor={appColours.lightGreen}
                     thumbTintColor={appColours.darkGreen}
                     maximumTrackTintColor={appColours.black}
-                    value={props.setsDefault != true ? localSliderValue : appSettings.gameSettings.noOfTurns}
+                    value={localSliderValue}
                 />
             </View>
         </>

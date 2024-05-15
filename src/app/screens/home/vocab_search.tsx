@@ -24,26 +24,26 @@ import { Formik } from 'formik';
 import * as yup from 'yup'
 import UpgradeBanner from 'app/shared/upgrade_banner';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
+import CurrentUserContext from 'app/context/current_user';
 
-import UserDatabaseContext from 'app/context/current_user_database';
+
 import { showMessage } from 'react-native-flash-message';
 
-import LocalDatabase from 'app/database/local_database';
+import UserContent from 'app/database/user_content';
 
 const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
     /* Get project context */
 
-    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings,] = React.useContext(DefaultAppSettingsContext)
 
-    const [projectList, setProjectList] = React.useState([]);
-
+    const [projectList,] = React.useState([]);
 
     const [currentProjectSelection, setCurrentProjectSelection] = React.useState("");
 
-    /* Get database context */
+    /* Get current user context */
 
-    const [databaseObject, setDatabaseObject] = React.useContext(UserDatabaseContext)
+    const [currentUser,] = React.useContext(CurrentUserContext)
 
     const searchProjectHandler = async ()=>{
 
@@ -56,7 +56,7 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
             return
         } else {
 
-            let resultArray = await LocalDatabase.getProjectEntries(databaseObject, currentProjectSelection)
+            const resultArray = await UserContent.getProjectEntries(currentUser, currentProjectSelection)
 
             props.navigation.navigate("results", {
                 
@@ -79,7 +79,7 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
             return
         } else {
 
-            let resultArray = await LocalDatabase.searchTerm(databaseObject.currentUser, databaseObject.database, searchTerm)
+            const resultArray = await UserContent.searchTerm(currentUser, searchTerm)
 
             props.navigation.navigate("results", {
                 

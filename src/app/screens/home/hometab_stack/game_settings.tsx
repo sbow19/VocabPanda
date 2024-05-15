@@ -21,7 +21,6 @@ import UpgradeBanner from 'app/shared/upgrade_banner';
 
 const GameSettings: React.FC = (props)=>{
 
-
 return (
     <View style={[CoreStyles.defaultScreen, additionalStyles]}>
 
@@ -39,6 +38,7 @@ return (
                         <AppSwitch
 
                             setsDefault={true}
+                            switchType={"timerOn"}
                         
                         />
                     </View>

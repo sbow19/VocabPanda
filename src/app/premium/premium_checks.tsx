@@ -1,38 +1,42 @@
 /* eslint-disable */
 
 import LocalDatabase from "app/database/local_database"
+import * as types from '@customTypes/types.d'
+import UserContent from "app/database/user_content"
 
-class PremiumChecks {
+class PremiumChecks extends LocalDatabase {
 
-    constructor(){
+    static checkProjectLength = (username: string, projectName:string , appSettings: types.AppSettingsObject) : Promise<types.ProjectLengthResponseObject>=>{
 
-    }
-
-    static checkProjectLength = (databaseObject, projectName, appSettings)=>{
-
-        let responseObject = {
-            upgrade: false,
+        const responseObject = {
+            upgradeNeeded: false,
             reason: "",
         }
 
         return new Promise(async(resolve)=>{
 
-            let resultArray = await LocalDatabase.getProjectEntries(databaseObject, projectName);
+            try{
 
-            let resultArrayLength = resultArray.length
+                const resultArray = await UserContent.getProjectEntries(username, projectName);
 
-            if(resultArrayLength >= 50){
-                responseObject.reason = "50 Limit"
-                resolve(responseObject)
-            } else
-            if(resultArrayLength >= 20 && !appSettings.premium.premium){
-                responseObject.upgrade = true
-                responseObject.reason = "20 Limit"
-                resolve(responseObject)
-            } else 
-            if(resultArrayLength < 20){
-                resolve(responseObject)
-            }
+                const resultArrayLength = resultArray.length
+    
+                if(resultArrayLength >= 50){
+                    responseObject.reason = "50 Limit"
+                    resolve(responseObject)
+                } else
+                if(resultArrayLength >= 20 && !appSettings.premium.premium){
+                    responseObject.upgradeNeeded = true
+                    responseObject.reason = "20 Limit"
+                    resolve(responseObject)
+                } else 
+                if(resultArrayLength < 20){
+                    resolve(responseObject)
+                }
+
+            }catch(e){}
+
+ 
         })
     }
 

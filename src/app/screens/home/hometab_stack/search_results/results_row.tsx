@@ -1,12 +1,11 @@
 /* eslint-disable */
-import { Table, TableWrapper, Row, Rows, Col, Cols, Cell } from 'react-native-table-component';
-import { ScrollView, View, Text, ViewStyle, TouchableOpacity } from 'react-native';
+import { TableWrapper, Cell } from 'react-native-table-component';
+import { View, Text, ViewStyle, TouchableOpacity } from 'react-native';
 import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
 import FullTextContext from 'app/context/view_full_text_context';
 import React from 'react';
-
 const ResultsRowTemplate: React.FC = props=>{
 
     /* Full text view context */
@@ -17,13 +16,14 @@ const ResultsRowTemplate: React.FC = props=>{
 
     const resultRow = props.resultRow
 
-    const projectNav = ()=>{
+    const projectNav = async()=>{
 
         props.navigation.navigate("Projects", {
             screen: "project view",
             params: {
-                project: "Hello"
-            }
+                project: props.route.params.project,
+                resultArray: props.searchResults
+        }
         })
     }
 
@@ -88,10 +88,10 @@ const ResultsRowTemplate: React.FC = props=>{
 
                     fullTextOverlayObject.setFullText({
 
-                        target_language: resultRow.target_language,
-                        target_language_lang: resultRow.target_language_lang,
-                        output_language: resultRow.output_language,
-                        output_language_lang: resultRow.output_language_lang
+                        target_language: resultRow.target_language_text,
+                        target_language_lang: resultRow.target_language,
+                        output_language: resultRow.output_language_text,
+                        output_language_lang: resultRow.output_language
 
                     })
 
@@ -117,7 +117,7 @@ const ResultsRowTemplate: React.FC = props=>{
                             ]}
                     >
                         {
-                            `(${resultRow.target_language_lang}):\n${resultRow.target_language}`
+                            `(${resultRow.target_language}):\n${resultRow.target_language_text}`
                         }
                     </Text>
                 </View>
@@ -141,10 +141,10 @@ const ResultsRowTemplate: React.FC = props=>{
 
                      fullTextOverlayObject.setFullText({
 
-                        target_language: resultRow.target_language,
-                        target_language_lang: resultRow.target_language_lang,
-                        output_language: resultRow.output_language,
-                        output_language_lang: resultRow.output_language_lang
+                        target_language: resultRow.target_language_text,
+                        target_language_lang: resultRow.target_language,
+                        output_language: resultRow.output_language_text,
+                        output_language_lang: resultRow.output_language
 
                     })
                     
@@ -169,7 +169,7 @@ const ResultsRowTemplate: React.FC = props=>{
                             ]}
                     >
                         { 
-                            `(${resultRow.output_language_lang}):\n${resultRow.output_language}`
+                            `(${resultRow.output_language}):\n${resultRow.output_language_text}`
                         }
                     </Text>
                 </View>

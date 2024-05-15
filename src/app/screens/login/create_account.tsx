@@ -23,7 +23,9 @@ import {
 import VocabPandaTextInput from "app/shared/text_input"
 import AppButton from "app/shared/app_button"
 import { Formik } from "formik"
-import AppLoginDetails from "app/storage/user_profile_details"
+import UserDetails from "app/database/user_profile_details"
+import BackendAPI from "app/api/backend"
+
 
 const createAccountSchema = yup.object({
     email: yup.string()
@@ -31,8 +33,8 @@ const createAccountSchema = yup.object({
         .email("Must be a valid email address"),
     username: yup.string()
         .required()
-        .min(8, "Password must have at least 8 characters")
-        .max(24, "Password can have no more than 16 characters"),
+        .min(8, "Username must have at least 8 characters")
+        .max(24, "Username can have no more than 16 characters"),
     password: yup.string()
         .required()
         .min(8, "Password must have at least 8 characters")
@@ -75,46 +77,67 @@ const CreateAccount: React.FC = props=>{
                                 type: "warning",
                                 message: "Internet required to create account.",
                             })
-
                             return
-
                         }
 
-                        /* If no email and username in local storage, then prompt user to connect to web */
+                        //CReate secure message with password in message
 
-                        const resultObject = await AppLoginDetails.checkLoginDetails(
-                            values.email,
-                            values.username
-                        );
+                        try{
 
-                        if(resultObject.match){
+                            const backendResponse = await BackendAPI.createAccount({
+                                email: values.email,
+                                username: values.username,
+                                password: values.password
+                            });
 
-                            /* Throw error message */
+                            if(backendResponse.addMessage instanceof Error){
+                                /* Throw error message */
+                                showMessage({
+                                    type: "warning",
+                                    message: backendResponse.addMessage.cause.addMessage,
+                                })
+                            } 
+                            else if(backendResponse.addMessage === "User added successfully!"){
+
+                                //Set login details for account locally (to replace with SQL storage)
+                                await UserDetails.createNewUser(
+                                    values.email,
+                                    values.username,
+                                    values.password, // Password hashed using local algorithm
+                                    backendResponse.userId //User id generated in backend.
+                                );
+
+                                /* Throw accounts created message */
+                                showMessage({
+                                    type: "success",
+                                    message: "Account created successfully",
+                                })
+
+
+                                /* Go back to sign in screen */
+                                props.navigation.pop()
+                            }
+                            else if (backendResponse.responseMessage === "Add unsuccessful" ){
+
+                                //Generic error when add unsuccessful.
+
+                                showMessage({
+                                    type: "warning",
+                                    message: "Username or password already exists."
+                                })
+
+                            }
+
+                        }catch(e){
+
+                            console.log(e);
+                            console.trace();
                             showMessage({
                                 type: "warning",
-                                message: "This username or email already exists",
-                            })
-                        } else if(!resultObject.match){
-
-
-                            await AppLoginDetails.setLoginDetails(
-                                values.email,
-                                values.username,
-                                values.password
-                            )
-
-                            /* Throw accounts crated message */
-
-                            showMessage({
-                                type: "success",
-                                message: "Account created successfully",
+                                message: "Some error creating account."
                             })
 
-
-                            /* Go back to sign in screen */
-                            props.navigation.pop()
                         }
-
 
                         actions.resetForm()
                         

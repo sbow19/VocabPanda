@@ -2,7 +2,8 @@
 
 import * as types from '@customTypes/types.d'
 import React, { useEffect } from 'react';
-import { CurrentRenderContext, NavigationContainer} from '@react-navigation/native'
+import { ActivityIndicator } from 'react-native';
+import {NavigationContainer} from '@react-navigation/native'
 import AppMainDrawer from '@routes/drawer';
 import GameStack from './game/gamestack';
 import SearchResults from '@screens/home/hometab_stack/search_results/search_results';
@@ -10,7 +11,7 @@ import SearchResults from '@screens/home/hometab_stack/search_results/search_res
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoggedInStatus from './context/loggedIn';
-import LoadingStatus from './context/loading';
+import LoadingStatusInitial from './context/loadingInitial';
 import LastActivity from './context/last_activity';
 import CurrentUserContext from './context/current_user';
 
@@ -20,36 +21,36 @@ import LoginStack from 'app/routes/login_stack';
 import FlashMessage, { showMessage } from 'react-native-flash-message';
 import CoreStyles from './shared_styles/core_styles';
 
-import AppSettings from './storage/app_settings_storage';
 import DefaultAppSettingsContext from './context/default_app_settings_context';
-import AppLoginDetails from './storage/user_profile_details';
+import UserDetails from './database/user_profile_details';
 
 import LocalDatabase from './database/local_database';
-import UserDatabaseContext from './context/current_user_database';
-import { SQLiteDatabase } from 'react-native-sqlite-storage';
-
-import axios from 'axios';
 import BackendAPI from 'app/api/backend';
 
 import InternetStatus from './context/internet';
 import NetInfo from "@react-native-community/netinfo";
+import LoadingStatusInGame from './context/loadingInGame';
+import ActivityIndicatorStatus from './context/activity_indicator_context';
+import windowDimensions from './context/dimensions';
+
+import db from './database/db_util';
 
 const MainAppContainer = createNativeStackNavigator()
 
 
-const VocabPandaApp: React.FC = props => { 
+const VocabPandaApp: React.FC = () => { 
 
     /* loading screen --> sign in screen or main app */
 
-    const [isLoggedIn, setIsLoggedIn] = React.useContext(LoggedInStatus);
+    const [isLoggedIn,] = React.useContext(LoggedInStatus);
 
-    const [isLoading, setIsLoading] = React.useContext(LoadingStatus);
+    const [isLoadingInitial, setIsLoadingInitial] = React.useContext(LoadingStatusInitial);
 
     /* Internet Status */
 
     const [isOnline, setIsOnline] = React.useState();
 
-    const isOnlineSet = [isOnline, setIsOnline]
+    const isOnlineSet = [isOnline, setIsOnline];
 
     /* Current user state */
 
@@ -61,29 +62,27 @@ const VocabPandaApp: React.FC = props => {
 
         const onStartUpLoad = async()=>{
 
-            if(isLoading){
+            if(isLoadingInitial){
                 try{
+
+                    /* FOR DEVELOPMENT: reset local database code here to prompt user*/
+
+                    await LocalDatabase.resetDatabase();
 
                     /*
                         Configures local database on the first load 
                     */
 
+                    //Create new database schema / check whether db is accessible
+
+                    await LocalDatabase.createDatabaseSchema();
+
                     //Set global headers in database
 
                     await BackendAPI.setGlobalHeaders();
 
-                    /* Sets object defining login details and API key in local storage*/
-                    await AppLoginDetails.setInitial();
-
-                    /* Set initial app default settings in local storage*/
-                    await AppSettings.setInitial();
-
-                    /* Tests whether a database can be connected to */
-                    await LocalDatabase.createTestDatabase().catch(
-                        error=>{
-                            throw new Error(error)
-                        }
-                    );
+                    /* Set API key in local storage / request new API key on first startup*/
+                    await LocalDatabase.setAPIKey();
 
                     /*
                         Check for internet connection
@@ -103,7 +102,7 @@ const VocabPandaApp: React.FC = props => {
 
             
                     //If all loading actions completed successfully, then no issues.
-                    setIsLoading(false);
+                    setIsLoadingInitial(false);
 
 
                 }catch(err){
@@ -120,7 +119,6 @@ const VocabPandaApp: React.FC = props => {
                 }
             }
         }
-
         onStartUpLoad()
         
     }, [isLoggedIn]);
@@ -132,10 +130,10 @@ const VocabPandaApp: React.FC = props => {
         <CurrentUserContext.Provider value={currentUserSet}>
             <NavigationContainer>
                 {(()=>{
-                    if(isLoading){
+                    if(isLoadingInitial){
+
                         return <LoadingScreen/>
 
-                        
                     } else if(!isLoggedIn){
 
                         return <LoginStack/>
@@ -164,94 +162,131 @@ const VocabPandaApp: React.FC = props => {
 
 }
 
-const MainApp: React.FC = props=>{
+const MainApp: React.FC = ()=>{
     
     /* Setting current user */
 
-    const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
-
-    /* Setting database object globally to app */
-
-    const [databaseObject, setMyDatabaseObject] = React.useState({})
-
-    const myDatabaseOptions: types.StateHandlerList<SQLiteDatabase, React.Dispatch<React.SetStateAction<SQLiteDatabase>>> = [databaseObject, setMyDatabaseObject]
+    const [currentUser,] = React.useContext(CurrentUserContext);
 
     /* Getting last activity data on sign in */
 
-    const [lastActivityObject, setLastActivityData] = React.useState({})
+    const [lastActivityObject, setLastActivityData] = React.useState({});
 
+    //Get in game loading handler
 
-    /* Loading screen set */
+    const [isLoadingInGame, setIsLoadingInGame] = React.useContext(LoadingStatusInGame);
 
-    const [isLoading, setIsLoading] = React.useState(true)
+    //Get in game activity indicator
 
+    const [activityIndicator, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
 
-    /* Code for handling default game settings globally */
+    /* Code for handling default game settings globally  */
 
-    const [appSettings, setAppSettings] = React.useState<types.AppSettingsObject>({})
+    const [appSettings, setAppSettings] = React.useState<types.AppSettingsObject>({});
     
-    function setAppSettingsHandler(
-        timerOn: boolean|null, 
-        noOfTurns: number|null, 
-        setsDefault: boolean|null,
-        projectConfig?: types.ProjectConfig<types.ProjectObject> | types.ProjectConfig<string>,
-        leftConfig?
-    
-        ){
+    function setAppSettingsHandler(value, valueType: string){
 
+        console.log(value, valueType)
 
-        let newSettings = { ...appSettings}
-    
-        if(timerOn == true || timerOn == false){
-            newSettings.gameSettings.timerOn = timerOn
-        }
+        const newSettings = { ...appSettings}
 
-        if(typeof(noOfTurns)==="number"){
-            newSettings.gameSettings.noOfTurns = noOfTurns
-        }
+        if(valueType === "timerOn"){
 
+            //Update database
 
-        /* When a project is added or deleted, the global state of the dropdowns is updated here
-        so any changes will show immediately, rather than on the next app reload */
+            UserDetails.updateTimerValue(currentUser, value)
+            .then(()=>{
 
-        if(projectConfig){
-            if(projectConfig.mode === "add"){
+                console.log("Timer val update successfully.");
 
-                newSettings.projects.push(projectConfig.project)
+            })
+            .catch((e)=>{
+
+                console.log(e);
+                showMessage({
+                    message: "Unable to update timer value.",
+                    type: "warning"
+                })
             }
+            );
 
-            if(projectConfig.mode === "delete"){
+            //Update app settings
 
-                const newList = newSettings.projects.filter(item => item?.projectName !==  projectConfig.project);
+            newSettings.userSettings.timerOn = value;
+        };
 
-                newSettings.projects = newList
+        if(valueType === "noOfTurns"){
 
-            }
-        }
+            //Update database
+            UserDetails.updateTurnsValue(currentUser, value)
 
-        if(leftConfig){
+            //UPdate app settings
 
-            newSettings = leftConfig
-        }
+            newSettings.userSettings.noOfTurns = value;
+        };
 
-        if(setsDefault==true){
-            AppSettings.setDefaultSettings(currentUser, newSettings)
-        }
+        if(valueType === "addProject"){
+
+            //Project object is pushed into array of projects
+            newSettings.projects.push(value);
+        };
+
+        if(valueType === "deleteProject"){
+
+            //FIlter out deleted project from dropdowns.
+
+            const newList = newSettings.projects.filter(item => item.projectName !== value);
+
+            newSettings.projects = newList
+        };
+
+        if(valueType === "defaultProject"){
+            //TODO This is more relevant from the Chrome Extension
+        };
+
+        if(valueType === "defaultTargetLang"){
+            //Update database
+            UserDetails.updateTargetLangDefault(currentUser, value);
+
+            //Update app settings
+            newSettings.userSettings.targetLanguage = value;
+        };
+
+        if(valueType === "defaultOutputLang"){
+            //update database
+            UserDetails.updateOutputLangDefault(currentUser, value);
+
+            //Update app settings
+            newSettings.userSettings.outputLanguage = value; 
+        };
+
+        if(valueType === "subtractTranslation"){
+
+            //Update app settings
+            newSettings.translationsLeft = value; 
+        };
+
+        if(valueType === "subtractPlay"){
+
+            //Update app settings
+            newSettings.playsLeft = value; 
+        };
+
         setAppSettings(newSettings)
-    }
+    };
+
+    const myDefaultAppSettings:types.StateHandlerList<types.AppSettingsObject, Function> = [appSettings, setAppSettingsHandler];
 
     // Loads global variables such as datrabase objects and app settings once on sign in
     React.useEffect(()=>{
 
-        if(isLoading && currentUser){
+        if(isLoadingInGame && currentUser){
+            //Set activity indicator while loading
+            setActivityIndicator(true);
+
             const appSettingsLoad = async ()=>{
 
-                /* Sets default app settings for new user */
-                await AppSettings.newSettings(currentUser)
-                
-                 /* Async function to fetch last activity data */
-    
-                /* async function to link up to account database if possible
+                /* 
                 - if no connection, skip this step, and render an alert to inform user of lack of connection
                 - if connection then either:
                   - Download entire content table, if none on local --> inform user that this is taking place on loading screen.
@@ -262,61 +297,39 @@ const MainApp: React.FC = props=>{
                 
                 */
 
-                /* Opening database and creating new table */
-                const lastActivityResultArray = await LocalDatabase.openDatabase(currentUser).then(async(databaseObject)=>{
-
-                    setMyDatabaseObject(databaseObject);
-
-                    /* Last activity determiner */
-
-                    const lastLoggedIn = await AppSettings.getLastLoggedInDate(currentUser)
-
-                    const lastActivityResultArray = await LocalDatabase.getLastActivity(currentUser, databaseObject.database, lastLoggedIn);
-
-                    return lastActivityResultArray
-
-                }).then(lastActivityResultArray =>{
-
-                    return lastActivityResultArray
-
-                })
-                .catch((e)=>{
-
-                    console.log("Failed to open database")
-                    console.log(e)
-                })
-
                 /* Check for premium update */
 
-                let upgradeToPremium = false
+                const upgradeToPremium = false  //REPLACE WITH SCRIPT WHICH LOOKS FOR UPGRADE INDICATOR __ BACKEND?
 
                 if(upgradeToPremium){
-                    await AppSettings.upgradeToPremium(currentUser, "15/02/2024")
+                    await UserDetails.upgradeToPremium(currentUser, "15/02/2024")
                 }
 
                 /* Check for downgrade */
 
-                let downgradeToFree = true
+                const downgradeToFree = false  //REPLACE WITH SCRIPT WHICH LOOKS FOR UPGRADE INDICATOR __ BACKEND?
 
                 if(downgradeToFree){
-                    await AppSettings.downgradeToFree(currentUser)
+                    await UserDetails.downgradeToFree(currentUser)
                 }
 
-                await AppSettings.updateUserSettings(currentUser)
+
+                //Fetch app settings
                 
+                const appSettings: types.AppSettingsObject = await UserDetails.getDefaultAppSettings(currentUser)// Fetch default app settings for user
+            
+                setAppSettings(appSettings);
 
-                const appSettings = await AppSettings.getDefaultAppSettings(currentUser)
+                
+                /* Last activity determiner */
 
-                /* 
-                    Fetch API to check whether user is premium and set end date. This data is set on first run.
-                    Check to see if there is a timeout thing  
-                */
+                const lastActivityResultArray = await UserDetails.getLastActivity(currentUser);
 
-                setAppSettings(appSettings)
+                console.log(lastActivityResultArray, "Last activity array");
 
                 /* Setting last activity object */
 
-                let lastActivityObject = {
+                const lastActivityObject = {
 
                     lastActivity: false,
                     lastActivityResultArray: lastActivityResultArray
@@ -327,9 +340,16 @@ const MainApp: React.FC = props=>{
                     lastActivityObject.lastActivity = true
                 }
 
-                setLastActivityData(lastActivityObject)
+                setLastActivityData(lastActivityObject);
 
-                setIsLoading(false)
+                //Update user login time, occurs after every other operation is successful.
+
+                await UserDetails.updateUserLoginTime(currentUser);
+
+                //Set is loading to false brings up login screen.
+
+                setIsLoadingInGame(false);
+                setActivityIndicator(false);
             }
             appSettingsLoad()    
         }
@@ -337,76 +357,98 @@ const MainApp: React.FC = props=>{
     }, [currentUser])
 
 
-    const gamesLeftInterval = React.useRef("")
-    const translationsLeftInterval = React.useRef("")
+    const gamesLeftInterval = React.useRef("");
+    const translationsLeftInterval = React.useRef("");
 
-    /* Interval timer to check countdowns for refreshes across the app */
+    /* Interval timer to check countdowns for refreshes across the app -- TODO REFACTOR OUT*/
     React.useEffect(()=>{
 
-        if(!isLoading){
+        if(!isLoadingInGame){
 
-            clearInterval(gamesLeftInterval.current)
-            clearInterval(translationsLeftInterval.current)
-            
-            /* Checking game */
-            gamesLeftInterval.current = setInterval(async()=>{
+            const setCronJobs = async ()=>{
 
-                const HOUR_IN_MILLISECONDS = 60 * 60 * 1000; // 1 hour in milliseconds
+                clearInterval(gamesLeftInterval.current)
+                clearInterval(translationsLeftInterval.current)
 
-                if(appSettings.gamesLeft.refreshNeeded && ! appSettings.premium.premium){
-
-                    let currentTime = new Date();
-                    let refreshBaseTime = new Date(appSettings.gamesLeft.refreshBaseTime);
-
-                    let timeDifference = currentTime-refreshBaseTime
-                    
-                    if(timeDifference > HOUR_IN_MILLISECONDS){
-
-                        let newAppSettings = await AppSettings.refreshGamesLeft(currentUser, appSettings)
-
-                        setAppSettings(newAppSettings)
-                    }      
-                }
-
-            }, 10000);
-
-            /* Checking translations */
-            translationsLeftInterval.current = setInterval(async()=>{
-
-                const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000; // 1 day in milliseconds
-
-
-                if(appSettings.translationsLeft.refreshNeeded){
-
-                    let currentTime = new Date();
-                    let refreshBaseTime = new Date(appSettings.translationsLeft.refreshBaseTime);
-
-                    let timeDifference = currentTime-refreshBaseTime;
-
-                    if(timeDifference > DAY_IN_MILLISECONDS){
-                        
-                        let newAppSettings = await AppSettings.refreshTranslationsLeft(currentUser, appSettings)
-
-                        setAppSettings(newAppSettings)
-
-                    }
-                }
+                const userId: string = await LocalDatabase.getUserId(currentUser);
                 
-            }, 10000);
+                /* Checking plays refresh */
+
+                const premium = await UserDetails.checkPremiumStatus(currentUser);
+
+                if(premium){
+
+                    console.log("User is premium, no plays refresh necessary");
+
+                } else if (!premium){
+
+                    gamesLeftInterval.current = setInterval(async()=>{
+
+                        //Check every 100 seconds whether the current time is greater than the refresh time indicated in the plays refresh table
+
+                        const playsRefreshTimeLeft = await UserDetails.getPlaysRefreshTimeLeft(userId);
+
+                        const currentTime = new Date();
+                        const refreshTime = new Date(playsRefreshTimeLeft["games_refresh"]);
+                        
+                        if(currentTime > refreshTime){
+
+                            await UserDetails.refreshGamesLeft(userId);
+
+                            const newAppSettings = {...appSettings}
+
+                            newAppSettings.playsLeft = 10;
+
+                            setAppSettings(newAppSettings)
+                        }     
+                    }, 100000);
+                };
+                    
+
+                /* Checking translations */
+                translationsLeftInterval.current = setInterval(async()=>{
+
+                    //Check every 100 seconds whether the current time is greater than the refresh time indicated in the translations refresh table;
+
+                    const refreshTimeRaw = await UserDetails.getTranslationsRefreshTimeLeft(userId);
+
+                    let currentTime = new Date();
+                    let refreshTime = new Date(refreshTimeRaw["translations_refresh"]);
+
+                    if(currentTime > refreshTime && premium){
+                        
+                        await UserDetails.refreshTranslationsLeftPremium(userId);
+
+                        const newAppSettings = {...appSettings};
+
+                        newAppSettings.translationsLeft = 120;
+
+                        setAppSettings(newAppSettings)
+
+                    } else if (currentTime > refreshTime && !premium){
+
+                        await UserDetails.refreshTranslationsLeftFree(userId);
+
+                        const newAppSettings = {...appSettings}
+
+                        newAppSettings.translationsLeft = 40;
+
+                        setAppSettings(newAppSettings)
+                    };
+                }, 100000);
+            }
+
+            setCronJobs();
         }
 
-    }, [isLoading, appSettings])
-
-    const myDefaultAppSettings:types.StateHandlerList<types.AppSettingsObject, Function> =[appSettings, setAppSettingsHandler]
-
+    }, [appSettings])
 
     return(
-        <>
-        
-        { isLoading ? <LoadingScreen/> : 
+        <> 
     
+            {isLoadingInGame === true ? (<LoadingScreen/>) :( 
+
             <>
-            <UserDatabaseContext.Provider value={myDatabaseOptions}>
             <LastActivity.Provider value={lastActivityObject}>
             <DefaultAppSettingsContext.Provider value={myDefaultAppSettings}>
                 <MainAppContainer.Navigator screenOptions={{headerShown:false}}>
@@ -416,10 +458,17 @@ const MainApp: React.FC = props=>{
                 </MainAppContainer.Navigator>
             </DefaultAppSettingsContext.Provider>
             </LastActivity.Provider>
-            </UserDatabaseContext.Provider>
             
+            </>)}
 
-            </>}
+            {activityIndicator ? <ActivityIndicator size={"large"} style={{
+                position: "absolute",
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                height: windowDimensions.HEIGHT,
+                width: windowDimensions.WIDTH
+
+            }}/> : null}
         </>
            
     )

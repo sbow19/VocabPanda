@@ -4,6 +4,7 @@ import React, { Dispatch, SetStateAction } from "react";
 import { TextStyle, TextInputProps } from "react-native";
 
 import { ViewStyle } from "react-native";
+import { SQLiteDatabase } from "react-native-sqlite-storage";
 
 export type CoreColours = {
     black: "#3E3B3F"
@@ -110,16 +111,11 @@ export type ProjectObject = {
 
 export type AppSettingsObject = {
 
-    gameSettings?: {
+    userSettings?: {
         timerOn: boolean
         noOfTurns: number
-    }
-
-    dropDownLanguages?:{
-
         targetLanguage?: string
         outputLanguage?: string
-
     }
 
     projects?: Array<ProjectObject | null>
@@ -131,16 +127,14 @@ export type AppSettingsObject = {
         endTime: string
     }
 
-    gamesLeft: {
-        gamesLeft: number,
-        refreshBaseTime: string
-    }
+    playsLeft: number
 
-    translationsLeft: {
-        translationsLeft: number,
-        refreshBaseTime: string
-    }
-} 
+    playsRefreshTime: number
+
+    translationsLeft: number
+
+    translationsRefreshTime: number
+}
 
 export type ProjectConfig<ProjectObject> ={
 
@@ -211,5 +205,82 @@ export type GameSettingsObject = {
 
 export type CreateAccountCall = {
 
+    username: string
+    password: string
+    email: string
     
 }
+
+export type LoginResultObject = {
+
+    loginSuccess: boolean
+    username: string | ""
+    identifierType: "email" | "username" | ""
+    password: string| ""
+}
+
+export type DeleteAccountResponseObject = {
+
+    username: string
+    deletionSuccessful: boolean
+    message: string
+}
+
+export type CreateAccountResponse = {
+
+    responseMessage: "Add successful" | "Add unsuccessful"
+    addMessage: "User added successfully!" | Error 
+    userId: string
+    
+}
+
+export type ChangePasswordResponse = {
+
+    changeSuccessful: boolean
+    changeMessage: string
+
+}
+
+export type DatabaseObject = {
+
+    database: SQLiteDatabase,
+    username: string
+}
+
+export type ProjectLengthResponseObject = {
+
+    upgradeNeeded: boolean
+    reason: "50 Limit" | "20 Limit" | ""
+}
+
+export type EntryObject = {
+
+    input: string
+    inputLang: string
+    output: string
+    outputLang: string
+    project: string
+}
+
+export type TranslateCallObject = {
+
+    targetText: string, 
+    targetLanguage: string,
+    outputLanguage: string,
+    username: string
+}
+
+export type TranslateResponseObject = {
+
+    success: boolean
+    translations: any[]
+
+}
+
+export type FullTextObject = {
+    target_language: string,
+    target_language_lang: string,
+    output_language: string,
+    output_language_lang: string
+}
+

@@ -29,7 +29,7 @@ const HomeScreen = (props: Object) =>{
 
     const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
 
-    const lastActivityObject = React.useContext(LastActivity)
+    const lastActivityObject = React.useContext(LastActivity);
 
     const gameNav = ()=>{
 

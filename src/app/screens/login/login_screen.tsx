@@ -19,10 +19,12 @@ import {
 
  import LoggedInStatus from "app/context/loggedIn"
  import { Formik } from "formik"
-import AppLoginDetails from "app/storage/user_profile_details"
+import UserDetails from "app/database/user_profile_details"
 import { showMessage } from "react-native-flash-message"
 
 import CurrentUserContext from "app/context/current_user"
+import BackendAPI from "app/api/backend"
+import LoadingStatusInGame from "app/context/loadingInGame"
  
 
 
@@ -30,9 +32,12 @@ const LoginScreen: React.FC = props=>{
 
     const[forgotTextColor, setForgotTextColor] = React.useState(appColours.black)
 
-    const [isLoggedIn, setIsLoggedIn] = React.useContext(LoggedInStatus);
+    const [ , setIsLoggedIn] = React.useContext(LoggedInStatus);
 
-    const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
+    const [ , setCurrentUser] = React.useContext(CurrentUserContext);
+
+    //Set is in game loading 
+    const [, setIsLoadingInGame] = React.useContext(LoadingStatusInGame);
 
     return(
         <TouchableOpacity
@@ -48,21 +53,25 @@ const LoginScreen: React.FC = props=>{
                     onSubmit={async(values, actions)=>{
 
                         try{
-                            let resultObject = await AppLoginDetails.signIn(
+
+                            const resultObject = await UserDetails.signIn(
                                 values.user,
                                 values.password
-                            )
+                            );
 
                             if(resultObject.loginSuccess){
 
                                 showMessage({
                                     message: "Login success",
                                     type: "success"
-                                })
-
+                                });
                                 
-                                setCurrentUser(resultObject.userName)
-                                setIsLoggedIn(true)
+                                setCurrentUser(resultObject.username);
+                                setIsLoadingInGame(true);// Needs to be set first before setting logged in
+                                setIsLoggedIn(true);
+                                
+
+                                await BackendAPI.sendLoggedInEvent(resultObject);
                                 
 
                             } else if (!resultObject.loginSuccess){
@@ -70,15 +79,20 @@ const LoginScreen: React.FC = props=>{
                                 showMessage({
                                     message: "Login failed",
                                     type: "warning"
-                                })
-                            }
+                                });
+                            };
 
 
                         }catch(e){
-                            console.log(e)
-                        }
+                            console.log(e);
 
-                        actions.resetForm()
+                            showMessage({
+                                message: "Error occurred while logging in.",
+                                type: "warning"
+                            });
+                        };
+
+                        actions.resetForm();
 
                     }}
             

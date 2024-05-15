@@ -20,15 +20,13 @@ import Dropdown from 'app/shared/dropdown';
 import ProjectDropdown from 'app/shared/project_dropdown';
 import React from 'react';
 import LastActivity from 'app/context/last_activity';
-import AppSettings from 'app/storage/app_settings_storage';
 import CurrentUserContext from 'app/context/current_user';
 import UpgradePrompt from 'app/premium/upgrade_overlay';
 
 
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
-import { showMessage } from 'react-native-flash-message';
-import UserDatabaseContext from 'app/context/current_user_database';
-import LocalDatabase from 'app/database/local_database';
+import UserDetails from 'app/database/user_profile_details';
+import UserContent from 'app/database/user_content';
 
 const GameHome: React.FC = props=>{
 
@@ -37,25 +35,21 @@ const GameHome: React.FC = props=>{
 
     const [appSettings, appSettingsHandler] = React.useContext(DefaultAppSettingsContext)
 
-    /* dtatabase object  */
-
-    const [databaseObject] =  React.useContext(UserDatabaseContext)
-
     /* Current user context */
 
-    const [currentUser] = React.useContext(CurrentUserContext)
+    const [currentUser] = React.useContext(CurrentUserContext);
 
     /* Kast activity object context */
 
-    const lastActivityObject = React.useContext(LastActivity)
+    const lastActivityObject = React.useContext(LastActivity);
 
     /* Game slider value */ /* TODO change to useRef to avoid entire screen re renders */
 
-    const [gameSliderValue, setGameSliderValue] = React.useState(10)
+    const [gameSliderValue, setGameSliderValue] = React.useState(10);
 
     /* Game turns value */ /* TODO change to useRef to avoid entire screen re renders  */
 
-    const [gameTimeronValue, setGameTimeronValue] = React.useState(false)
+    const [gameTimeronValue, setGameTimeronValue] = React.useState(false);
 
     /* Project dropdown index */
 
@@ -67,26 +61,26 @@ const GameHome: React.FC = props=>{
 
     /* Game mode */
 
-    const [gameMode, setGameMode] = React.useState("All Words")
+    const [gameMode, setGameMode] = React.useState("All Words");
 
     /* set project state */
 
-    const [project, setProject] = React.useState("")
+    const [project, setProject] = React.useState("");
 
     /* Set upgrade prompt  */
 
-    const [upgradePrompt, setUpgradePrompt] = React.useState(false)
+    const [upgradePrompt, setUpgradePrompt] = React.useState(false);
 
 
     const getProjectIndex = ()=>{
 
-        let projectList = [];
+        const projectList = [];
 
         for(let project of appSettings.projects){
             projectList.push(project?.projectName)
-        }
+        };
 
-        let projectDropdownIndex = projectList.indexOf(props.route.params.project)
+        const projectDropdownIndex = projectList.indexOf(props.route.params.project)
 
         return projectDropdownIndex 
    }
@@ -95,7 +89,7 @@ const GameHome: React.FC = props=>{
 
    React.useEffect(()=>{
 
-    /* Set game mode */
+    /* Set game mode based on source of redirect*/
 
     if(props.route?.params?.reDirectContent){
 
@@ -134,8 +128,8 @@ const GameHome: React.FC = props=>{
 
     /* Set game settings */
 
-    setGameSliderValue(appSettings.gameSettings?.noOfTurns)
-    setGameTimeronValue(appSettings.gameSettings?.timerOn)
+    setGameSliderValue(appSettings.userSettings?.noOfTurns)
+    setGameTimeronValue(appSettings.userSettings?.timerOn)
 
 
    }, [props.route])
@@ -145,10 +139,6 @@ const GameHome: React.FC = props=>{
 
     if(props.route.params.gameMode === "Search Results" && gameMode === "Search Results" && props.route.params.resultArray.length > 0){
 
-        let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
-
-        appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
-
         props.navigation.navigate("vocab game", {
 
             timerOn: gameTimeronValue,
@@ -156,7 +146,15 @@ const GameHome: React.FC = props=>{
             gameMode: "Search Results",
             resultArray: props.route.params.resultArray,
             project: ""
-        })
+        }); 
+
+        const playsLeft = appSettings.playsLeft - 1
+
+        await UserDetails.setPlaysLeft(currentUser, playsLeft);
+
+        appSettingsHandler(playsLeft, "subtractPlay"); // Update play left
+
+
 
         return
     }
@@ -174,9 +172,9 @@ const GameHome: React.FC = props=>{
 
     if(gameMode === "All Words"){
 
-        let allWords = await LocalDatabase.getAll(databaseObject.currentUser, databaseObject.database)
+        const resultArray = await UserContent.getAllEntries(currentUser);
 
-        if(allWords.length === 0){
+        if(resultArray.length === 0){
             showMessage({
                 type: "info",
                 message: "No entries made yet"
@@ -186,18 +184,20 @@ const GameHome: React.FC = props=>{
 
         } else {
 
-            let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
-
-            appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
-
             props.navigation.navigate("vocab game", {
 
                 timerOn: gameTimeronValue,
                 noOfTurns: gameSliderValue,
                 gameMode: "All Words",
-                resultArray: [],
+                resultArray: resultArray,
                 project: ""
             })
+
+            const playsLeft = appSettings.playsLeft - 1
+
+            await UserDetails.setPlaysLeft(currentUser, playsLeft);
+
+            appSettingsHandler(playsLeft, "subtractPlay");
     
             return
 
@@ -206,11 +206,9 @@ const GameHome: React.FC = props=>{
 
     if (gameMode === "By Project") {
 
-        let projectWords = await LocalDatabase.getProjectEntries(databaseObject, project)
+        const resultArray = await UserContent.getProjectEntries(currentUser, project);
 
-        console.log(projectWords)
-
-        if(projectWords.length === 0){
+        if(resultArray.length === 0){
             showMessage({
                 type: "info",
                 message: "No entries made yet"
@@ -220,18 +218,21 @@ const GameHome: React.FC = props=>{
 
         } else {
 
-            let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
-
-            appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
 
             props.navigation.navigate("vocab game", {
 
                 timerOn: gameTimeronValue,
                 noOfTurns: gameSliderValue,
                 gameMode: "By Project",
-                resultArray: [],
+                resultArray: resultArray,
                 project: project
             })
+
+            const playsLeft = appSettings.playsLeft - 1
+
+            await UserDetails.setPlaysLeft(currentUser, playsLeft);
+
+            appSettingsHandler(playsLeft, "subtractPlay");
     
             return
         }
@@ -239,18 +240,20 @@ const GameHome: React.FC = props=>{
 
     if(gameMode === "Latest Activity" && lastActivityObject.lastActivity == true){
 
-        let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
-
-        appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
-
         props.navigation.navigate("vocab game", {
 
             timerOn: gameTimeronValue,
             noOfTurns: gameSliderValue,
             gameMode: "Latest Activity",
-            resultArray: [],
+            resultArray: lastActivityObject.lastActivityResultArray,
             project: ""
         })
+
+        const playsLeft = appSettings.playsLeft - 1
+
+        await UserDetails.setPlaysLeft(currentUser, playsLeft);
+
+        appSettingsHandler(playsLeft, "subtractPlay");
 
         return
 
@@ -269,10 +272,6 @@ const GameHome: React.FC = props=>{
 
     if(gameMode === "Latest Activity - By Project"){
 
-        let newAppSettings = await AppSettings.setGamesLeftDetails(currentUser, appSettings)
-
-        appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
-
         props.navigation.navigate("vocab game", {
 
             timerOn: gameTimeronValue,
@@ -282,9 +281,14 @@ const GameHome: React.FC = props=>{
             project: ""
         })
 
-        return
+        const playsLeft = appSettings.playsLeft - 1
 
-    }
+        await UserDetails.setPlaysLeft(currentUser, playsLeft);
+
+        appSettingsHandler(playsLeft, "subtractPlay");
+
+        return
+    };
 
     if(gameMode === "Search Results"){
 
@@ -299,7 +303,7 @@ const GameHome: React.FC = props=>{
     
     const gameStart = async()=>{
 
-        if(appSettings.gamesLeft.gamesLeft > 0 ){
+        if(appSettings.playsLeft > 0 ){
 
             gameModeNavigate()
 
@@ -314,6 +318,7 @@ const GameHome: React.FC = props=>{
         <>
             {/* Render only if user is not premium user */}
             {appSettings.premium.premium ? <></> : <UpgradeBannerGame {...props}/>}
+
             <View
                 style={[
                     CoreStyles.defaultScreen,
@@ -337,6 +342,9 @@ const GameHome: React.FC = props=>{
                         <View style={contentCellStyle}>
                             <AppSwitch
                                 onPress={setGameTimeronValue}
+                                switchType={"timerOn"}
+                                defaultValue={appSettings.userSettings?.timerOn}
+                                setsDefault={false}
                             />
                         </View>
                     </View>
@@ -351,6 +359,9 @@ const GameHome: React.FC = props=>{
                         <View style={[contentCellStyle, {paddingBottom:30}]}>
                             <AppSlider
                                 onPress={setGameSliderValue}
+                                sliderType={"noOfTurns"}
+                                defaultValue={appSettings.userSettings?.noOfTurns}
+                                setsDefault={false}
                             />
                         </View>
                     </View>
@@ -403,7 +414,7 @@ const ProjectModeProject: React.FC = props =>{
 
     /*  App settings context */
 
-    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings,] = React.useContext(DefaultAppSettingsContext)
 
     return(
         <View style={projectModeWrapperStyle}>
@@ -437,7 +448,7 @@ const UpgradeBannerGame = props =>{
 
     /* App settings */
 
-    const [appSettings, setAppSettings] = React.useContext(DefaultAppSettingsContext);
+    const [appSettings,] = React.useContext(DefaultAppSettingsContext);
 
     /* Timeleft */
 
@@ -449,29 +460,23 @@ const UpgradeBannerGame = props =>{
 
     /* Timeleft string */
 
-    const [timeLeftString, setTimeLeftString] = React.useState("")
+    const [timeLeftString, setTimeLeftString] = React.useState("");
 
     
-    React.useMemo(()=>{
+    React.useMemo(async()=>{
+    
+        const currentTime = new Date();
+        const refreshTime = new Date(appSettings.playsRefreshTime);
 
-        const HOUR_IN_MILLISECONDS = 60 * 60 * 1000
+        if(currentTime < refreshTime){
 
-        let gamesRefreshBaseTime = new Date(appSettings.gamesLeft.refreshBaseTime)
-        let currentTime = new Date()
+            const timeLeft = refreshTime - currentTime;
 
-        let timeElapsed = currentTime - gamesRefreshBaseTime
+            const timeLeftConverted = convertMilliseconds(timeLeft);
 
-        console.log(gamesRefreshBaseTime)
+            setTimeLeftString(timeLeftConverted);
 
-        if(timeElapsed < HOUR_IN_MILLISECONDS){
-
-            let timeLeft = HOUR_IN_MILLISECONDS - timeElapsed
-
-            let timeLeftConverted = convertMilliseconds(timeLeft)
-
-            setTimeLeftString(timeLeftConverted)
-
-            setTimeLeftDisplay(timeLeft)
+            setTimeLeftDisplay(timeLeft);
 
         } else {
 
@@ -540,7 +545,7 @@ const UpgradeBannerGame = props =>{
                     {lineHeight: 14}
                 ]}
             > 
-                You have {appSettings.gamesLeft.gamesLeft} plays left.
+                You have {appSettings.playsLeft} plays left.
                 {timeLeftDisplay ? timeLeftString : null} Upgrade to premium for unlimited turns.
             </Text>
 

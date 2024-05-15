@@ -1,161 +1,57 @@
 /* eslint-disable */
 
-import SQLite, { SQLiteDatabase } from 'react-native-sqlite-storage'
+import SQLite, { SQLiteDatabase } from 'react-native-sqlite-storage';
+import { Alert } from 'react-native';
+import NetInfo from "@react-native-community/netinfo";
+import EncryptedStorage from "react-native-encrypted-storage";
+import BackendAPI from 'app/api/backend';
+import SQLStatements from './prepared_statements';
 
-class LocalDatabase {
-
-    constructor(){
-
-    }
-
-    
-
-    static getLastActivity = (userName: string, database: SQLiteDatabase, lastLoggedIn) =>{
-
-        return new Promise((resolve, reject)=>{
-
-            const formattedDatetime = lastLoggedIn.slice(0, 19).replace("T", " "); //Converts js datetime to SQL compatible datetime string
-
-            const getLastActivityQuery = `SELECT * FROM ${userName}
-            
-            WHERE last_updated_at > ?`
-
-            database.transaction(async(transaction)=>{
-
-                let [_, resultArrayRaw] = await transaction.executeSql(getLastActivityQuery, [formattedDatetime]);
-
-                let resultArray = this.#parseRowResults(resultArrayRaw)
-
-                resolve(resultArray)
-
-            },
-            error=>{
-                console.log("Last activity update unsuccessful")
-                reject(error)
-            }, 
-            success=>{
-                console.log("Last activity update successful")
-
-            }) 
-        })
-
-    }
-
-    static getAll = (userName: string, database: SQLiteDatabase) =>{
-
-        return new Promise((resolve, reject)=>{
+import moment from 'moment';
+import * as types from '@customTypes/types.d'
+import db from './db_util';
 
 
-            const getAllTableQuery = `SELECT * FROM ${userName}`
+class LocalDatabase{
 
-            database.transaction(async(transaction)=>{
-
-                let [_, resultArrayRaw] = await transaction.executeSql(getAllTableQuery);
-
-                let resultArray = this.#parseRowResults(resultArrayRaw)
-
-                resolve(resultArray)
-            },
-            (error)=>{
-
-                console.log("All data fetch filed")
-                console.log(error)
-                reject(error)
-            },
-            (success)=>{
-
-                console.log("All data fetch success")
-                resolve(success)
-            })
-
-
-        })
-    }
-
-    static deleteTable = (userName: string, database: SQLiteDatabase)=>{
-
+    static transactionPromiseWrapper = (sqlStatement: string, args: string[], successMessage = null)=>{
         return new Promise(async(resolve, reject)=>{
 
-            const deleteTableQuery = `DROP TABLE IF EXISTS ${userName}`
 
-            database.transaction(transaction=>{
+            try{
 
-                transaction.executeSql(deleteTableQuery)
-            },
-            (error)=>{
-
-                console.log("Account deletion failed")
-                console.log(error)
-                reject(error)
-            },
-            (success)=>{
-
-                console.log("Account deletion successful")
-                resolve(success)
-            })
-        })
-    }
-
-    static #createUserTable = (userName: string, database: SQLiteDatabase)=>{
-
-        return new Promise(async(resolve, reject)=>{
-
-            const openTableQuery = `CREATE TABLE IF NOT EXISTS ${userName}(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                target_language TEXT,
-                target_language_lang TEXT,
-                output_language TEXT, 
-                output_language_lang TEXT,
-                project TEXT,
-                tags VARCHAR(255) DEFAULT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                let resultArray;
                 
-            );
+                db.transaction((transaction)=>{
+                
+                    transaction.executeSql(sqlStatement, args, 
+                
+                        (tx, result)=>{
+                            resultArray = result
+                        });        
+                },
+                async (error)=>{
 
-            CREATE TRIGGER update_last_updated_at
-            AFTER UPDATE ON ${userName}
-            FOR EACH ROW
-            BEGIN
-                UPDATE ${userName} SET last_updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END;
+                    console.log("Error occured", error)
+                    reject(error)
 
-            -- Add index on target_language column
-            CREATE INDEX idx_target_language ON ${userName} (target_language);
+                },
+                async (success)=>{
+                    console.log("Transaction successful: ", successMessage)
+                    resolve(resultArray)
+                    
+                });
 
-            -- Add index on output_language column
-            CREATE INDEX idx_output_language ON ${userName} (output_language);
-
-            -- Add index on project column
-            CREATE INDEX idx_project ON ${userName} (project);
-
-            -- Add index on created_at column
-            CREATE INDEX idx_create_at ON ${userName} (created_at);
-
-            -- Add index on last_updated_at column
-            CREATE INDEX idx_last_updated_at ON ${userName} (last_updated_at);
+            }catch(e){
+                console.log("Hello")
+                reject(e)
+            }
             
-            `
 
-            database.transaction(transaction =>{
-
-                transaction.executeSql(openTableQuery)
-            },
-            (error)=>{
-
-                console.log("Failed to create user table")
-                reject(error)
-
-            },
-            (success)=>{
-
-                console.log("User table created or already exists")
-                resolve(success)
-            })
         })
-    };
+    }
 
-    static #parseRowResults = (resultArrayRaw)=>{
+    static parseRowResults = (resultArrayRaw)=>{
 
         let resultArrayRawLength = resultArrayRaw.rows.length;
         let resultArray = [];
@@ -169,208 +65,314 @@ class LocalDatabase {
         return resultArray
     }
 
+    static createDatabaseSchema = () =>{
 
-    static createTestDatabase = ()=>{
         return new Promise(async (resolve, reject)=>{
 
-            await SQLite.openDatabase({
-                name: "player.db",
-                location: "default"
-            },
-            e=>{
-                console.log("Open successful")
-                resolve(e)
-            },
-            e=>{
-                console.log("Open unsuccessful")
-                reject(e)
-            })
+                try{
+
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.USERS, [], "users table created or exists");
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_DETAILS, [], "user details table created or exists");
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_SETTINGS, [], "user settings created or exists");
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.PROJECTS, [], "projects created or exists");
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.TRANSLATIONS_LEFT, [], "translations left table created or exists");
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.PLAYS_LEFT, [], "plays left table created or exists");
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.NEXT_PLAYS_REFRESH, [], "next plays refresh table created or exists");
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.NEXT_TRANSLATIONS_REFRESH, [], "next translations refresh table created or exists");
+                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_ENTRIES, [], "user entries table created or exists");
+
+                    resolve(null);
+                    
+                }catch(e){
+
+                    reject(e)
+                }finally{
+                    resolve(null)
+                }
+
         })
     }
 
-    static openDatabase = async(userName: string) =>{
+    // static openDatabase = (): Promise<SQLiteDatabase> =>{
 
-        let databaseObject = {
-            database: {},
-            currentUser: userName
-        }
+    //     return new Promise(async(resolve, reject)=>{
+
+    //         try{
+
+    //             const db = await SQLite.openDatabase({
+    //                 name: "vocabpanda.db",
+    //                 location: "default"
+    //             });
+
+    //             //Execute code to allow foreign keys
+    //             await db.executeSql('PRAGMA foreign_keys = ON');
+
+    //             resolve(db);
+
+    //         }catch(e){
+
+    //             reject(e);
+    //         }
+    //     })
+    // }
+
+
+    //FOR DEVELOPMENT -= DROP ENTIRE DATABASE
+
+    static resetDatabase = ()=>{
 
         return new Promise(async (resolve, reject)=>{
 
-            await SQLite.openDatabase({
+            try{
 
-                    name: `vocabpanda.db`,
-                    location: "default"
-                },
-                async (success)=>{
+                Alert.alert(
+                    "Reset database?",
+                    "Would you like to refresh the local database?",
+                    [
+                        {
+                            text: "Yes",
+                            onPress: async()=>{
 
-                    console.log("Database successfully opened... creating table")
+                                try{
 
-                    await this.#createUserTable(userName, success).then(()=>{
+                                    const resultObject = await SQLite.deleteDatabase({
 
-                        databaseObject.database = success
-                        resolve(databaseObject)
+                                        name: `vocabpanda.db`,
+                                        location: "default"
+                                    }
+                                    )
+                    
+                                    console.log(resultObject);
+    
+                                    await EncryptedStorage.removeItem("api-key");
+                    
+                                    resolve(resultObject);
+                    
 
-                    }).catch((e)=>{
-                        console.log(e)
-                        reject(e)
-                    });
-                },
-                (error)=>{
+                                }catch(e){
+                                    throw e
+                                }
 
-                    console.log("Error opening database")
-                    reject(error)
+                                
+                            }
+                        },
+                        {
+                            text: "No",
+                            onPress: ()=>{
+
+                                resolve(null);
+                            }
+                        }
+                    ],
+                    {
+                        cancelable: false
+                    }
+                )
+
+            }catch(e){
+
+                console.log(e);
+
+                reject(e);
+
+
+            }
+            
+
+        })
+
+    }
+
+    static setAPIKey = ()=>{
+
+        return new Promise(async(resolve, reject)=>{
+
+            try{
+
+                const APIKey = await EncryptedStorage.getItem('api-key');
+
+                //Check for internet connection
+
+                const isOnline = await NetInfo.fetch().then(state=>{
+
+                    return state.isConnected;
+                });
+
+                //Testing backend API key generatio
+    
+                if(!APIKey && isOnline){
+
+                    //Where user device has no data and is connected to internet, api key requewst made,
+            
+                    const backendResponse = await BackendAPI.requestAPIKey();
+
+                    if(!backendResponse.APIKey){
+                        const error = "Backend error generating API key."
+                        throw error;
+                    };
+
+                    await EncryptedStorage.setItem("api-key",
+                        backendResponse.APIKey
+                    );
+
+                    //Once API key set in local storage  we need to re add the global headers
+
+                    await BackendAPI.setGlobalHeaders();
+
+                    resolve(null);
+                    return
+
+                } else if (!APIKey && !isOnline){
+
+                    const error = "User must be online before starting app.";
+                    throw error
+
+                } else if (APIKey){
+
+                    //Once API key set in local storage  we need to re add the global headers
+                    await BackendAPI.setGlobalHeaders();
+
+                    resolve(null);
+                    return
+                }
+            
+            
+            }catch(e){
+                console.log(e);
+                const AddLocalUserDetailsError = new Error(
+                    "Error creating local storage for API Key."
+                ).stack;
+                
+                reject(AddLocalUserDetailsError);
+            }
+        })       
+    };
+
+    static getAPIKey = ()=>{
+
+        return new Promise(async(resolve)=>{
+
+            const resultObject = {
+                APIKey: "",
+                message: ""
+            };
+
+            try{
+    
+                /* Get API key from storage */
+                const APIKey = await EncryptedStorage.getItem('api-key');
+
+                //Check that API key exists
+
+                if(APIKey === null){
+                    /* Check if inputted password matches password in database */
+
+                    resultObject.APIKey = "";
+                    resultObject.message = "No API key exists";
+
+                    resolve(resultObject);
+
+                    return
+
+                } else if (APIKey){
+
+                    resultObject.APIKey = APIKey;
+                    resultObject.message = "API key exists";
+
+                    resolve(resultObject);
+
+                    return
 
                 }
-            )
 
+            }catch(e){
+    
+                resultObject.message = "No API key exists"
+                resolve(resultObject);
+    
+            }
         })
-    }
+    };
 
-    static addNewEntry = async(databaseObject: {database: SQLiteDatabase, userName: string}, entryObject: {input: string, inputLang: string, output: string, outputLang: string, project: string})=>{
+    static checkAPIKey = async ()=>{
 
         return new Promise(async(resolve, reject)=>{
 
-            databaseObject.database.transaction(transaction=>{
+            const resultObject = {
+                APIKeyExists: false,
+                message: ""
+            };
 
-                let userName  = databaseObject.currentUser
+            try{
+    
+                /* Get api keys in local storage */
+                const APIKeysRaw = await EncryptedStorage.getItem('api-key');
 
-                const executeAddQuery = `
+                console.log(APIKeysRaw)
+    
+                const APIKeys = JSON.parse(APIKeysRaw);
 
-                    INSERT INTO ${userName} (target_language, target_language_lang, output_language, output_language_lang, project) VALUES (?,?,?,?,?)
+
+                if(!APIKeys){
+
+                    resultObject.APIKeyExists = false;
+                    resolve(resultObject);
+                } else if (APIKeys){
+
+                    resultObject.APIKeyExists = true;
+                    resolve(resultObject);
+                }
+
+
                 
-                `
-                transaction.executeSql(executeAddQuery, [entryObject.input, entryObject.inputLang, entryObject.output, entryObject.outputLang, entryObject.project])
 
-            },
-            error=>{
-                reject(error)
-            },
-            success=>{
-
-                console.log("Insert into table success")
-                resolve(success)
-            })
+            }catch(e){
+    
+                resultObject.message = "Error checking API Key" + JSON.stringify(e);
+                console.log(resultObject.message)
+                reject(resultObject)
+    
+            }
         })
+    };
+
+    //MISC methods
+
+    static getCurrentTime(){
+        // Get current datetime
+        const sqlFormattedDate = moment().format('YYYY-MM-DD HH:mm:ss');
+
+        return sqlFormattedDate
     }
 
-    static getProjectEntries = async(databaseObject: {database: SQLiteDatabase, userName: string}, projectName: string) =>{
-
-        return new Promise ((resolve, reject)=>{
-
-            databaseObject.database.transaction(async(transaction)=>{
-
-                let userName = databaseObject.currentUser
-
-                const getProjectSQLQuery = `
-                
-                    SELECT * FROM ${userName} WHERE project = '${projectName}'
-                
-                `
-
-                let [_, resultArrayRaw] = await transaction.executeSql(getProjectSQLQuery);
-
-                let resultArray = this.#parseRowResults(resultArrayRaw)
-
-                resolve(resultArray)
-
-            },
-            error=>{
-                reject(error)
-            },
-            success=>{
-
-                console.log("Project fetch was a success")
-            })
-
-        })
-
-    }
-
-    static deleteProject= (userName: string, database: SQLiteDatabase, project: string)=>{
-
+    static getUserId(username: string){
         return new Promise(async(resolve, reject)=>{
 
-            const deleteProjectQuery = `DELETE FROM ${userName} WHERE project='${project}'`
+            try{
 
-            database.transaction(transaction=>{
+                const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.generalStatements.getUserId, [username], "fetched user id");
 
-                transaction.executeSql(deleteProjectQuery)
-            },
-            (error)=>{
+                const resultArray = this.parseRowResults(resultArrayRaw);
 
-                console.log("Project deletion failed")
-                console.log(error)
-                reject(error)
-            },
-            (success)=>{
+                if(resultArray.length === 0){
 
-                console.log("Project deletion successful")
-                resolve(success)
-            })
-        })
-    }
+                    throw "Error: no user id found"
 
-    static deleteEntry = (userName: string, database: SQLiteDatabase, entryId: string)=>{
+                }else if (resultArray.length === 1){
 
-        return new Promise(async(resolve, reject)=>{
+                    
 
-            const deleteEntryQuery = `DELETE FROM ${userName} WHERE id='${entryId}'`
+                    const userId = resultArray[0].id;
+                    resolve(userId);
+                }
 
-            database.transaction(transaction=>{
-
-                transaction.executeSql(deleteEntryQuery)
-            },
-            (error)=>{
-
-                console.log("Entry deletion failed")
-                console.log(error)
-                reject(error)
-            },
-            (success)=>{
-
-                console.log("Entry deletion successful")
-                resolve(success)
-            })
-        })
-    }
-
-    static searchTerm = (userName: string, database: SQLiteDatabase, searchString: string)=>{
-
-        return new Promise((resolve, reject)=>{
-
-            const searchQuery = `
-            SELECT * FROM ${userName} 
-            WHERE 
-                (target_language LIKE '${searchString}%' OR 
-                target_language LIKE '%${searchString}%' OR 
-                target_language LIKE '%${searchString}') OR
-                (output_language LIKE '${searchString}%' OR 
-                output_language LIKE '%${searchString}%' OR 
-                output_language LIKE '%${searchString}')
-        `;
-
-            database.transaction(async(transaction)=>{
-
-
-            let [_, resultArrayRaw] = await transaction.executeSql(searchQuery);
-
-            let resultArray = this.#parseRowResults(resultArrayRaw)
-
-            resolve(resultArray)
-
-            },
-            error=>{
-                reject(error)
-            },
-            success=>{
-
-                console.log("Project fetch was a success")
-            })
+            }catch(e){
+                reject(e)
+            }
 
         })
+    };
 
-    }
 }
 
 export default LocalDatabase;

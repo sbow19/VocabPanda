@@ -13,19 +13,24 @@ import {
  import OptionsOverlayContext from "app/context/options_context";
 import CoreStyles from "app/shared_styles/core_styles";
 import ContentCard from "app/shared/content_card";
-import { CustomButtonStylesProp, CustomCardStyles } from "app/types/types.d";
-import LocalDatabase from "app/database/local_database";
+import { CustomCardStyles } from "app/types/types.d";
 import CurrentUserContext from "app/context/current_user";
-import UserDatabaseContext from "app/context/current_user_database";
+import EditTextContext from "app/context/edit_text_context"
+
+import UserContent from "app/database/user_content";
 
 const OptionsOverlay: React.FC = props=>{
 
-    const optionsOverlayObject = React.useContext(OptionsOverlayContext)
-    // const editTextOverlayObject = React.useContext(EditTextContext)
+    //Options overlay object 
+    const optionsOverlayObject = React.useContext(OptionsOverlayContext);
 
-    const [databaseObject] = React.useContext(UserDatabaseContext)
+    //Edit entries overlay object
 
-    const [currentUser] = React.useContext(CurrentUserContext) 
+    const editOverlayObject = React.useContext(EditTextContext);
+
+    const currentEntryId = optionsOverlayObject.currentEntryId; 
+
+    const [currentUser] = React.useContext(CurrentUserContext) ;
 
     return(
 
@@ -46,11 +51,11 @@ const OptionsOverlay: React.FC = props=>{
                     <AppButton
                         customStyles={CoreStyles.deleteButtonColor}
                         onPress={async()=>{
-                            await LocalDatabase.deleteEntry(currentUser, databaseObject.database, optionsOverlayObject.currentEntryId)
+                            await UserContent.deleteEntry(currentUser, currentEntryId);
 
-                            props.setDeletedRowId(optionsOverlayObject.currentEntryId)
+                            props.setDeletedRowId(currentEntryId); //Current entry id set as deleted row id
 
-                            optionsOverlayObject.setOptionsOverlayVisible(!optionsOverlayObject.visible)
+                            optionsOverlayObject.setOptionsOverlayVisible(!optionsOverlayObject.visible); //Close options overlay
                         }}
                     >
                         <Text
@@ -58,16 +63,16 @@ const OptionsOverlay: React.FC = props=>{
                         >Delete</Text>
                     </AppButton>
 
-                    {/* <AppButton
+                    <AppButton
                         onPress={()=>{
                             optionsOverlayObject.setOptionsOverlayVisible(!optionsOverlayObject.visible);     
-                            editTextOverlayObject.setEditTextVisible(!editTextOverlayObject.visible)                 
+                            editOverlayObject.setEditTextVisible(!editOverlayObject.visible);
                         }}
                     >
                         <Text
                             style={CoreStyles.actionButtonText}
                         >Edit</Text>
-                    </AppButton> */}
+                    </AppButton>
                 </ContentCard>
 
 

@@ -2,7 +2,7 @@
 
 import * as types from '@customTypes/types.d'
 
-import React, {useState, useContext} from 'react';
+import React, {useState} from 'react';
 import {
     View,
     Text, 
@@ -26,16 +26,18 @@ import { languagesList } from 'app/shared/languages_list';
 import { Overlay } from '@rneui/base';
 import { Formik } from 'formik';
 
-import DeeplTranslate from 'app/api/translation_call';
+import BackendAPI from 'app/api/backend';
 
 import * as yup from 'yup'
 import UpgradeBanner from 'app/shared/upgrade_banner';
-import AppSettings from 'app/storage/app_settings_storage';
 
 import CurrentUserContext from 'app/context/current_user';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
+import LoadingStatusInGame from "../../context/loadingInGame";
+import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
 
-import UserDatabaseContext from 'app/context/current_user_database';
+import UserDetails from 'app/database/user_profile_details';
+import UserContent from 'app/database/user_content';
 import LocalDatabase from 'app/database/local_database';
 
 import UpgradePrompt from 'app/premium/upgrade_overlay';
@@ -44,10 +46,6 @@ import { showMessage } from 'react-native-flash-message';
 
 
 const TranslateVocab: React.FC = props=>{
-
-    /* Get user database connection */
-
-    const [database, setDatabaseObject] = React.useContext(UserDatabaseContext)
     /* Get current user context */
     
     const [currentUser, setCurrentUser] = React.useContext(CurrentUserContext)
@@ -60,16 +58,18 @@ const TranslateVocab: React.FC = props=>{
 
     const [upgradePrompt, setUpgradePrompt] = React.useState(false)
 
-    /* Language selections stored in local state but also set as default languages */
+    /* Language selections stored in local state but also set as default language */
     const [inputLangSelection, setInputLangSelection] = useState("");
 
     const handleInputLanguageSelection = (language: string)=>{
 
         setInputLangSelection(language);
 
-        appSettings.dropDownLanguages.targetLanguage = language
+        //Update default target language
+        UserDetails.updateTargetLangDefault(currentUser, language);
 
-        AppSettings.setDefaultSettings(currentUser, appSettings)
+        //App settings handler
+        appSettingsHandler(language, "defaultTargetLang")
     }
 
     const [outputLangSelection, setOutputLangSelection] = useState("");
@@ -78,17 +78,24 @@ const TranslateVocab: React.FC = props=>{
 
         setOutputLangSelection(language);
 
-        appSettings.dropDownLanguages.outputLanguage = language
+        //Update default target language
+        UserDetails.updateOutputLangDefault(currentUser, language);
 
-        AppSettings.setDefaultSettings(currentUser, appSettings)
+        //App settings handler
+        appSettingsHandler(language, "defaultOutputLang")
 
     }
 
    /*  project selection for saving new text to project */
-    const [projectSelection, setProjectSelection] = useState("")
+    const [projectSelection, setProjectSelection] = useState("");
 
     /* add to project overlay state  */
-    const [overlayVisible, setOverlayVisible] = useState(false)
+    const [overlayVisible, setOverlayVisible] = useState(false);
+
+    //Get in game activity indicator
+
+    const [activityIndicator, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
+
 
     /* Check the current search term */
 
@@ -97,38 +104,49 @@ const TranslateVocab: React.FC = props=>{
 
     const addToProjectHandler = async(input: string, output: string)=>{
 
-        let responseObject = await PremiumChecks.checkProjectLength(database, projectSelection, appSettings);
+        try{
 
-        if(responseObject.upgrade){
+            const responseObject: types.ProjectLengthResponseObject = await PremiumChecks.checkProjectLength(currentUser, projectSelection, appSettings);
 
-            setUpgradePrompt(true)
+            if(responseObject.upgradeNeeded){
 
-        } else 
-        if(!responseObject.upgrade && responseObject.reason === "50 Limit"){
+                setUpgradePrompt(true)
 
+            } else 
+            if(!responseObject.upgradeNeeded && responseObject.reason === "50 Limit"){
+
+                showMessage({
+                    type: "warning",
+                    message: "50 entry limit reached"
+                })
+            } else 
+            if(!responseObject.upgradeNeeded && responseObject.reason === ""){
+
+                const entryObject: types.EntryObject = {
+                    input: input,
+                    inputLang: inputLangSelection,
+                    output: output,
+                    outputLang: outputLangSelection,
+                    project: projectSelection 
+                };
+        
+                await UserContent.addNewEntry(currentUser, entryObject);
+
+                showMessage({
+                    type: "success",
+                    message: "Entry added successfully!"
+                })
+            }
+
+        }catch(e){
+
+            console.log(e);
             showMessage({
                 type: "warning",
-                message: "50 entry limit reached"
-            })
-        } else 
-        if(!responseObject.upgrade && responseObject.reason === ""){
-
-            const entryObject = {
-                input: input,
-                inputLang: inputLangSelection,
-                output: output,
-                outputLang: outputLangSelection,
-                project: projectSelection 
-            }
-    
-            await LocalDatabase.addNewEntry(database, entryObject)
-
-            showMessage({
-                type: "success",
-                message: "Entry added successfully!"
+                message: "Error adding new entry!"
             })
         }
-    
+
         /* Close overlay */
         setOverlayVisible(!overlayVisible)
     }
@@ -136,15 +154,15 @@ const TranslateVocab: React.FC = props=>{
     React.useEffect(()=>{
 
         /* On initial render, set the default value of dropdowns to saved languages for current user */
-        const getLanguageSettings = async()=>{
+        const getLanguageSettings = ()=>{
 
+            console.log(appSettings, "Translate ")
 
-            let appSettings = await AppSettings.getDefaultAppSettings(currentUser);
+            setInputLangSelection(appSettings.userSettings.targetLanguage);
 
-            setInputLangSelection(appSettings.dropDownLanguages.targetLanguage)
-
-            setOutputLangSelection(appSettings.dropDownLanguages.outputLanguage)
+            setOutputLangSelection(appSettings.userSettings.outputLanguage);
         }
+
         getLanguageSettings()
 
 
@@ -158,11 +176,10 @@ const TranslateVocab: React.FC = props=>{
              <UpgradeBanner {...props}/>
                 <Formik
                     initialValues={{input: "", output: ""}}
-                    onSubmit={async(values, actions)=>{
+                    onSubmit={()=>{
 
                         /* add to project */
                         setOverlayVisible(false)
-
                     
                     }}
                     validationSchema={inputValidationSchema}
@@ -205,7 +222,6 @@ const TranslateVocab: React.FC = props=>{
                                         handleBlur('input')(e)
 
                                         /* short circuit when  */
-
                                         if(values.input.length <= 3 || values.input === currentSearchTerm.current){
 
                                             /**cancels translation logic */
@@ -214,50 +230,57 @@ const TranslateVocab: React.FC = props=>{
 
                                         currentSearchTerm.current = values.input // Set new term searched
 
-                                        /* Check if there are any refreshes left */
+                                        console.log(appSettings, "translate")
+                                        /* Check if there are any translations left */
+                                        if(appSettings.translationsLeft > 0){
 
-                                        if(!appSettings.translationsLeft.refreshNeeded){
+                                            setActivityIndicator(true);
 
-
-                                            let response = await DeeplTranslate.translate({
+                                            const {success, translations}: types.TranslateResponseObject = await BackendAPI.translate({
+                                                username: currentUser,
                                                 targetText: values.input,
                                                 outputLanguage: outputLangSelection,
                                                 targetLanguage: inputLangSelection
-                                            })
-
-                                           
-
-                                            if(response.text){
-                                                await setFieldValue("output", response.text)
+                                            });
+    
+                                            if(success){
                                                 
-                                                let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings)
+                                                //If there was a successful translation, then subtract from remaining 
+                                                await setFieldValue("output", translations.text);
 
-                                                appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+                                                const translationsLeft = appSettings.translationsLeft - 1;
 
-                                            } 
-                                        } else 
-                                        if(appSettings.translationsLeft.translationsLeft > 0 ){
+                                                appSettingsHandler(translationsLeft, "subtractTranslation");
 
-                                            let response = await DeeplTranslate.translate({
-                                                targetText: values.input,
-                                                outputLanguage: outputLangSelection,
-                                                targetLanguage: inputLangSelection
-                                            })
-
-                                            if(response.text){
-                                                await setFieldValue("output", response.text)
+                                                setActivityIndicator(false); 
                                                 
-                                                let newAppSettings = await AppSettings.setTranslationsLeftDetails(currentUser, appSettings)
+                                                try{
 
-                                                appSettingsHandler(undefined, undefined,  undefined, undefined, newAppSettings)
+                                                    await UserDetails.setTranslationsLeft(currentUser, appSettings.translationsLeft);
 
-                                            } 
-                                        } else {
+                                                }catch(e){
+
+                                                    console.trace();
+                                                    console.log(e);
+                                                    setActivityIndicator(false);
+
+                                                }
+                                                
+
+                                            } else if (!success){
+
+                                                setActivityIndicator(false);
+
+                                                showMessage({
+                                                    message: "There was a connection issue",
+                                                    type: "warning"
+                                                })
+
+                                            }
+                                        } else if (appSettings.translationsLeft === 0) {
 
                                             setUpgradePrompt(true)
                                         }
-
-                                        
                                       
                                     }}
                                 />
@@ -286,10 +309,13 @@ const TranslateVocab: React.FC = props=>{
                                 <VocabPandaTextInput 
                                     style={customOutputStyle} 
                                     numberOfLines={4} 
-                                    editable={false}
+                                    editable={true}
                                     placeholder='Output'
                                     maxLength={100}
                                     value={values.output}
+                                    onChangeText={
+                                        handleChange("output")
+                                    }
                                 />
                             </View>
                         
@@ -372,8 +398,15 @@ const TranslateVocab: React.FC = props=>{
                                   style={{
                                     width: windowDimensions.WIDTH*0.3,
                                 }}>
-                                    <AppButton onPress={()=>{setOverlayVisible(!overlayVisible)}}>
-                                            <Text style={CoreStyles.actionButtonText}>Close</Text>
+                                    <AppButton 
+                                        onPress={
+                                            ()=>{setOverlayVisible(!overlayVisible)}
+                                        }
+                                        customStyles={
+                                            CoreStyles.backButtonColor
+                                        }
+                                    >
+                                            <Text style={CoreStyles.backButtonText}>Close</Text>
                                     </AppButton>
                                 </View>
                                 <View
@@ -415,34 +448,34 @@ const CountdownCard = ()=>{
 
     /* Current project list context */
 
-    const [appSettings, appSettingsHandler] = React.useContext(DefaultAppSettingsContext);
+    const [appSettings, ] = React.useContext(DefaultAppSettingsContext);
 
     /* Timeleft */
 
-    const [timeLeftDisplay, setTimeLeftDisplay] = React.useState(null)
+    const [timeLeftDisplay, setTimeLeftDisplay] = React.useState(null);
 
     /* Timeleft on first referesh */
 
-    const timeLeftInterval = React.useRef("")
+    const timeLeftInterval = React.useRef("");
+
+    /* Current user context */
+
+    const [currentUser] = React.useContext(CurrentUserContext);
 
     /* Timeleft string */
 
     const [timeLeftString, setTimeLeftString] = React.useState("")
 
-    React.useMemo(()=>{
+    React.useMemo(async()=>{
 
-        const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000
+        const currentTime = new Date();
+        const translationsRefreshTime = new Date(appSettings.playsRefreshTime);
 
-        let translationRefreshBaseTime = new Date(appSettings.translationsLeft.refreshBaseTime)
-        let currentTime = new Date()
+        if(translationsRefreshTime > currentTime){
 
-        let timeElapsed = currentTime - translationRefreshBaseTime
+            const timeLeft = translationsRefreshTime - currentTime;
 
-        if(timeElapsed < DAY_IN_MILLISECONDS){
-
-            let timeLeft = DAY_IN_MILLISECONDS - timeElapsed
-
-            let timeLeftConverted = convertMilliseconds(timeLeft)
+            const timeLeftConverted = convertMilliseconds(timeLeft)
 
             setTimeLeftString(timeLeftConverted)
 
@@ -456,8 +489,6 @@ const CountdownCard = ()=>{
     }, [appSettings])
 
     React.useEffect(()=>{
-
-        console.log("useeffect")
 
         if(timeLeftDisplay != null){
 
@@ -498,7 +529,7 @@ const CountdownCard = ()=>{
             <Text
                 style={[CoreStyles.contentText, {lineHeight:14, fontSize:12}]}
             >
-                You have {appSettings.translationsLeft.translationsLeft} translations left. 
+                You have {appSettings.translationsLeft} translations left. 
                 {timeLeftDisplay != null ? ` Your translations refresh in \n${timeLeftString}.` : null}
             </Text>
             

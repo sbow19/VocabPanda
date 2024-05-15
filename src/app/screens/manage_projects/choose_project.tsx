@@ -24,16 +24,16 @@ import * as yup from 'yup'
 import { languagesList } from 'app/shared/languages_list';
 import UpgradeBanner from 'app/shared/upgrade_banner';
 
-import AppSettings from 'app/storage/app_settings_storage';
+
+import UserContent from 'app/database/user_content';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
-import UserDatabaseContext from 'app/context/current_user_database';
 import CurrentUserContext from 'app/context/current_user';
 
 import Dropdown from 'app/shared/dropdown';
-import LocalDatabase from 'app/database/local_database';
 import { showMessage } from 'react-native-flash-message';
 
 import UpgradePrompt from 'app/premium/upgrade_overlay';
+import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
 
 
 
@@ -42,26 +42,26 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
     
     /* Set upgrade prompt  */
 
-    const [upgradePrompt, setUpgradePrompt] = React.useState(false)
+    const [upgradePrompt, setUpgradePrompt] = React.useState(false);
 
-    const [currentUser] = React.useContext(CurrentUserContext)
+    const [currentUser] = React.useContext(CurrentUserContext);
 
     const [currentProjectSelection, setCurrentProjectSelection] = useState("");
 
     const [overlayVisible, setOverlayVisible] = useState(false);
 
-    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext);
 
 
     /* States for target language and output language */
 
-    const [targetLanguage, setTargetLanguage] = React.useState(appSettings.dropDownLanguages.targetLanguage)
+    const [targetLanguage, setTargetLanguage] = React.useState(appSettings.dropDownTargetLanguage);
 
-    const [outputLanguage, setOutputLanguage] = React.useState(appSettings.dropDownLanguages.outputLanguage)
+    const [outputLanguage, setOutputLanguage] = React.useState(appSettings.dropDownOutputLanguage);
 
-    /* Database object context */
+    //Get in game activity indicator
 
-    const [databaseObject, setDatabaseObject] = React.useContext(UserDatabaseContext)
+    const [, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
 
 
     const navHandler = async()=>{
@@ -77,7 +77,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
             return
         } else {
 
-            let resultArray = await LocalDatabase.getProjectEntries(databaseObject, currentProjectSelection)
+            const resultArray = await UserContent.getProjectEntries(currentUser, currentProjectSelection);
 
             props.navigation.navigate("project view", {
 
@@ -109,8 +109,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                     <View style={{flex:1, justifyContent: "space-evenly", alignItems:"center"}}>
                     
                         <View>
-                            <ProjectDropdown 
-                                data={[]} 
+                            <ProjectDropdown
                                 defaultButtonText='Choose Project'
                                 setSelection={setCurrentProjectSelection}
                             />
@@ -158,40 +157,51 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                         outputLanguage: outputLanguage
                     }
 
-                    const projectConfig:types.ProjectConfig<types.ProjectObject> ={
 
-                        project:{
+                    //Check whether max project no has been reached
 
-                            projectName: values.projectName,
-                            targetLanguage: targetLanguage,
-                            outputLanguage: outputLanguage
-
-                        },
-
-                        mode: "add"
-                       
-                    }
-
-                    let projectLength = appSettings.projects.length
+                    const projectLength = appSettings.projects?.length;
 
                     if(projectLength >= 20){
 
+                        //Premium users have maximum of  20 projects
                         showMessage({
                             type: "warning",
                             message: "Maximum amount of projects reached"
-                        })
-
+                        });
 
                     } else 
                     if (projectLength >= 10  && !appSettings.premium.premium){
 
-                        setUpgradePrompt(true)
+                        //Free users have maximum of ten projects
+                        setUpgradePrompt(true);
 
                     } else 
-                    if( projectLength < 10){
+                    if(projectLength < 10){
 
-                        await AppSettings.addProject(currentUser, projectObject)
-                        setAppSettingsHandler(undefined,undefined,undefined, projectConfig)
+                        try{
+
+                            setActivityIndicator(true);
+                            await UserContent.addProject(currentUser, projectObject);
+                            setActivityIndicator(false)
+
+                            setAppSettingsHandler(projectObject, "addProject");
+
+                            showMessage({
+                                type: "info",
+                                message: "Project added successfully!."
+                            })
+
+                        }catch(e){
+                            setActivityIndicator(false)
+
+                            showMessage({
+                                type: "warning",
+                                message: "Unable to add new project"
+                            })
+
+                        }
+                        
                         actions.resetForm()
                     }
                 
@@ -267,9 +277,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                                     <Dropdown
                                         defaultButtonText='Output lang'
                                         data={languagesList()}
-                                        setSelection={setOutputLanguage}
-                                        custom={dropdownStyles}
-                                    
+                                        setSelection={setOutputLanguage}                                    
                                     />
                                 </View>
                                 
@@ -329,11 +337,6 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
         </View>
     )
-}
-
-const dropdownStyles:types.CustomDropDown = {
-
-
 }
 
 const topCardCustomStylings: types.CustomCardStyles ={

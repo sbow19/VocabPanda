@@ -1,0 +1,199 @@
+Database schema in the form of SQL queries
+
+-- USERS
+
+CREATE TABLE IF NOT EXISTS "users" (
+
+  "id" TEXT NOT NULL,
+  "username" TEXT NOT NULL,
+  "email" TEXT NOT NULL,
+  "password_hash" TEXT NULL DEFAULT NULL,
+
+  PRIMARY KEY ("id"),
+  UNIQUE INDEX "username" ("username" ASC) ,
+  UNIQUE INDEX "email" ("email" ASC) ,
+  INDEX "id_index" ("id" ASC) ,
+  INDEX "username_index" ("username" ASC) ,
+  INDEX "email_index" ("email" ASC) )
+;
+
+-- USER DETAILS
+
+CREATE TABLE IF NOT EXISTS "user_details" (
+  "username" TEXT NOT NULL,
+  "user_id" TEXT NULL DEFAULT NULL,
+  "last_logged_in" DATETIME NOT NULL,
+  "premium" TINYINT NOT NULL,
+  PRIMARY KEY ("username"),
+  UNIQUE INDEX "username" ("username" ASC) ,
+
+  CONSTRAINT "user_details_fk_2"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE,
+
+  CONSTRAINT "user_details_ibfk_1"
+    FOREIGN KEY ("username")
+    REFERENCES "users" ("username")
+    ON DELETE CASCADE)
+;
+
+-- USER SETTINGS
+
+CREATE TABLE IF NOT EXISTS "user_settings" (
+  "user_id" TEXT NOT NULL,
+  "timer_on" TINYINT NOT NULL,
+  "slider_val" INT NOT NULL,
+  "target_lang" TEXT NOT NULL,
+  "output_lang" TEXT NOT NULL,
+  "default_project" TEXT NULL DEFAULT NULL,
+  PRIMARY KEY ("user_id"),
+
+  CONSTRAINT "user_settings_ibfk_1"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE)
+;
+
+-- PROJECTS
+
+CREATE TABLE IF NOT EXISTS "projects" (
+  "user_id" TEXT NOT NULL,
+  "project" TEXT NOT NULL,
+  "target_lang" TEXT NULL DEFAULT NULL,
+  "output_lang" TEXT NULL DEFAULT NULL,
+  PRIMARY KEY ("user_id", "project"),
+  CONSTRAINT "projects_ibfk_1"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE)
+;
+
+-- TRANSLATION LEFT
+
+CREATE TABLE IF NOT EXISTS "translations_left" (
+  "user_id" TEXT NOT NULL,
+  "translations_left" INT NOT NULL,
+  PRIMARY KEY ("user_id"),
+  CONSTRAINT "translations_left_ibfk_1"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE)
+;
+
+
+-- PLAYS LEFT
+
+CREATE TABLE IF NOT EXISTS "plays_left" (
+  "user_id" TEXT NOT NULL,
+  "plays_left" INT NULL DEFAULT NULL,
+  PRIMARY KEY ("user_id"),
+  CONSTRAINT "plays_left_ibfk_1"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE
+);
+
+--NEXT PLAYS REFRESH
+
+CREATE TABLE IF NOT EXISTS "next_plays_refresh" (
+  "user_id" TEXT NOT NULL,
+  "game_refresh" DATETIME NULL DEFAULT NULL,
+  PRIMARY KEY ("user_id"),
+  CONSTRAINT "next_plays_refresh_ibfk_1"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE)
+;
+
+-- NEXT TRANSLATIONS REFRESH 
+
+CREATE TABLE IF NOT EXISTS "next_translations_refresh" (
+  "user_id" TEXT NOT NULL,
+  "translations_refresh" DATETIME NULL DEFAULT NULL,
+  PRIMARY KEY ("user_id"),
+  CONSTRAINT "next_translations_refresh_ibfk_1"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE)
+;
+
+
+-- USER ENTRIES
+
+CREATE TABLE IF NOT EXISTS "user_entries" (
+  "user_id" TEXT NULL DEFAULT NULL,
+  "username" TEXT NULL DEFAULT NULL,
+  "entry_id" TEXT NOT NULL,
+  "target_language_text" TEXT NULL DEFAULT NULL,
+  "target_language" TEXT NULL DEFAULT NULL,
+  "output_language_text" TEXT NULL DEFAULT NULL,
+  "output_language" TEXT NULL DEFAULT NULL,
+  "tags" TINYINT NOT NULL,
+
+  "created_at" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  "project" TEXT NULL DEFAULT NULL,
+
+  PRIMARY KEY ("entry_id"),
+
+  UNIQUE INDEX "entry_id_UNIQUE" ("entry_id" ASC) ,
+  UNIQUE INDEX "unique_user_entry" ("user_id" ASC, "target_language_text" ASC, "target_language" ASC) ,
+
+  INDEX "target_language_text_index" ("username" ASC, "target_language_text" ASC) ,
+  INDEX "output_language_text_index" ("username" ASC, "output_language_text" ASC) ,
+  INDEX "created_at_index" ("username" ASC, "created_at" ASC) ,
+  INDEX "updated_at_index" ("username" ASC, "updated_at" ASC) ,
+  INDEX "user_entries_ibfk_2" ("user_id" ASC, "project" ASC) ,
+
+  CONSTRAINT "user_entries_ibfk_1"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE,
+
+  CONSTRAINT "user_entries_ibfk_2"
+    FOREIGN KEY ("user_id" , "project")
+    REFERENCES "projects" ("user_id" , "project")
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+;
+
+
+--ENTRY TAGS 
+
+CREATE TABLE IF NOT EXISTS "entry_tags" (
+  "tag_id" TEXT NOT NULL,
+  "entry_id" TEXT NOT NULL,
+
+  PRIMARY KEY ("entry_id", "tag_id"),
+  INDEX "tag_id" ("tag_id" ASC) ,
+
+  CONSTRAINT "entry_tags_ibfk_1"
+    FOREIGN KEY ("entry_id")
+    REFERENCES "user_entries" ("entry_id")
+    ON DELETE CASCADE,
+
+  CONSTRAINT "entry_tags_ibfk_2"
+    FOREIGN KEY ("tag_id")
+    REFERENCES "user_tags" ("tag_id")
+    ON DELETE CASCADE)
+;
+
+-- USER TAGS
+
+CREATE TABLE IF NOT EXISTS "user_tags" (
+  "user_id" TEXT NOT NULL,
+  "tag_name" TEXT NOT NULL,
+  "tag_id" TEXT NULL DEFAULT NULL,
+
+  PRIMARY KEY ("user_id", "tag_name"),
+  UNIQUE INDEX "tag_id" ("tag_id" ASC) ,
+
+  CONSTRAINT "user_tags_ibfk_1"
+    FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id")
+    ON DELETE CASCADE)
+;
+
+
+

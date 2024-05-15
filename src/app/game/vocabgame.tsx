@@ -26,11 +26,9 @@ import GameLoadingScreen from './loading_screen ';
 
 import GameLogic from './game _logic/game_logic';
 import CurrentUserContext from 'app/context/current_user';
-import UserDatabaseContext from 'app/context/current_user_database';
 import AppButton from 'app/shared/app_button';
-import LastActivity from 'app/context/last_activity';
 
-const VocabGame: React.FC = props=>{
+const VocabGame: React.FC = (props)=>{
 
     /* Game state object */
 
@@ -42,9 +40,6 @@ const VocabGame: React.FC = props=>{
     /* Current user state */
     
     const[currentUser] = React.useContext(CurrentUserContext)
-
-    /* Current user database object */
-    const[databaseObject] = React.useContext(UserDatabaseContext)
 
     /* Loading state */
 
@@ -61,10 +56,6 @@ const VocabGame: React.FC = props=>{
     /* Set next button */
 
     const [nextButton, setNextButton] = React.useState(false)
-
-    /* last activity */
-
-    const lastActivityObject = React.useContext(LastActivity)
 
     /* countdown interval id */
 
@@ -83,27 +74,18 @@ const VocabGame: React.FC = props=>{
         if(isLoading == true){
 
             async function setUpGame(){
-
-                
-
-                /* Insert latest activity array to props.route.params;
-                note however that this throws a warning, given the result array is "non-serialisable
-                REFACTOR NEEDED; parse database array results at source so we ony deal with arrays of search results
-                " */
-                if(props.route.params.gameMode === "Latest Activity"){
-
-                    props.route.params.resultArray = lastActivityObject.lastActivityResultArray                
-                }
             
                 /* Logic to set up game depending on the game mode */
 
-                let myGameState=  new GameLogic(props.route.params, currentUser, databaseObject, props.route.params.resultArray)
+                const myGameState=  new GameLogic(props.route.params, currentUser, props.route.params.resultArray);
+
+                /* Then fetch game rows used for game with this line below */
 
                 await myGameState.fetchArray()
 
-                gameState.current = myGameState
+                //Set game state to reference
 
-                /* Then fetch game rows used for game with this line below */
+                gameState.current = myGameState;
 
                 setIsLoading(false)
         
@@ -280,8 +262,8 @@ const VocabGame: React.FC = props=>{
                         >
                             Target Language: {
                             gameState.current.turnType === "target" ? 
-                            gameState.current.gameArray[currentTurn-1].target_language_lang : 
-                            gameState.current.gameArray[currentTurn-1].output_language_lang
+                            gameState.current.gameArray[currentTurn-1].target_language : 
+                            gameState.current.gameArray[currentTurn-1].output_language
                             }
                         </Text>
                     </View>
@@ -300,8 +282,8 @@ const VocabGame: React.FC = props=>{
                         >    
                             {
                             gameState.current.turnType === "target" ? 
-                            gameState.current.gameArray[currentTurn-1].target_language : 
-                            gameState.current.gameArray[currentTurn-1].output_language
+                            gameState.current.gameArray[currentTurn-1].target_language_text : 
+                            gameState.current.gameArray[currentTurn-1].output_language_text
                             }
                         </Text>
                     </View>
@@ -337,8 +319,8 @@ const VocabGame: React.FC = props=>{
                         >
                             Output Language: {
                             gameState.current.turnType === "target" ? 
-                            gameState.current.gameArray[currentTurn-1].output_language_lang : 
-                            gameState.current.gameArray[currentTurn-1].target_language_lang
+                            gameState.current.gameArray[currentTurn-1].output_language : 
+                            gameState.current.gameArray[currentTurn-1].target_language
                             }
                         </Text>
                     </View>
@@ -357,13 +339,13 @@ const VocabGame: React.FC = props=>{
                                 if(gameState.current.turnType === "target"){
                                     score = gameState.current.checkAnswer(
                                         values.input, 
-                                        gameState.current.gameArray[currentTurn-1].output_language,
+                                        gameState.current.gameArray[currentTurn-1].output_language_text,
                                         timeLeft
                                     )
                                 } else if (gameState.current.turnType === "output"){
                                     score = gameState.current.checkAnswer(
                                         values.input,
-                                        gameState.current.gameArray[currentTurn-1].target_language,
+                                        gameState.current.gameArray[currentTurn-1].target_language_text,
                                         timeLeft
                                     )
                                 }

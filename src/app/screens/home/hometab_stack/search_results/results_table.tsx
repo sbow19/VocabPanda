@@ -41,6 +41,7 @@ const SearchResultTable = props => {
         setFullText: setFullText
     }
 
+
     /* All search results provided by project view */
 
     const [resultRows, setResultRows] = React.useState(props.searchResults)

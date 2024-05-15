@@ -2,10 +2,12 @@
 
 import * as types from '@customTypes/types.d'
 import LocalDatabase from 'app/database/local_database'
+import UserContent from 'app/database/user_content'
+import UserDetails from 'app/database/user_profile_details'
 
 class GameLogic {
 
-    constructor(gameSettings: types.GameSettingsObject, userName: string, databaseObject, resultArrayParam: Array<any>){
+    constructor(gameSettings: types.GameSettingsObject, userName: string, resultArrayParam: Array<any>){
 
         /* Turn timer on? */
         this.timerOn = gameSettings.timerOn
@@ -21,10 +23,6 @@ class GameLogic {
 
         /* Set username */
         this.userName = userName
-
-        /* Set database Object */
-
-        this.databaseObject = databaseObject
 
         /* Set result array */
         
@@ -52,15 +50,15 @@ class GameLogic {
 
             if(this.gameMode === "By Project"){
 
-                let resultArray = await LocalDatabase.getProjectEntries(this.databaseObject, this.project)
+                const resultArray = await UserContent.getProjectEntries(this.userName, this.project);
 
-                this.resultArray = resultArray
+                this.resultArray = resultArray;
 
                 /* randomises result array and returns game array of no of turns length */
 
-                let gameArray = await this.#setGameArray(resultArray)
+                const gameArray = this.#setGameArray(resultArray)
 
-                this.gameArray = gameArray
+                this.gameArray = gameArray;
 
                 resolve(gameArray)
             } else
@@ -69,7 +67,7 @@ class GameLogic {
 
                 /* Result array already provided in gameSettings argument */
 
-                let gameArray = await this.#setGameArray(this.resultArray)
+                let gameArray = this.#setGameArray(this.resultArray)
 
                 this.gameArray = gameArray
 
@@ -79,59 +77,53 @@ class GameLogic {
 
             if(this.gameMode === "Latest Activity"){
 
-                /* Result array already provided in gameSettings argument */
+                const resultArray = await UserDetails.getLastActivity(this.userName);
 
-                let gameArray = await this.#setGameArray(this.resultArray)
+                this.resultArray = resultArray;
 
+                let gameArray = this.#setGameArray(this.resultArray);
 
-                this.gameArray = gameArray
+                this.gameArray = gameArray;
 
                 resolve(gameArray)
 
-            } else 
-
-            if(this.gameMode === "All Words"){
+            } 
+            else if(this.gameMode === "All Words"){
 
                 /* Randomly ident */
 
-                let resultArray = await LocalDatabase.getAll(this.userName, this.databaseObject.database)
+                const resultArray = await UserContent.getAllEntries(this.userName);
 
-                this.resultArray = resultArray
+                this.resultArray = resultArray;
 
                 /* randomises result array and returns game array of no of turns length */
 
-                let gameArray = await this.#setGameArray(resultArray)
+                let gameArray = this.#setGameArray(resultArray);
 
-                this.gameArray = gameArray
+                this.gameArray = gameArray;
 
-                resolve(gameArray)
-            } else
-
-            if(this.gameMode === "Latest Activity - By Project"){
+                resolve(gameArray);
+            } 
+            else if(this.gameMode === "Latest Activity - By Project"){
 
                 /* Result array already provided in gameSettings argument */
 
-                let gameArray = await this.#setGameArray(this.resultArray)
-
+                let gameArray = this.#setGameArray(this.resultArray)
 
                 this.gameArray = gameArray
 
                 resolve(gameArray)
-
-
             }
 
             reject("Nothing")
         })
     }
 
-    #setGameArray = async(resultArray: Array<any>)=>{
+    #setGameArray = (resultArray: Array<any>)=>{
 
-        return new Promise((resolve, reject)=>{
-
-            let randomisedArray = []
-            let filteredArray = []
-            let resultArrayLength = resultArray.length
+            const randomisedArray = []
+            const filteredArray = []
+            const resultArrayLength = resultArray.length
 
             
             for(let i=0; i< resultArrayLength ; i++){
@@ -145,7 +137,6 @@ class GameLogic {
                 this.noOfTurns = resultArrayLength
             }
 
-
             for(let i = 0 ; i < resultArrayLength && i < this.noOfTurns ; i++){
 
                 let filteredArrayLength = filteredArray.length
@@ -158,9 +149,7 @@ class GameLogic {
 
             }
 
-            resolve(randomisedArray)
-        })
-
+            return randomisedArray;
 
     }
 

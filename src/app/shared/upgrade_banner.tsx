@@ -8,7 +8,7 @@ import React from "react";
 
 const UpgradeBanner: React.FC = props =>{
 
-    const [appSettings] = React.useContext(DefaultAppSettingsContext)
+    const [appSettings] = React.useContext(DefaultAppSettingsContext);
 
     return(
 

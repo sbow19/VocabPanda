@@ -1,7 +1,8 @@
 /* eslint-disable */
 
-import { Table, TableWrapper, Row, Rows, Col, Cols, Cell } from 'react-native-table-component';
+import { Table, TableWrapper, Cell } from 'react-native-table-component';
 import { ScrollView, View, Text, ViewStyle, TouchableOpacity } from 'react-native';
+import * as types from '@customTypes/types.d'
 import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
@@ -18,12 +19,7 @@ import EditTextContext from 'app/context/edit_text_context';
 
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
 
-type FullTextObject = {
-    target_language: string,
-    target_language_lang: string,
-    output_language: string,
-    output_language_lang: string
-}
+
 
 const ResultTable = props => {
 
@@ -39,7 +35,8 @@ const ResultTable = props => {
         visible: optionsOverlayVisible,
         setOptionsOverlayVisible: setOptionsOverlayVisible,
         currentEntryId: currentEntryId,
-        setCurrentEntryId: setCurrentEntryId
+        setCurrentEntryId: setCurrentEntryId,
+        
     }
 
 
@@ -47,7 +44,7 @@ const ResultTable = props => {
 
     const [fullTextVisible, setFullTextVisible] = React.useState(false);
 
-    const [fullText, setFullText] = React.useState<FullTextObject>({
+    const [fullText, setFullText] = React.useState<types.FullTextObject>({
         target_language: "",
         target_language_lang: "",
         output_language: "",
@@ -65,16 +62,21 @@ const ResultTable = props => {
 
     const [editTextVisible, setEditTextVisible] = React.useState(false);
 
+    const [entryToEdit, setEntryToEdit] = React.useState({});
+
+
     const editTextOverlayObject = {
         visible: editTextVisible,
-        setEditTextVisible: setEditTextVisible
+        setEditTextVisible: setEditTextVisible,
+        entryToEdit: entryToEdit,  //Result row attached to options 
+        setEntryToEdit: setEntryToEdit//Allows the refresh after editing entry
     }
 
     const [deletedRowId, setDeletedRowId] = React.useState("")
 
     /* All search results provided by project view */
 
-    const [resultRows, setResultRows] = React.useState(props.searchResults)
+    const [resultRows, setResultRows] = React.useState(props.searchResults); //Set array of entries.
 
     /* Displaye result rows */
 
@@ -93,45 +95,64 @@ const ResultTable = props => {
 
     React.useMemo(()=>{
 
-        let resultRowsLength = resultRows.length;
+        const resultRowsLength = resultRows.length;
 
         noOfPages.current = Math.floor(resultRowsLength / 15) + 1 // Max number of rows displayed is 15
 
     }, [resultRows])
 
-
+    //Trigger update of rows when entry to edi changes
     React.useEffect(()=>{
 
-        let displayedRowsStartIndex = (pageNumber * 15) - 15
-        let displayedRowsEndIndex = (pageNumber * 15)
-        let displayedRows = resultRows.slice(displayedRowsStartIndex, displayedRowsEndIndex)
+    if(Object.keys(entryToEdit).length > 0){
+
+        const newResultRows = resultRows.map(row => {
         
-        let listLength = displayedRows.length
-        let resultRowsComp = []
+            if(row["entry_id"] === entryToEdit["entry_id"]){
+                return entryToEdit
+            }
+        });
+
+        setResultRows(newResultRows)
+        
+    }
+    }, [entryToEdit])
+
+    //Setting which 15 entries to display
+    React.useEffect(()=>{
+
+        const displayedRowsStartIndex = (pageNumber * 15) - 15
+        const displayedRowsEndIndex = (pageNumber * 15)
+        const displayedRows = resultRows.slice(displayedRowsStartIndex, displayedRowsEndIndex)
+        
+        const listLength = displayedRows.length;
+        const resultRowsComp = [];
 
 
         for(let i=0; i < listLength ; i++){
 
-            let resultRow = displayedRows[i]
+            let resultRow = displayedRows[i];
 
-            resultRowsComp.push(<RowTemplate {...props} key={i} resultRow={resultRow}/>)
+            resultRowsComp.push(<RowTemplate {...props} key={resultRow["entry_id"]} resultRow={resultRow}/>)
         }
         setDisplayedResultRows(resultRowsComp)
         
 
     }, [pageNumber, resultRows])
 
-
+    //Trigger delete row based on id selected
     React.useEffect(()=>{
 
-        if(typeof deletedRowId === "number"){
+        if(typeof deletedRowId === "string"){
 
-            let newResultRows = resultRows.filter(row => row.id != deletedRowId)
+            const newResultRows = resultRows.filter(row => row["entry_id"] != deletedRowId)
 
             setResultRows(newResultRows)
             
         }
     }, [deletedRowId])
+
+  
 
 
     return (

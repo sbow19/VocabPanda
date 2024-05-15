@@ -6,7 +6,9 @@ import {
 
 const edittext = {
     visible: false,
-    setEditTextVisible: ()=>{}
+    setEditTextVisible: ()=>{},
+    entryToEdit: {},
+    setEntryToEdit: ()=>{}
 }
 
 const EditTextContext = createContext(edittext)
