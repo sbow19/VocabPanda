@@ -263,13 +263,17 @@ const MainApp: React.FC = ()=>{
         if(valueType === "subtractTranslation"){
 
             //Update app settings
-            newSettings.translationsLeft = value; 
+            newSettings.translationsLeft = value.translationsLeft;
+            
+            newSettings.translationsRefreshTime = value.translationsRefreshTime;
         };
 
         if(valueType === "subtractPlay"){
 
             //Update app settings
-            newSettings.playsLeft = value; 
+            newSettings.playsLeft = value.playsLeft; 
+
+            newSettings.playsRefreshTime = value.playsRefreshTime;
         };
 
         setAppSettings(newSettings)
@@ -324,8 +328,6 @@ const MainApp: React.FC = ()=>{
                 /* Last activity determiner */
 
                 const lastActivityResultArray = await UserDetails.getLastActivity(currentUser);
-
-                console.log(lastActivityResultArray, "Last activity array");
 
                 /* Setting last activity object */
 
@@ -401,7 +403,7 @@ const MainApp: React.FC = ()=>{
 
                             setAppSettings(newAppSettings)
                         }     
-                    }, 100000);
+                    }, 50000);
                 };
                     
 
@@ -435,7 +437,7 @@ const MainApp: React.FC = ()=>{
 
                         setAppSettings(newAppSettings)
                     };
-                }, 100000);
+                }, 50000);
             }
 
             setCronJobs();

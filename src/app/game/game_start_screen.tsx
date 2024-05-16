@@ -22,6 +22,7 @@ import React from 'react';
 import LastActivity from 'app/context/last_activity';
 import CurrentUserContext from 'app/context/current_user';
 import UpgradePrompt from 'app/premium/upgrade_overlay';
+import { showMessage } from 'react-native-flash-message';
 
 
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
@@ -151,9 +152,12 @@ const GameHome: React.FC = props=>{
         const playsLeft = appSettings.playsLeft - 1
 
         await UserDetails.setPlaysLeft(currentUser, playsLeft);
+        const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
 
-        appSettingsHandler(playsLeft, "subtractPlay"); // Update play left
-
+        appSettingsHandler({
+            playsLeft,
+            playsRefreshTime
+        }, "subtractPlay"); // Update play left
 
 
         return
@@ -193,11 +197,15 @@ const GameHome: React.FC = props=>{
                 project: ""
             })
 
-            const playsLeft = appSettings.playsLeft - 1
+            const playsLeft = appSettings.playsLeft - 1;
 
             await UserDetails.setPlaysLeft(currentUser, playsLeft);
+            const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
 
-            appSettingsHandler(playsLeft, "subtractPlay");
+            appSettingsHandler({
+                playsLeft,
+                playsRefreshTime
+            }, "subtractPlay"); // Update play left
     
             return
 
@@ -231,8 +239,12 @@ const GameHome: React.FC = props=>{
             const playsLeft = appSettings.playsLeft - 1
 
             await UserDetails.setPlaysLeft(currentUser, playsLeft);
+            const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
 
-            appSettingsHandler(playsLeft, "subtractPlay");
+            appSettingsHandler({
+                playsLeft,
+                playsRefreshTime
+            }, "subtractPlay"); // Update play left
     
             return
         }
@@ -252,8 +264,12 @@ const GameHome: React.FC = props=>{
         const playsLeft = appSettings.playsLeft - 1
 
         await UserDetails.setPlaysLeft(currentUser, playsLeft);
+        const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
 
-        appSettingsHandler(playsLeft, "subtractPlay");
+        appSettingsHandler({
+            playsLeft,
+            playsRefreshTime
+        }, "subtractPlay"); // Update play left
 
         return
 
@@ -280,12 +296,16 @@ const GameHome: React.FC = props=>{
             resultArray: props.route.params.resultArray,
             project: ""
         })
-
+        
         const playsLeft = appSettings.playsLeft - 1
 
         await UserDetails.setPlaysLeft(currentUser, playsLeft);
+        const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
 
-        appSettingsHandler(playsLeft, "subtractPlay");
+        appSettingsHandler({
+            playsLeft,
+            playsRefreshTime
+        }, "subtractPlay"); // Update play left
 
         return
     };
@@ -463,7 +483,7 @@ const UpgradeBannerGame = props =>{
     const [timeLeftString, setTimeLeftString] = React.useState("");
 
     
-    React.useMemo(async()=>{
+    React.useMemo(()=>{
     
         const currentTime = new Date();
         const refreshTime = new Date(appSettings.playsRefreshTime);

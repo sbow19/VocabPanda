@@ -145,8 +145,6 @@ class UserDetails extends LocalDatabase{
 
                 const userId = await super.getUserId(username);
 
-                
-
                 //Get user settings
 
                 const userSettingsRaw = await this.getUserSettings(userId);
@@ -207,9 +205,9 @@ class UserDetails extends LocalDatabase{
 
                 //Get translations refresh time left
 
-                const translationsRefreshTimeRaw = await UserDetails.getPlaysRefreshTimeLeft(userId);
+                const translationsRefreshTimeRaw = await UserDetails.getTranslationsRefreshTimeLeft(userId);
 
-                defaultAppSettings.translationssRefreshTime = translationsRefreshTimeRaw["translations_refresh"]
+                defaultAppSettings.translationsRefreshTime = translationsRefreshTimeRaw["translations_refresh"]
 
 
                 resolve(defaultAppSettings);
@@ -391,7 +389,7 @@ class UserDetails extends LocalDatabase{
 
                 await this.transactionPromiseWrapper(SQLStatements.addNewUser.TRANSLATIONS_LEFT, [
                     id,
-                    40
+                    100
                 ], 
                 "translations left added to table");
 
@@ -536,7 +534,7 @@ class UserDetails extends LocalDatabase{
 
                     allAppSettings[userName].translationsLeft = 
                     {
-                        translationsLeft: 120,
+                        translationsLeft: 250,
                         refreshBaseTime: "",
                         refreshNeeded: false
                     }
@@ -765,6 +763,103 @@ class UserDetails extends LocalDatabase{
                 
             } catch(e){
                 console.log("Could not update plays left.")
+                console.log(e);
+                console.trace();
+                reject(e);
+            }
+        })
+    };
+
+    static setPlaysRefreshTimeLeft(username: string){
+        return new Promise(async(resolve, reject)=>{
+
+            try{
+
+                //Get userId 
+                const userId = await this.getUserId(username);
+
+                //Check whether time exists
+                const checkValue = await this.getPlaysRefreshTimeLeft(userId);
+
+                if(checkValue["game_refresh"] !== null){
+                    //If there is already a time set, don't refresh it
+                    resolve(checkValue["game_refresh"])
+                    return 
+                };
+
+                //Add an hour in milliseconds
+
+                const currentTime = new Date();
+                const HOUR_IN_MILLISECONDS = 3600000;
+                const currentTimeMillis = currentTime.getTime();
+
+                // Calculate the new time by adding an hour
+                const newTimeMillis = currentTimeMillis + HOUR_IN_MILLISECONDS;
+
+                // Create a new Date object with the calculated time
+                const newTime = new Date(newTimeMillis);
+
+                const formattedTime = newTime.toISOString();
+
+                //Get new db transaction, and update time in database.
+                await this.transactionPromiseWrapper(SQLStatements.refreshStatements.setPlaysRefreshTime, [
+                    formattedTime,
+                    userId
+                ],
+                "Updated plays refresh time");
+                resolve(newTime); //Resolves plays refresh time
+                
+            } catch(e){
+                console.log("Could not update plays refresh time left.")
+                console.log(e);
+                console.trace();
+                reject(e);
+            }
+        })
+    };
+
+    static setTranslationsRefreshTimeLeft(username: string){
+        return new Promise(async(resolve, reject)=>{
+
+            try{
+
+                //Get userId 
+                const userId = await this.getUserId(username);
+
+                //Check whether time exists
+                const checkValue = await this.getTranslationsRefreshTimeLeft(userId);
+
+                if(checkValue["translations_refresh"] !== null){
+                    //If there is already a time set, don't refresh it
+                    resolve(checkValue["translations_refresh"]);
+                    return 
+                };
+
+                //Add an week in milliseconds
+
+                const currentTime = new Date();
+                const WEEK_IN_MILLISECONDS = 604800000;
+                const currentTimeMillis = currentTime.getTime();
+
+                // Calculate the new time by adding a week
+                const newTimeMillis = currentTimeMillis + WEEK_IN_MILLISECONDS;
+
+                // Create a new Date object with the calculated time
+                const newTime = new Date(newTimeMillis);
+
+                const formattedTime = newTime.toISOString();
+                //Get new db transaction, and update time in database.
+
+                await this.transactionPromiseWrapper(SQLStatements.refreshStatements.setTranslationRefreshTime, [
+                    formattedTime,
+                    userId
+                ],
+                "Updated translations refresh time");
+
+                resolve(newTime); // Resolves to new time
+                
+            } catch(e){
+                console.log("Could not update translations refresh time left.")
                 console.log(e);
                 console.trace();
                 reject(e);

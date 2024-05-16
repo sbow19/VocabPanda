@@ -8,7 +8,7 @@ const {height, width} = Dimensions.get('window');
 
 const windowDimensions: types.WindowDimensions = {
 
-    HEIGHT: height, 
+    HEIGHT: height - 50, 
     WIDTH: width
 
 }

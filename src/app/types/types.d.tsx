@@ -5,6 +5,7 @@ import { TextStyle, TextInputProps } from "react-native";
 
 import { ViewStyle } from "react-native";
 import { SQLiteDatabase } from "react-native-sqlite-storage";
+import { BooleanSchema } from "yup";
 
 export type CoreColours = {
     black: "#3E3B3F"
@@ -253,14 +254,7 @@ export type ProjectLengthResponseObject = {
     reason: "50 Limit" | "20 Limit" | ""
 }
 
-export type EntryObject = {
 
-    input: string
-    inputLang: string
-    output: string
-    outputLang: string
-    project: string
-}
 
 export type TranslateCallObject = {
 
@@ -278,9 +272,40 @@ export type TranslateResponseObject = {
 }
 
 export type FullTextObject = {
-    target_language: string,
-    target_language_lang: string,
-    output_language: string,
-    output_language_lang: string
+    targetLanguageText: string,
+    targetLanguage: string,
+    outputLanguageText: string,
+    outputLanguage: string
+};
+
+
+//Entry related types
+
+export type APIEntryObject = {
+    updateType: "create" | "remove" | "update" 
+    entryDetails: EntryDetails
+}
+
+export type APIEntryResponse = {
+    success: Boolean
+    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
+    error?: Error
+    operationType?: "create" | "update" | "remove" | ""
+    contentType?: "project" | "tags" | "entry" | "user"
+}
+
+export type EntryDetails = {
+    targetLanguageText: string
+    targetLanguage: string
+    outputLanguageText: string
+    outputLanguage: string
+    project: string
+    createdAt: string
+    updatedAt:  string
+    tags: number
+    tagsArray: string[]
+    userId: string
+    username: string
+    entryId: string
 }
 

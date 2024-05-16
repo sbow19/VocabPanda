@@ -94,7 +94,7 @@ const TranslateVocab: React.FC = props=>{
 
     //Get in game activity indicator
 
-    const [activityIndicator, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
+    const [, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
 
 
     /* Check the current search term */
@@ -106,6 +106,7 @@ const TranslateVocab: React.FC = props=>{
 
         try{
 
+            //Check whether max number of entries exceeded
             const responseObject: types.ProjectLengthResponseObject = await PremiumChecks.checkProjectLength(currentUser, projectSelection, appSettings);
 
             if(responseObject.upgradeNeeded){
@@ -122,20 +123,57 @@ const TranslateVocab: React.FC = props=>{
             } else 
             if(!responseObject.upgradeNeeded && responseObject.reason === ""){
 
-                const entryObject: types.EntryObject = {
-                    input: input,
-                    inputLang: inputLangSelection,
-                    output: output,
-                    outputLang: outputLangSelection,
+                const entryObject: types.EntryDetails = {
+                    targetLanguageText: input,
+                    targetLanguage: inputLangSelection,
+                    outputLanguageText: output,
+                    outputLanguage: outputLangSelection,
                     project: projectSelection 
                 };
         
-                await UserContent.addNewEntry(currentUser, entryObject);
+                const entryId = await UserContent.addNewEntry(currentUser, entryObject);
 
                 showMessage({
                     type: "success",
                     message: "Entry added successfully!"
                 })
+
+
+                //Send new entry details to backend or retain here.
+                //Handle backend communication errors seperately here
+                UserContent.getEntryById(currentUser, entryId)
+                .then((newEntryDetailsRaw: Array[])=>{
+
+                    const newEntryDetails = UserContent.convertEntryArrayToObject(newEntryDetailsRaw[0]);
+
+                    const newEntryDetailsObject: types.APIEntryObject = {
+
+                        entryDetails: newEntryDetails,
+                        updateType: "create"
+                    }
+
+                    BackendAPI.sendEntryInfo(newEntryDetailsObject)
+                    .then((entryAPIResponseObject)=>{
+
+                        console.log(entryAPIResponseObject)
+
+                    })
+                    .catch((entryAPIResponseObject)=>{
+
+                        console.log(entryAPIResponseObject) 
+
+                    });
+
+                })
+                .catch((e)=>{
+
+                    console.log(e);
+                    showMessage({
+                        type: "warning",
+                        message: "Error retrieving new entry!"
+                    })
+                })
+        
             }
 
         }catch(e){
@@ -230,7 +268,6 @@ const TranslateVocab: React.FC = props=>{
 
                                         currentSearchTerm.current = values.input // Set new term searched
 
-                                        console.log(appSettings, "translate")
                                         /* Check if there are any translations left */
                                         if(appSettings.translationsLeft > 0){
 
@@ -244,26 +281,30 @@ const TranslateVocab: React.FC = props=>{
                                             });
     
                                             if(success){
-                                                
-                                                //If there was a successful translation, then subtract from remaining 
-                                                await setFieldValue("output", translations.text);
-
-                                                const translationsLeft = appSettings.translationsLeft - 1;
-
-                                                appSettingsHandler(translationsLeft, "subtractTranslation");
-
-                                                setActivityIndicator(false); 
+                                            
                                                 
                                                 try{
 
                                                     await UserDetails.setTranslationsLeft(currentUser, appSettings.translationsLeft);
+                                                    const translationsRefreshTime = await UserDetails.setTranslationsRefreshTimeLeft(currentUser);
+
+                                                    //If there was a successful translation, then subtract from remaining 
+                                                    await setFieldValue("output", translations.text);
+
+                                                    const translationsLeft = appSettings.translationsLeft - 1;
+
+                                                    appSettingsHandler({
+                                                        translationsLeft:translationsLeft,
+                                                        translationsRefreshTime: translationsRefreshTime
+                                                    }, "subtractTranslation");
 
                                                 }catch(e){
 
                                                     console.trace();
                                                     console.log(e);
+                                                
+                                                }finally{
                                                     setActivityIndicator(false);
-
                                                 }
                                                 
 
@@ -436,10 +477,11 @@ const TranslateVocab: React.FC = props=>{
 
 function convertMilliseconds(milliseconds){
 
-    let hours = Math.floor(milliseconds / (60 * 1000 * 60))
-    let minutes = Math.floor((milliseconds % (60 * 1000 * 60)) / (1000*60))
+    let days = Math.floor(milliseconds / (1000 * 60 * 60 * 24));
+    let hours = Math.floor((milliseconds % (1000 * 60 * 60 * 24)) / (60 * 1000 * 60))
+    let minutes = Math.floor(((milliseconds % (1000 * 60 * 60 * 24)) % (60 * 1000 * 60)) / (1000 * 60))
 
-    let remainingString = `${hours} hours : ${minutes} minutes`
+    let remainingString = `${days} days : ${hours} hours : ${minutes} minutes`
 
     return remainingString
 }
@@ -458,18 +500,15 @@ const CountdownCard = ()=>{
 
     const timeLeftInterval = React.useRef("");
 
-    /* Current user context */
-
-    const [currentUser] = React.useContext(CurrentUserContext);
 
     /* Timeleft string */
 
     const [timeLeftString, setTimeLeftString] = React.useState("")
 
-    React.useMemo(async()=>{
+    React.useMemo(()=>{
 
         const currentTime = new Date();
-        const translationsRefreshTime = new Date(appSettings.playsRefreshTime);
+        const translationsRefreshTime = new Date(appSettings.translationsRefreshTime);
 
         if(translationsRefreshTime > currentTime){
 

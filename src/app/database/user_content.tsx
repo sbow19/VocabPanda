@@ -110,7 +110,7 @@ class UserContent extends LocalDatabase {
 
     //Entries
 
-    static addNewEntry = (username: string, entryObject: types.EntryObject): Promise<void> =>{
+    static addNewEntry = (username: string, entryObject: types.EntryDetails): Promise<string> =>{
 
         return new Promise (async(resolve, reject)=>{
 
@@ -131,17 +131,17 @@ class UserContent extends LocalDatabase {
                         userId,
                         username,
                         entryId,
-                        entryObject.input, 
-                        entryObject.inputLang, 
-                        entryObject.output, 
-                        entryObject.outputLang, 
+                        entryObject.targetLanguageText, 
+                        entryObject.targetLanguage, 
+                        entryObject.outputLanguageText, 
+                        entryObject.outputLanguage, 
                         0,
                         entryObject.project
                     ]
                     , 
                     "Added user entry"
                 )
-                resolve(null)
+                resolve(entryId);
 
             }catch(e){
 
@@ -326,6 +326,27 @@ class UserContent extends LocalDatabase {
         })
 
     };
+
+    static convertEntryArrayToObject = (entryObject): types.EntryDetails=>{
+
+        const entryDetails: types.EntryDetails = {
+            userId: entryObject["user_id"],
+            username: entryObject["username"],
+            entryId: entryObject["entry_id"],
+            targetLanguageText: entryObject["target_language_text"],
+            targetLanguage: entryObject["target_language"],
+            outputLanguageText: entryObject["output_language_text"],
+            outputLanguage: entryObject["output_language"],
+            tags: entryObject["tags"],
+            createdAt: entryObject["created_at"],
+            updatedAt: entryObject["updated_at"],
+            project: entryObject["project"],
+            tagsArray: []
+        };
+
+        return entryDetails;
+
+    }
 
 
 }

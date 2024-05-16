@@ -243,10 +243,13 @@ const SQLStatements = {
 
       getTranslationsRefreshTimeLeft: `SELECT translations_refresh from "next_translations_refresh" WHERE (user_id = ?);`,
       updateTranslationsRefreshPremium: `UPDATE next_translations_refresh SET translations_refresh = NULL WHERE (user_id = ?);`,
-      updateTranslationsRemainingPremium: `UPDATE translations_left SET translations_left = 120 WHERE (user_id = ?);`,
+      updateTranslationsRemainingPremium: `UPDATE translations_left SET translations_left = 250 WHERE (user_id = ?);`,
 
       updateTranslationsRefreshFree: `UPDATE next_translations_refresh SET translations_refresh = NULL WHERE (user_id = ?);`,
-      updateTranslationsRemainingFree: `UPDATE translations_left SET translations_left = 40 WHERE (user_id = ?);`,
+      updateTranslationsRemainingFree: `UPDATE translations_left SET translations_left = 100 WHERE (user_id = ?);`,
+
+      setTranslationRefreshTime: `UPDATE next_translations_refresh SET translations_refresh = ? WHERE (user_id = ?);`,
+      setPlaysRefreshTime: `UPDATE next_plays_refresh SET game_refresh = ? WHERE (user_id = ?);`
 
     },
 

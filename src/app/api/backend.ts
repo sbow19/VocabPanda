@@ -79,7 +79,7 @@ class BackendAPI {
             }
            
         })
-    }
+    };
     
     //Request API key for device when first opened
     static requestAPIKey():Promise<{message:string, APIKey: string}>{
@@ -107,10 +107,9 @@ class BackendAPI {
                 reject(err);
             }
         })
-    }
+    };
 
     //Create account logic  
-
     static createAccount(details: types.CreateAccountCall): Promise<types.CreateAccountResponse>{
         return new Promise(async (resolve, reject)=>{
 
@@ -129,10 +128,86 @@ class BackendAPI {
             }catch(err){
 
                 //Trigger error status for creating app --> monitor error
-                 console.log(err.message)
+                console.log(err.message)
                 console.log(err.request);
                 console.log(err.response)
                 reject(err);
+            }
+
+        })
+    };
+
+    //User entries logic 
+    static sendEntryInfo(entryObject: types.APIEntryObject): Promise<types.APIEntryResponse>{
+        return new Promise(async(resolve, reject)=>{
+
+            let entryAPIResponseObject: types.APIEntryResponse = {
+                success: false,
+                operationType: entryObject.updateType,
+                contentType: "entry",
+                message: "operation unsuccessful"
+            }
+
+            try{
+
+                //Check internet status 
+                const internetStatus = await this.checkInternetStatus();
+
+                let res; // initiate response object
+
+
+                if(internetStatus){
+
+                    console.log(axios.defaults, "Entry API call"); 
+
+                    switch(entryObject.updateType){
+                        case "create":
+                            res = await axios.post("/app/entries/addentry", entryObject.entryDetails);
+                            break
+                        case "update":
+                            res = await axios.post("/app/entries/updateentry", entryObject.entryDetails);
+                            break
+                        case "remove":
+                            res = await axios.post("/app/entries/deleteentry", entryObject.entryDetails.entryId);
+                            break
+
+                    }
+
+                    console.log(res, "Entry API response");
+
+                    entryAPIResponseObject = res.data; //Replace response with response object from backend
+
+                    //Response object
+
+                    if(entryAPIResponseObject.success){
+                        //If the operatoin was successful
+                        resolve(entryAPIResponseObject)
+
+                    }else if(!entryAPIResponseObject.success) {
+
+                        //If the operation failed
+                        reject(entryAPIResponseObject)
+                    }
+
+                } else if (!internetStatus){
+                    //Add details to buffer - call this function later
+                    entryAPIResponseObject.message = "no internet"
+                    resolve(entryAPIResponseObject);
+
+                }
+
+
+            }catch(e){
+
+                console.log(e, "BackendAPI.sendEntryInfo");
+
+                //Add details to buffer - call this function later
+
+                entryAPIResponseObject.error = e;
+                entryAPIResponseObject.success = false;
+                entryAPIResponseObject.message = "misc error"
+
+                reject(entryAPIResponseObject);
             }
 
         })
