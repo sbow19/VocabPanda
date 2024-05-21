@@ -22,18 +22,20 @@ import FlashMessage, { showMessage } from 'react-native-flash-message';
 import CoreStyles from './shared_styles/core_styles';
 
 import DefaultAppSettingsContext from './context/default_app_settings_context';
-import UserDetails from './database/user_profile_details';
 
 import LocalDatabase from './database/local_database';
 import BackendAPI from 'app/api/backend';
+import UserDetails from './database/user_profile_details';
 
 import InternetStatus from './context/internet';
 import NetInfo from "@react-native-community/netinfo";
 import LoadingStatusInGame from './context/loadingInGame';
 import ActivityIndicatorStatus from './context/activity_indicator_context';
 import windowDimensions from './context/dimensions';
+import BufferFlushingContext from './context/buffer_flushing';
+import BufferManager from './api/buffer';
+import axios from 'axios';
 
-import db from './database/db_util';
 
 const MainAppContainer = createNativeStackNavigator()
 
@@ -56,7 +58,16 @@ const VocabPandaApp: React.FC = () => {
 
     const [currentUser, setCurrentUser] = React.useState("")
 
-    const currentUserSet = [currentUser, setCurrentUser] 
+    const currentUserSet = [currentUser, setCurrentUser];
+
+    /* Buffer flush state */
+
+    const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
+
+    //Get in game activity indicator
+
+    const [activityIndicator, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
+    
 
     React.useEffect(()=>{
 
@@ -73,13 +84,15 @@ const VocabPandaApp: React.FC = () => {
                         Configures local database on the first load 
                     */
 
+                    await BufferManager.createBufferStorage();
+
                     //Create new database schema / check whether db is accessible
 
                     await LocalDatabase.createDatabaseSchema();
 
                     //Set global headers in database
 
-                    await BackendAPI.setGlobalHeaders();
+                    await BackendAPI.setGlobalHeaders(bufferFlushState);
 
                     /* Set API key in local storage / request new API key on first startup*/
                     await LocalDatabase.setAPIKey();
@@ -90,16 +103,34 @@ const VocabPandaApp: React.FC = () => {
                     
                     const isUserOnline = await NetInfo.fetch();
 
-                    setIsOnline(isUserOnline);
+                    setIsOnline(isUserOnline.isInternetReachable);
 
                     /*
                         Set event listener for internet connection
                     */
 
-                    NetInfo.addEventListener(state=>{
-                        setIsOnline(state.isConnected);
-                    });
+                    NetInfo.addEventListener((state)=>{
+                        setIsOnline(state.isInternetReachable);
 
+                        if(state.isInternetReachable && !bufferFlushState){
+
+                            setBufferFlushingState(true); //Set buffer flushing status
+                            
+                            BufferManager.flushRequests()
+                            .then((bufferFlushResponse)=>{
+
+                                //Once flushing has complete, then we set buffer flushing status to false
+                                setBufferFlushingState(false);
+                            })
+                            .catch((bufferFlushError)=>{
+
+                                console.log("Buffer flushing error app module")
+                                setBufferFlushingState(false);
+
+                                //Handle buffer flush error. 
+                            })
+                        }
+                    });
             
                     //If all loading actions completed successfully, then no issues.
                     setIsLoadingInitial(false);
@@ -122,6 +153,12 @@ const VocabPandaApp: React.FC = () => {
         onStartUpLoad()
         
     }, [isLoggedIn]);
+
+    React.useEffect(()=>{
+
+        axios.defaults.bufferStatus = bufferFlushState;
+
+    }, [bufferFlushState])
 
     
     return(
@@ -156,8 +193,18 @@ const VocabPandaApp: React.FC = () => {
                         }
                     }
                 />
+            {activityIndicator ? <ActivityIndicator size={"large"} style={{
+                position: "absolute",
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                height: windowDimensions.HEIGHT + 50,
+                width: windowDimensions.WIDTH
+
+            }}/> : null}
         </CurrentUserContext.Provider>
         </InternetStatus.Provider>
+
+        
     )
 
 }
@@ -183,22 +230,69 @@ const MainApp: React.FC = ()=>{
     /* Code for handling default game settings globally  */
 
     const [appSettings, setAppSettings] = React.useState<types.AppSettingsObject>({});
+
+    /* Get buffer flushing context */
+
+    const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
+
+    const sendSettingsInfoTimeout = React.useRef("");
+
+    const sendUserSettings = ()=>{
+
+        clearTimeout(sendSettingsInfoTimeout.current);
+
+        sendSettingsInfoTimeout.current = setTimeout(async()=>{
+
+            try{
+
+                //Get user id 
+                const userId = await LocalDatabase.getUserId(currentUser);
+
+                //Get user settings
+                const userSettingsRaw = await UserDetails.getUserSettings(userId);
+
+                //Get user settings object
+                const userSettings = UserDetails.convertUserSettingsObject(userSettingsRaw);
+
+                //
+                BackendAPI.sendSettingsInfo(userSettings)
+                .then((settingsAPIResponse)=>{
+                    console.log(settingsAPIResponse);
+                })
+                .catch((settingsAPIResponse)=>{
+                    console.log(settingsAPIResponse);
+                })
+
+            }catch(e){
+
+                console.log(e, "Some error setting timeout");
+
+            }
+            
+
+        }, 5000)
+
+    }
     
-    function setAppSettingsHandler(value, valueType: string){
+    const setAppSettingsHandler = async(value, valueType: string) =>{
+        
 
         console.log(value, valueType)
 
         const newSettings = { ...appSettings}
 
+        //User settings fields 
         if(valueType === "timerOn"){
 
-            //Update database
+            clearTimeout(sendSettingsInfoTimeout.current);
 
+            //Update database
             UserDetails.updateTimerValue(currentUser, value)
             .then(()=>{
 
                 console.log("Timer val update successfully.");
-
+                //send to backend
+                sendUserSettings();
             })
             .catch((e)=>{
 
@@ -207,8 +301,7 @@ const MainApp: React.FC = ()=>{
                     message: "Unable to update timer value.",
                     type: "warning"
                 })
-            }
-            );
+            });
 
             //Update app settings
 
@@ -217,14 +310,87 @@ const MainApp: React.FC = ()=>{
 
         if(valueType === "noOfTurns"){
 
+            clearTimeout(sendSettingsInfoTimeout.current);
+
             //Update database
             UserDetails.updateTurnsValue(currentUser, value)
+            .then(()=>{
+
+                //send to backend
+                sendUserSettings();
+
+            })
+            .catch((e)=>{
+
+                console.log(e);
+                showMessage({
+                    message: "Unable to update no of turns value.",
+                    type: "warning"
+                })
+            })
 
             //UPdate app settings
 
             newSettings.userSettings.noOfTurns = value;
         };
 
+        if(valueType === "defaultProject"){
+            //TODO This is more relevant from the Chrome Extension
+        };
+
+        if(valueType === "defaultTargetLang"){
+
+            clearTimeout(sendSettingsInfoTimeout.current);
+
+            //Update database
+            UserDetails.updateTargetLangDefault(currentUser, value)
+            .then(()=>{
+
+                //send to backend
+                sendUserSettings();
+                
+            })
+            .catch((e)=>{
+
+                console.log(e);
+                showMessage({
+                    message: "Unable to update default target language.",
+                    type: "warning"
+                })
+            })
+
+
+            //Update app settings
+            newSettings.userSettings.targetLanguage = value;
+        };
+
+        if(valueType === "defaultOutputLang"){
+
+            clearTimeout(sendSettingsInfoTimeout.current);
+
+            //update database
+            UserDetails.updateOutputLangDefault(currentUser, value)
+            .then(()=>{
+
+                //send to backend
+                sendUserSettings();
+                
+            })
+            .catch((e)=>{
+
+                console.log(e);
+                showMessage({
+                    message: "Unable to update default output language.",
+                    type: "warning"
+                })
+            })
+
+
+            //Update app settings
+            newSettings.userSettings.outputLanguage = value; 
+        };
+
+        //User content fields
         if(valueType === "addProject"){
 
             //Project object is pushed into array of projects
@@ -240,29 +406,22 @@ const MainApp: React.FC = ()=>{
             newSettings.projects = newList
         };
 
-        if(valueType === "defaultProject"){
-            //TODO This is more relevant from the Chrome Extension
-        };
 
-        if(valueType === "defaultTargetLang"){
-            //Update database
-            UserDetails.updateTargetLangDefault(currentUser, value);
-
-            //Update app settings
-            newSettings.userSettings.targetLanguage = value;
-        };
-
-        if(valueType === "defaultOutputLang"){
-            //update database
-            UserDetails.updateOutputLangDefault(currentUser, value);
-
-            //Update app settings
-            newSettings.userSettings.outputLanguage = value; 
-        };
-
+        //User game details fields
         if(valueType === "subtractTranslation"){
 
-            //Update app settings
+            try{
+
+                await UserDetails.setTranslationsLeft(currentUser, value.translationsLeft);
+                await UserDetails.setTranslationsRefreshTimeLeft(currentUser, value.translationsRefreshTime);
+
+            }catch(e){
+
+                console.log(e);
+
+            }
+
+            //Update app settings - NOTE translations left and refresh are handled in the backend when translation call is made. 
             newSettings.translationsLeft = value.translationsLeft;
             
             newSettings.translationsRefreshTime = value.translationsRefreshTime;
@@ -270,10 +429,30 @@ const MainApp: React.FC = ()=>{
 
         if(valueType === "subtractPlay"){
 
-            //Update app settings
-            newSettings.playsLeft = value.playsLeft; 
+            try{
+                const playsLeft = value - 1;
 
-            newSettings.playsRefreshTime = value.playsRefreshTime;
+                await UserDetails.setPlaysLeft(currentUser, playsLeft);
+                const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
+
+
+                //Update app settings
+                newSettings.playsLeft = playsLeft; 
+
+                newSettings.playsRefreshTime = playsRefreshTime;
+
+                //Send info to backend
+
+                const userId = await LocalDatabase.getUserId(currentUser);
+
+                BackendAPI.updatePlaysLeft(userId, playsLeft, playsRefreshTime);
+
+            }catch(e){
+
+                console.log(e);
+
+            }
+            
         };
 
         setAppSettings(newSettings)
@@ -361,89 +540,106 @@ const MainApp: React.FC = ()=>{
 
     const gamesLeftInterval = React.useRef("");
     const translationsLeftInterval = React.useRef("");
+    const flushBufferInterval = React.useRef("");
 
     /* Interval timer to check countdowns for refreshes across the app -- TODO REFACTOR OUT*/
     React.useEffect(()=>{
 
-        if(!isLoadingInGame){
+        console.log("Hello world, use effect")
 
-            const setCronJobs = async ()=>{
+        const setCronJobs = async ()=>{
 
-                clearInterval(gamesLeftInterval.current)
-                clearInterval(translationsLeftInterval.current)
+            clearInterval(gamesLeftInterval.current);
+            clearInterval(translationsLeftInterval.current);
+            clearInterval(flushBufferInterval.current);
 
-                const userId: string = await LocalDatabase.getUserId(currentUser);
-                
-                /* Checking plays refresh */
+            const userId: string = await LocalDatabase.getUserId(currentUser);
+            
+            /* Checking plays refresh */
 
-                const premium = await UserDetails.checkPremiumStatus(currentUser);
+            const premium = await UserDetails.checkPremiumStatus(currentUser);
 
-                if(premium){
+            if(premium){
 
-                    console.log("User is premium, no plays refresh necessary");
+                console.log("User is premium, no plays refresh necessary");
 
-                } else if (!premium){
+            } else if (!premium){
 
-                    gamesLeftInterval.current = setInterval(async()=>{
+                gamesLeftInterval.current = setInterval(async()=>{
 
-                        //Check every 100 seconds whether the current time is greater than the refresh time indicated in the plays refresh table
+                    //Check every 100 seconds whether the current time is greater than the refresh time indicated in the plays refresh table
 
-                        const playsRefreshTimeLeft = await UserDetails.getPlaysRefreshTimeLeft(userId);
+                    const playsRefreshTimeLeft = await UserDetails.getPlaysRefreshTimeLeft(userId);
 
-                        const currentTime = new Date();
-                        const refreshTime = new Date(playsRefreshTimeLeft["games_refresh"]);
-                        
-                        if(currentTime > refreshTime){
-
-                            await UserDetails.refreshGamesLeft(userId);
-
-                            const newAppSettings = {...appSettings}
-
-                            newAppSettings.playsLeft = 10;
-
-                            setAppSettings(newAppSettings)
-                        }     
-                    }, 50000);
-                };
+                    const currentTime = new Date();
+                    const refreshTime = new Date(playsRefreshTimeLeft["games_refresh"]);
                     
+                    if(currentTime > refreshTime && playsRefreshTimeLeft !== null){
 
-                /* Checking translations */
-                translationsLeftInterval.current = setInterval(async()=>{
-
-                    //Check every 100 seconds whether the current time is greater than the refresh time indicated in the translations refresh table;
-
-                    const refreshTimeRaw = await UserDetails.getTranslationsRefreshTimeLeft(userId);
-
-                    let currentTime = new Date();
-                    let refreshTime = new Date(refreshTimeRaw["translations_refresh"]);
-
-                    if(currentTime > refreshTime && premium){
-                        
-                        await UserDetails.refreshTranslationsLeftPremium(userId);
-
-                        const newAppSettings = {...appSettings};
-
-                        newAppSettings.translationsLeft = 120;
-
-                        setAppSettings(newAppSettings)
-
-                    } else if (currentTime > refreshTime && !premium){
-
-                        await UserDetails.refreshTranslationsLeftFree(userId);
+                        await UserDetails.refreshGamesLeft(userId);
 
                         const newAppSettings = {...appSettings}
 
-                        newAppSettings.translationsLeft = 40;
+                        newAppSettings.playsLeft = 10;
 
                         setAppSettings(newAppSettings)
-                    };
+                    }     
                 }, 50000);
-            }
+            };
+                
 
-            setCronJobs();
-        }
+            /* Checking translations */
+            translationsLeftInterval.current = setInterval(async()=>{
 
-    }, [appSettings])
+                //Check every 100 seconds whether the current time is greater than the refresh time indicated in the translations refresh table;
+
+                const refreshTimeRaw = await UserDetails.getTranslationsRefreshTimeLeft(userId);
+
+                let currentTime = new Date();
+                let refreshTime = new Date(refreshTimeRaw["translations_refresh"]);
+
+                if(currentTime > refreshTime && premium && refreshTimeRaw !== null){
+                    
+                    await UserDetails.refreshTranslationsLeftPremium(userId);
+
+                    const newAppSettings = {...appSettings};
+
+                    newAppSettings.translationsLeft = 250;
+
+                    setAppSettings(newAppSettings)
+
+                } else if (currentTime > refreshTime && !premium && refreshTimeRaw !== null){
+
+                    await UserDetails.refreshTranslationsLeftFree(userId);
+
+                    const newAppSettings = {...appSettings}
+
+                    newAppSettings.translationsLeft = 100;
+
+                    setAppSettings(newAppSettings)
+                };
+            }, 50000);
+
+            /* Flush buffer */
+            flushBufferInterval.current = setInterval(async()=>{
+
+                console.log("Flush interval triggered", bufferFlushState)
+
+                //Check every 180 seconds whether the current time is greater than the refresh time indicated in the translations refresh table;
+
+                const isUserOnline = await NetInfo.fetch();
+
+                //If the internet is on but the buffer is not currently being flushed, then trigger flush.
+                if(isUserOnline.isInternetReachable && !bufferFlushState){
+                    BufferManager.flushRequests();
+                }
+                
+            }, 180000);
+        };
+
+        setCronJobs();
+
+    }, [currentUser])
 
     return(
         <> 
@@ -463,14 +659,7 @@ const MainApp: React.FC = ()=>{
             
             </>)}
 
-            {activityIndicator ? <ActivityIndicator size={"large"} style={{
-                position: "absolute",
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.5)",
-                height: windowDimensions.HEIGHT,
-                width: windowDimensions.WIDTH
-
-            }}/> : null}
+            
         </>
            
     )

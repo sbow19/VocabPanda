@@ -25,6 +25,7 @@ import AppButton from "app/shared/app_button"
 import { Formik } from "formik"
 import UserDetails from "app/database/user_profile_details"
 import BackendAPI from "app/api/backend"
+import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
 
 
 const createAccountSchema = yup.object({
@@ -56,6 +57,8 @@ const CreateAccount: React.FC = props=>{
 
     const [isOnline] = React.useContext(InternetStatus);
 
+    const [,setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
+
     return(
         <TouchableOpacity
             onPress={()=>Keyboard.dismiss()}
@@ -84,51 +87,51 @@ const CreateAccount: React.FC = props=>{
 
                         try{
 
-                            const backendResponse = await BackendAPI.createAccount({
-                                email: values.email,
-                                username: values.username,
-                                password: values.password
-                            });
+                            setActivityIndicator(true);
 
-                            if(backendResponse.addMessage instanceof Error){
-                                /* Throw error message */
-                                showMessage({
-                                    type: "warning",
-                                    message: backendResponse.addMessage.cause.addMessage,
-                                })
-                            } 
-                            else if(backendResponse.addMessage === "User added successfully!"){
+                            const createAccountObject: types.APIAccountObject<types.APICreateAccount> = {
 
-                                //Set login details for account locally (to replace with SQL storage)
-                                await UserDetails.createNewUser(
-                                    values.email,
-                                    values.username,
-                                    values.password, // Password hashed using local algorithm
-                                    backendResponse.userId //User id generated in backend.
-                                );
+                                accountOperationDetails: {
+                                    username: values.username,
+                                    password: values.password,
+                                    email: values.email
+                                },
+                                updateType: "create account"
+                            };
 
-                                /* Throw accounts created message */
-                                showMessage({
-                                    type: "success",
-                                    message: "Account created successfully",
-                                })
+                            const backendResponse = await BackendAPI.sendAccountInfo(createAccountObject);
+
+                            //Set login details for account locally (to replace with SQL storage)
+                            await UserDetails.createNewUser(
+                                values.email,
+                                values.username,
+                                values.password, // Password hashed using local algorithm
+                                backendResponse.userId //User id generated in backend.
+                            );
+
+                            /* Throw accounts created message */
+                            showMessage({
+                                type: "success",
+                                message: "Account created successfully",
+                            })
 
 
-                                /* Go back to sign in screen */
-                                props.navigation.pop()
-                            }
-                            else if (backendResponse.responseMessage === "Add unsuccessful" ){
-
-                                //Generic error when add unsuccessful.
-
-                                showMessage({
-                                    type: "warning",
-                                    message: "Username or password already exists."
-                                })
-
-                            }
+                            /* Go back to sign in screen */
+                            props.navigation.pop()
+    
 
                         }catch(e){
+
+                            const accountOperationResponse = e as types.APIAccountOperationResponse
+
+                            if(accountOperationResponse.customResponse === "user exists"){
+
+                                showMessage({
+                                    type: "warning",
+                                    message: "Account exists."
+                                })
+
+                            }
 
                             console.log(e);
                             console.trace();
@@ -137,9 +140,12 @@ const CreateAccount: React.FC = props=>{
                                 message: "Some error creating account."
                             })
 
+                        } finally{
+                            actions.resetForm();
+                            setActivityIndicator(false);
                         }
 
-                        actions.resetForm()
+                       
                         
                     }}
                     validationSchema={createAccountSchema}

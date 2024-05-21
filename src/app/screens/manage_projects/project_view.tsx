@@ -1,5 +1,5 @@
 /* eslint-disable */
-
+import * as types from '@customTypes/types.d'
 
 import React from 'react';
 import {
@@ -25,6 +25,8 @@ import UserContent from 'app/database/user_content';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 import ResultTable from "./project_table_template"
+import BackendAPI from 'app/api/backend';
+import { showMessage } from 'react-native-flash-message';
 
 const ProjectView: React.FC = props=>{
 
@@ -66,7 +68,6 @@ const ProjectView: React.FC = props=>{
     }, []);
 
    
-
     /* Navigate to game */
 
     const nav = ()=>{
@@ -98,18 +99,71 @@ const ProjectView: React.FC = props=>{
                     text: "Delete Project",
                     onPress: async ()=>{
 
-                        //Delete project from database - CHECK IF CASCADES TO ENTRIES CORRECTLY
-                        await UserContent.deleteProject(currentUser, project)
+                        try{
 
-                        /*Remove project from default settings - all dropdowns*/
+                            //Delete project from database - CHECK IF CASCADES TO ENTRIES CORRECTLY
+                            await UserContent.deleteProject(currentUser, project)
 
-                        setAppSettingsHandler(project, "removeProject")
+                            /*Remove project from default settings - all dropdowns*/
 
-                        props.navigation.reset(({
-                            index:0,
-                            routes: [{ name: 'choose project' }],
-                            key: null
-                          }))
+                            setAppSettingsHandler(project, "deleteProject")
+
+                            props.navigation.reset(({
+                                index:0,
+                                routes: [{ name: 'choose project' }],
+                                key: null
+                            }));
+
+                            
+                            //Send project details to backend or retain here.
+                            //Handle backend communication errors seperately here
+                            UserContent.getUserId(currentUser)
+                            .then((userId: string)=>{
+
+                                const projectDetails: types.ProjectDetails = {
+                                    projectName: project,
+                                    userId: userId,
+                                    targetLanguage: "",
+                                    outputLanguage: ""
+                                }
+
+                                const deleteProjectObject: types.APIProjectObject = {
+
+                                    projectDetails: projectDetails,
+                                    updateType: "remove"
+                                }
+
+                                BackendAPI.sendProjectInfo(deleteProjectObject)
+                                .then((projectAPIResponseObject)=>{
+
+                                    console.log(projectAPIResponseObject)
+
+                                })
+                                .catch((projectAPIResponseObject)=>{
+
+                                    console.log(projectAPIResponseObject) 
+
+                                });
+
+                            })
+                            .catch((e)=>{
+
+                                console.log(e, "Unable to get user id");
+                                
+                            })
+
+
+                        }catch(e){
+
+                            showMessage({
+                                type: "warning",
+                                message: "Unable to delete project"
+                            })
+
+                        }
+                        
+                        
+
                     }
                 }
             ],

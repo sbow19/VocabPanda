@@ -28,9 +28,11 @@ import UserDetails from 'app/database/user_profile_details';
 
 import LocalDatabase from 'app/database/local_database';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
+import BackendAPI from 'app/api/backend';
+import UserContent from 'app/database/user_content';
 
 const changePasswordSchema = yup.object({
-    password: yup.string()
+    newPassword: yup.string()
     .required()
     .min(8, "Password must have at least 8 characters")
     .max(24, "Password can have no more than 24 characters")
@@ -39,11 +41,11 @@ const changePasswordSchema = yup.object({
         "Must contain one uppercase, one lowercase, one number and one special character"
       ),
 
-rePassword: yup.string()
+reNewPassword: yup.string()
     .required()
     .min(8)
     .max(16)
-    .oneOf([yup.ref('password')], 'Passwords must match')
+    .oneOf([yup.ref('newPassword')], 'Passwords must match')
 })
 
 const Account: React.FC = props=>{
@@ -67,10 +69,6 @@ const Account: React.FC = props=>{
     /* current user context */
 
     const [currentUser, setCurrentUser] = useContext(CurrentUserContext)
-
-    /* Delete account error message */
-
-    const [errorMessageVisible, setErrorMessageVisible] = React.useState("")
 
 
     /* Triggers on sign out */
@@ -228,18 +226,92 @@ const Account: React.FC = props=>{
                     }}
                 >
                     <Formik
-                        initialValues={{password: "", rePassword: ""}}
+                        initialValues={{oldPassword: "", newPassword: "", reNewPassword: ""}}
                         validationSchema={changePasswordSchema}
                         onSubmit={async (values)=>{
                             
                             /* Call change password function in default settings class */
                             
-                            const result: types.ChangePasswordResponse = await UserDetails.changePassword(values.password, currentUser);
+                            try{
 
-                            showMessage({
-                                message: result.changeMessage,
-                                type: "info"
-                            })
+                                const connectionStatus = await BackendAPI.checkInternetStatus();
+
+                                if(!connectionStatus){
+
+                                    showMessage({
+                                        type: "warning",
+                                        message: "Connection to internet required"
+                                    })
+
+                                }
+                                else if(connectionStatus){
+
+                                    //Send project details to backend or retain here.
+                                    //Handle backend communication errors seperately here
+                                    UserContent.getUserId(currentUser)
+                                    .then((userId: string)=>{
+
+                                        const updatePasswordObject: types.APIAccountObject<types.APIUpdatePassword> = {
+
+                                            accountOperationDetails: {
+                                                userId: userId,
+                                                newPassword: values.newPassword,
+                                                oldPassword: values.oldPassword
+                                            },
+                                            updateType: "change password"
+                                        };
+
+                                        BackendAPI.sendAccountInfo(updatePasswordObject)
+                                        .then(async(accountAPIResponse)=>{
+
+                                            console.log(accountAPIResponse);
+
+                                            if(accountAPIResponse.accountOperation){
+
+                                                const result = await UserDetails.changePassword(values.newPassword, currentUser);
+
+                                                showMessage({
+                                                    message: "Password changed successfully",
+                                                    type: "success"
+                                                });
+
+                                            }                            
+
+                                        })
+                                        .catch((accountAPIResponse)=>{
+
+                                            console.log(accountAPIResponse);
+                                            showMessage({
+                                                message: "Unable to change password.",
+                                                type: "warning"
+                                            });
+                                        
+                                        });
+
+                                    })
+                                    .catch((e)=>{
+
+                                        console.log(e, "Unable to get user id");
+
+                                        showMessage({
+                                            message: "Unable to change password.",
+                                            type: "warning"
+                                        });
+                                        
+                                    })
+                                    
+                                }
+                                
+
+                            }catch(e){
+
+                                showMessage({
+                                    message: "Unable to change password.",
+                                    type: "info"
+                                });
+
+                            }
+                            
 
                             setPasswordOverlay(false);
                         }}
@@ -257,16 +329,33 @@ const Account: React.FC = props=>{
                                     <VocabPandaTextInput
                                         secureTextEntry={true}
                                         multiline={false}
+                                        placeholder="Enter old password..."
+                                        placeholderTextColor="grey"
+                                        value={values.oldPassword}
+                                        onChangeText={handleChange("oldPassword")}
+                                    />
+                                    <Text
+                                        style={CoreStyles.errorText}
+                                    >
+                                        {values.oldPassword !== "" ? errors.oldPassword : ""}
+                                    </Text>
+                                </View>
+                                <View
+                                    style={topPasswordContainer}
+                                >
+                                    <VocabPandaTextInput
+                                        secureTextEntry={true}
+                                        multiline={false}
                                         placeholder="Enter password..."
                                         placeholderTextColor="grey"
-                                        value={values.password}
-                                        onChangeText={handleChange("password")}
+                                        value={values.newPassword}
+                                        onChangeText={handleChange("newPassword")}
 
                                     />
                                      <Text
                                         style={CoreStyles.errorText}
                                      >
-                                        {values.password !== "" ? errors.password : ""}
+                                        {values.newPassword !== "" ? errors.newPassword : ""}
                                     </Text>
                                 </View>
                                 <View
@@ -277,13 +366,13 @@ const Account: React.FC = props=>{
                                         multiline={false}
                                         placeholder="Re-enter password..."
                                         placeholderTextColor="grey"
-                                        value={values.rePassword}
-                                        onChangeText={handleChange("rePassword")}
+                                        value={values.reNewPassword}
+                                        onChangeText={handleChange("reNewPassword")}
                                     />
                                     <Text
                                         style={CoreStyles.errorText}
                                     >
-                                        {values.rePassword !== "" ? errors.rePassword : ""}
+                                        {values.reNewPassword !== "" ? errors.reNewPassword : ""}
                                     </Text>
                                 </View>
 
@@ -327,24 +416,63 @@ const Account: React.FC = props=>{
                     initialValues={{password: ""}}
                     onSubmit={async (values, actions)=>{
 
-                        const results: types.DeleteAccountResponseObject = await UserDetails.deleteAccount(currentUser, values.password);
-                       
-                        if(results.deletionSuccessful == true){
+
+                            //Send project details to backend or retain here.
+                            //Handle backend communication errors seperately here
+                            UserContent.getUserId(currentUser)
+                            .then((userId: string)=>{
+
+                                const deleteAccountObject: types.APIAccountObject<types.APIDeleteAccount> = {
+
+                                    accountOperationDetails: {
+                                        userId: userId,
+                                        password: values.password
+                                    },
+                                    updateType: "delete account"
+                                };
+
+                                BackendAPI.sendAccountInfo(deleteAccountObject)
+                                .then(async(accountAPIResponse)=>{
+
+                                    console.log(accountAPIResponse);
+
+                                    await UserDetails.deleteAccount(currentUser, values.password);
+
+                                    showMessage({
+                                        message: "account successfully deleted",
+                                        type: "info"
+                                    });
                            
-                            setIsLoggedIn(false);
-                            setCurrentUser("");
-                            showMessage({
-                                message: "Account deleted",
-                                type: "info"
+                                    setIsLoggedIn(false);
+                                    setCurrentUser("");
+
+                                })
+                                .catch((accountAPIResponse)=>{
+
+                                    console.log(accountAPIResponse);
+                                    showMessage({
+                                     type: "warning",
+                                     message: "Could not delete account."
+                                    })
+
+                                });
+
                             })
+                            .catch((e)=>{
+
+                                console.log(e, "Unable to get user id");
+                                showMessage({
+                                    message: "Could not delete account",
+                                    type: "info"
+                                });
+                                
+                            })
+                            .finally(()=>{
+                                actions.resetForm();
+                            })
+
                             
-
-                        } else if (results.deletionSuccessful == false){
-
-                            setErrorMessageVisible(results.message)
-
-                        }
-                        actions.resetForm()
+                        
                     }}
                 >
 
@@ -384,12 +512,6 @@ const Account: React.FC = props=>{
                                     value={values.password}
                                     onChangeText={handleChange("password")}
                                 />
-
-                                <Text
-                                    style={CoreStyles.errorText}
-                                >
-                                    {errorMessageVisible}
-                                </Text>
 
                             </ContentCard>
 

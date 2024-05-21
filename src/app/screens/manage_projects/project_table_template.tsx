@@ -110,7 +110,10 @@ const ResultTable = props => {
         
             if(row["entry_id"] === entryToEdit["entry_id"]){
                 return entryToEdit
+            } else {
+                return row
             }
+
         });
 
         setResultRows(newResultRows)
@@ -127,6 +130,8 @@ const ResultTable = props => {
         
         const listLength = displayedRows.length;
         const resultRowsComp = [];
+
+        console.log(displayedRows)
 
 
         for(let i=0; i < listLength ; i++){

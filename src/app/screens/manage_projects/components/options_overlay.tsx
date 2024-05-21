@@ -18,6 +18,10 @@ import CurrentUserContext from "app/context/current_user";
 import EditTextContext from "app/context/edit_text_context"
 
 import UserContent from "app/database/user_content";
+import { showMessage } from "react-native-flash-message";
+import BackendAPI from "app/api/backend";
+
+import * as types from '@customTypes/types.d'
 
 const OptionsOverlay: React.FC = props=>{
 
@@ -51,11 +55,46 @@ const OptionsOverlay: React.FC = props=>{
                     <AppButton
                         customStyles={CoreStyles.deleteButtonColor}
                         onPress={async()=>{
-                            await UserContent.deleteEntry(currentUser, currentEntryId);
 
-                            props.setDeletedRowId(currentEntryId); //Current entry id set as deleted row id
+                            try{
 
-                            optionsOverlayObject.setOptionsOverlayVisible(!optionsOverlayObject.visible); //Close options overlay
+                                await UserContent.deleteEntry(currentUser, currentEntryId); //Delete entry locally
+                                
+                                const deleteEntryDetailsObject: types.APIEntryObject = {
+
+                                    entryDetails: {
+                                        entryId: currentEntryId
+                                    },
+                                    updateType: "remove"
+                                }
+            
+                                BackendAPI.sendEntryInfo(deleteEntryDetailsObject)
+                                .then((deleteAPIResponseObject)=>{
+            
+                                    console.log(deleteAPIResponseObject)
+            
+                                })
+                                .catch((deleteAPIResponseObject)=>{
+            
+                                    console.log(deleteAPIResponseObject) 
+            
+                                });
+
+                                props.setDeletedRowId(currentEntryId); //Current entry id set as deleted row id
+
+                            }catch(e){
+
+                                showMessage({
+                                    message: "Some error occurred while deleting entry.",
+                                    type: "warning"
+                                })
+
+                            }finally{
+
+                                optionsOverlayObject.setOptionsOverlayVisible(!optionsOverlayObject.visible); //Close options overlay
+
+                            }
+                            
                         }}
                     >
                         <Text

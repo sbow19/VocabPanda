@@ -271,53 +271,53 @@ const TranslateVocab: React.FC = props=>{
                                         /* Check if there are any translations left */
                                         if(appSettings.translationsLeft > 0){
 
-                                            setActivityIndicator(true);
+                                            try{
 
-                                            const {success, translations}: types.TranslateResponseObject = await BackendAPI.translate({
-                                                username: currentUser,
-                                                targetText: values.input,
-                                                outputLanguage: outputLangSelection,
-                                                targetLanguage: inputLangSelection
-                                            });
+                                                setActivityIndicator(true);
+
+                                                const translationsResponse: types.APITranslateResponse = await BackendAPI.translate({
+                                                    username: currentUser,
+                                                    targetText: values.input,
+                                                    outputLanguage: outputLangSelection,
+                                                    targetLanguage: inputLangSelection
+                                                });
     
-                                            if(success){
-                                            
-                                                
-                                                try{
-
-                                                    await UserDetails.setTranslationsLeft(currentUser, appSettings.translationsLeft);
-                                                    const translationsRefreshTime = await UserDetails.setTranslationsRefreshTimeLeft(currentUser);
-
-                                                    //If there was a successful translation, then subtract from remaining 
-                                                    await setFieldValue("output", translations.text);
-
-                                                    const translationsLeft = appSettings.translationsLeft - 1;
-
+                                                if(translationsResponse.success){
                                                     appSettingsHandler({
-                                                        translationsLeft:translationsLeft,
-                                                        translationsRefreshTime: translationsRefreshTime
+                                                        translationsLeft: translationsResponse.translationsLeft,
+                                                        translationsRefreshTime: translationsResponse.translationRefreshTime
                                                     }, "subtractTranslation");
 
-                                                }catch(e){
+                                                    await setFieldValue("output", translationsResponse.translations.text);
 
-                                                    console.trace();
-                                                    console.log(e);
-                                                
-                                                }finally{
-                                                    setActivityIndicator(false);
                                                 }
-                                                
 
-                                            } else if (!success){
+                                            }catch(e){
+
+                                                const translationResponse = e as types.APITranslateResponse;
+
+                                                if(translationResponse.message === "no internet"){
+
+                                                   
+
+                                                    showMessage({
+                                                        message: "Internet is needed to make translations",
+                                                        type: "warning"
+                                                    })
+                                                }else {
+
+                                                    showMessage({
+                                                        message: "There was some error making the translation",
+                                                        type: "warning"
+                                                    })
+
+                                                }
+                                            } finally{
 
                                                 setActivityIndicator(false);
-
-                                                showMessage({
-                                                    message: "There was a connection issue",
-                                                    type: "warning"
-                                                })
-
                                             }
+
+                                           
                                         } else if (appSettings.translationsLeft === 0) {
 
                                             setUpgradePrompt(true)

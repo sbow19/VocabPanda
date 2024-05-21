@@ -7,16 +7,13 @@ import DeviceInfo from 'react-native-device-info';
 import {Buffer} from 'buffer'
 import * as types from '@customTypes/types.d'
 import NetInfo from "@react-native-community/netinfo";
+import axiosConfig from './axios_config';
+
 import LocalDatabase from 'app/database/local_database';
-
-
-//FOR PRODUCTION
-    //Need to make sure that the device is making https requests in general
 
 class BackendAPI {
 
     //Check internet status
-
     static checkInternetStatus(){
 
         return new Promise(async(resolve, reject)=>{
@@ -25,7 +22,7 @@ class BackendAPI {
 
                 const status = await NetInfo.fetch();
 
-                resolve(status.isConnected);
+                resolve(status.isInternetReachable);
 
             }catch(e){
 
@@ -33,23 +30,20 @@ class BackendAPI {
             }
         })
        
-    }
+    };
 
     static internetStatus: boolean | null = false
 
     //Set global headers
 
-    static setGlobalHeaders(APIKey = null):Promise<boolean>{
+    static setGlobalHeaders(bufferFlushingStatus: boolean):Promise<boolean>{
         return new Promise(async(resolve, reject)=>{
 
             try{
 
-                // Set base URL if your API endpoints share a common base URL
-                axios.defaults.baseURL = 'http://192.168.1.171:3000';
-                axios.defaults.headers.common['Content-Type'] = 'application/json';
+                //Configure axios 
 
-                //Set default timeout to 1 second
-                axios.defaults.timeout = 15000;
+                axiosConfig(bufferFlushingStatus);
 
                 //Check for API key in local storage. If does not exist, then authorization header not added.
 
@@ -57,15 +51,12 @@ class BackendAPI {
 
                 if (resultObject.message === "API key exists"){
 
-                    console.log(resultObject);
-
                     const uniqueDeviceId = await DeviceInfo.getUniqueId(); //Gets unique device id;
 
                     axios.defaults.headers.common["Authorization"] = "Basic " + Buffer.from(uniqueDeviceId + ":" + resultObject.APIKey).toString("base64");
 
                 }
 
-                console.log("Global headers set");
                 resolve(true);
 
             }catch(err){
@@ -86,8 +77,6 @@ class BackendAPI {
         return new Promise(async(resolve, reject)=>{
 
             try{
-                console.log(axios.defaults, "Request API call");
-
                 const uniqueDeviceId = await DeviceInfo.getUniqueId(); //Gets unique device id;
 
                 let res = await axios.post("/generateapikey",{
@@ -109,39 +98,97 @@ class BackendAPI {
         })
     };
 
-    //Create account logic  
-    static createAccount(details: types.CreateAccountCall): Promise<types.CreateAccountResponse>{
+    //Account logic
+
+    static sendAccountInfo(accountObject: types.APIAccountObject<types.AccountOperationDetails>): Promise<types.APIAccountOperationResponse>{
         return new Promise(async (resolve, reject)=>{
+
+            let accountOperationResponse: types.APIAccountOperationResponse = {
+                message: "operation unsuccessful",
+                success: false,
+                contentType: "account",
+                accountOperation: accountObject.updateType
+                
+            };
 
             try{
 
-                console.log(axios.defaults, "Create account call");
+                const internetStatus = await this.checkInternetStatus();
+            
 
-                const res = await axios.post("/account/createaccount", details);
+                if(internetStatus){
 
-                console.log(res, "Create account response")
+                    let res; // initiate response object
 
-                const userAddResponseObject: types.CreateAccountResponse = res.data;
+                    switch(accountObject.updateType){
+                        case "create account":
+                            res = await axios.post("/account/createaccount", accountObject.accountOperationDetails);
+                            break
+                        case "delete account":
+                            
+                            res = await axios.post("/account/deleteaccount", accountObject.accountOperationDetails);
+                            break
+                        case "upgrade":
+                            res = await axios.post("/account/upgrade", accountObject.accountOperationDetails);
+                            break
+                        case "downgrade":
+                            res = await axios.post("/account/downgrade", accountObject.accountOperationDetails);
+                            break
+                        case "change password":
+                            
+                            res = await axios.post("/account/updatepassword", accountObject.accountOperationDetails);
+                            break
 
-                resolve(userAddResponseObject);               
+                    }
 
-            }catch(err){
+                    console.log(res, "Account API response");
 
-                //Trigger error status for creating app --> monitor error
-                console.log(err.message)
-                console.log(err.request);
-                console.log(err.response)
-                reject(err);
+                    accountOperationResponse = res.data; //Replace response with response object from backend
+
+                    //Response object
+
+                    if(accountOperationResponse.success){
+                        //If the operatoin was successful
+                        resolve(accountOperationResponse)
+
+                    }else if(accountOperationResponse) {
+
+                        //If the operation failed
+                        reject(accountOperationResponse)
+
+                        //Add details to buffer
+                    }
+
+                }else if(!internetStatus){
+
+                    accountOperationResponse.message = "no internet";
+                    reject(accountOperationResponse);
+
+                }
+            
+
+            }catch(e){
+
+                console.log({...e}, "BackendAPI.sendAccountInfo");
+
+                //Add details to buffer - call this function later
+
+                accountOperationResponse.error = e;
+                accountOperationResponse.success = false;
+                accountOperationResponse.message = "misc error"
+
+                reject(accountOperationResponse);
             }
+
 
         })
     };
 
     //User entries logic 
-    static sendEntryInfo(entryObject: types.APIEntryObject): Promise<types.APIEntryResponse>{
+    static sendEntryInfo(entryObject: types.APIEntryObject): Promise<types.APIOperationResponse>{
         return new Promise(async(resolve, reject)=>{
 
-            let entryAPIResponseObject: types.APIEntryResponse = {
+            let entryAPIResponseObject: types.APIOperationResponse = {
                 success: false,
                 operationType: entryObject.updateType,
                 contentType: "entry",
@@ -150,58 +197,44 @@ class BackendAPI {
 
             try{
 
-                //Check internet status 
-                const internetStatus = await this.checkInternetStatus();
-
                 let res; // initiate response object
 
-
-                if(internetStatus){
-
-                    console.log(axios.defaults, "Entry API call"); 
-
-                    switch(entryObject.updateType){
-                        case "create":
-                            res = await axios.post("/app/entries/addentry", entryObject.entryDetails);
-                            break
-                        case "update":
-                            res = await axios.post("/app/entries/updateentry", entryObject.entryDetails);
-                            break
-                        case "remove":
-                            res = await axios.post("/app/entries/deleteentry", entryObject.entryDetails.entryId);
-                            break
-
-                    }
-
-                    console.log(res, "Entry API response");
-
-                    entryAPIResponseObject = res.data; //Replace response with response object from backend
-
-                    //Response object
-
-                    if(entryAPIResponseObject.success){
-                        //If the operatoin was successful
-                        resolve(entryAPIResponseObject)
-
-                    }else if(!entryAPIResponseObject.success) {
-
-                        //If the operation failed
-                        reject(entryAPIResponseObject)
-                    }
-
-                } else if (!internetStatus){
-                    //Add details to buffer - call this function later
-                    entryAPIResponseObject.message = "no internet"
-                    resolve(entryAPIResponseObject);
+                switch(entryObject.updateType){
+                    case "create":
+                        res = await axios.post("/app/entries/addentry", entryObject.entryDetails);
+                        break
+                    case "update":
+                        res = await axios.post("/app/entries/updateentry", entryObject.entryDetails);
+                        break
+                    case "remove":
+                        res = await axios.post("/app/entries/deleteentry", entryObject.entryDetails);
+                        break
 
                 }
+
+                console.log(res, "Entry API response");
+
+                entryAPIResponseObject = res.data; //Replace response with response object from backend
+
+                //Response object
+
+                if(entryAPIResponseObject.success){
+                    //If the operatoin was successful
+                    resolve(entryAPIResponseObject)
+
+                }else if(!entryAPIResponseObject.success) {
+
+                    //If the operation failed
+                    reject(entryAPIResponseObject)
+
+                    //Add details to buffer
+                }
+
 
 
             }catch(e){
 
-                console.log(e, "BackendAPI.sendEntryInfo");
-
-                //Add details to buffer - call this function later
+                console.log({...e}, "BackendAPI.sendEntryInfo");
 
                 entryAPIResponseObject.error = e;
                 entryAPIResponseObject.success = false;
@@ -213,15 +246,175 @@ class BackendAPI {
         })
     }
 
+    //User project logic 
+    static sendProjectInfo(projectObject: types.APIProjectObject): Promise<types.APIOperationResponse>{
+        return new Promise(async(resolve, reject)=>{
 
-    //Buffer logic; data stored locally and temporarily
+            let projectAPIResponseObject: types.APIOperationResponse = {
+                success: false,
+                operationType: projectObject.updateType,
+                contentType: "project",
+                message: "operation unsuccessful"
+            }
 
-    //Store buffer content locally (run programmatically)
-    static #storeBufferContent():Promise<boolean>{
-        return new Promise((resolve, reject)=>{
+            try{
 
-            resolve(true)
 
+                let res; // initiate response object
+
+                switch(projectObject.updateType){
+                    case "create":
+                        res = await axios.post("/app/entries/newproject", projectObject.projectDetails);
+                        break
+                    case "remove":
+                        res = await axios.post("/app/entries/deleteproject", projectObject.projectDetails);
+                        break
+
+                }
+
+                console.log(res, "Project API response");
+
+                projectAPIResponseObject = res.data; //Replace response with response object from backend
+
+                //Response object
+
+                if(projectAPIResponseObject.success){
+                    //If the operatoin was successful
+                    resolve(projectAPIResponseObject)
+
+                }else if(!projectAPIResponseObject.success) {
+
+                    //If the operation failed
+                    reject(projectAPIResponseObject)
+
+                    //Add details to buffer
+                }
+
+
+
+            }catch(e){
+
+                console.log({...e}, "Project api error")
+                //Add details to buffer - call this function later
+
+                projectAPIResponseObject.error = e;
+                projectAPIResponseObject.success = false;
+                projectAPIResponseObject.message = "misc error"
+
+                reject(projectAPIResponseObject);
+            }
+
+        })
+    }
+
+    //User settings logic 
+    static sendSettingsInfo(settingsObject: types.UserSettings): Promise<types.APIOperationResponse>{
+        return new Promise(async(resolve, reject)=>{
+
+            let settingsAPIResponse: types.APIOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful"
+            }
+
+            try{
+
+                let res; // initiate response object
+
+
+                    res = await axios.post("/app/settings/update", settingsObject);
+                        
+
+                    console.log(res, "User settings response");
+
+                    settingsAPIResponse = res.data; //Replace response with response object from backend
+
+                    //Response object
+
+                    if(settingsAPIResponse.success){
+                        //If the operatoin was successful
+                        resolve(settingsAPIResponse)
+
+                    }else if(!settingsAPIResponse.success) {
+
+                        //If the operation failed
+                        reject(settingsAPIResponse)
+
+                        //Add details to buffer
+                    }
+
+            }catch(e){
+
+                console.log({...e}, "BackendAPI.sendEntryInfo");
+
+                //Add details to buffer - call this function later
+
+                settingsAPIResponse.error = e;
+                settingsAPIResponse.success = false;
+                settingsAPIResponse.message = "misc error"
+
+                reject(settingsAPIResponse);
+            }
+
+        })
+    }
+
+
+    //UPdate user plays left
+    static updatePlaysLeft = (userId, playsLeft, playsRefreshTime): Promise<types.APIOperationResponse> =>{
+        return new Promise(async(resolve, reject)=>{
+
+            let playsAPIResponse: types.APIOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "account",
+                message: "operation unsuccessful"
+            }
+
+            try{
+
+                let res; // initiate response object
+
+                const playsObject = {
+                    playsLeft: playsLeft,
+                    playsRefreshTime: playsRefreshTime
+                } 
+
+                res = await axios.post("/app/game/updateplays", playsObject);
+                    
+
+                console.log(res, "User settings response");
+
+                playsAPIResponse = res.data; //Replace response with response object from backend
+
+                //Response object
+
+                if(playsAPIResponse.success){
+                    //If the operatoin was successful
+                    resolve(playsAPIResponse)
+
+                }else if(!playsAPIResponse.success) {
+
+                    //If the operation failed
+                    reject(playsAPIResponse)
+
+                    //Add details to buffer
+                }
+
+
+            }catch(e){
+
+                console.log(e, "BackendAPI.sendEntryInfo");
+
+                //Add details to buffer - call this function later
+
+                playsAPIResponse.error = e;
+                playsAPIResponse.success = false;
+                playsAPIResponse.message = "misc error"
+
+                reject(playsAPIResponse);
+            }
         })
     }
 
@@ -230,63 +423,23 @@ class BackendAPI {
     static sendLoggedInEvent(logInResultObject: types.LoginResultObject):Promise<boolean>{
         return new Promise(async(resolve, reject)=>{
 
-            const internetStatus = await this.checkInternetStatus(); //Check internet status
+            try{
 
-            if(internetStatus){
-                try{
+                const res = await axios.post('/app/login', logInResultObject);
 
-                    console.log("Send logged in again first")
-                    const res = await axios.post('/app/login', {
-                        loginResultObject: logInResultObject
-                    });
-                    console.log(res) 
+                const APIUpdateResponseObject = res.data;
 
-                    const APIUpdateResponseObject = res.data;
+                resolve(APIUpdateResponseObject);
 
-                    resolve(APIUpdateResponseObject);
+            }catch(e){
 
-                }catch(e){
-
-                    reject(e);
-    
-                }
-            } else if (!internetStatus){
-
-                //Add to buffer to send when coneciton restarts.
-
-                resolve(null)
-
+                console.log({...e})
+                reject(e);
 
             }
-
           
         })
     }
-
-    //Send buffer content (run every 2 minutes)
-    static #sendBufferContent(contentObject, eventType):Promise<boolean>{
-        return new Promise(async(resolve, reject)=>{
-
-            try{
-
-                let res = await axios
-                .post("/app/sync", {
-                    userSettings: "",  //Content like games left, game settings etc
-                    userContent: [] //Chronologically ordered list of buffer content, db changes, deletes, updates etc
-                });
-
-                console.log(res);
-
-            }catch(err){
-
-                //Error occurs if negative response from server, request timed out, lack of connection etc, keep buffer
-                //If there is some conflict with the backend, where for instance there are duplicate entries, then the latest duplicate
-                //takes precedence.
-
-                console.log(err)
-            }
-        })
-    };
 
     //Deepl translate
     
@@ -330,12 +483,15 @@ class BackendAPI {
         return [target_language_id, output_language_id]
     }
 
-    static translate(searchTerms: types.TranslateCallObject): Promise<types.TranslateResponseObject>{
+    static translate(searchTerms: types.APITranslateCall): Promise<types.APITranslateResponse>{
 
-        const responseObject: types.TranslateResponseObject = {
+        const responseObject: types.APITranslateResponse = {
 
             success: false,
-            translations: []
+            translations: [],
+            translationRefreshTime: 0,
+            translationsLeft: 0,
+            message: "no internet"
 
         };
 
@@ -344,22 +500,42 @@ class BackendAPI {
             const [target_language_id, output_language_id] = this.#changeLanguageValue(searchTerms.targetLanguage, searchTerms.outputLanguage);
 
             try{
-                const apiResponse = await axios.post('/translate', {
-                    username: searchTerms.username,
-                    text: searchTerms.targetText,
-                    source_lang: target_language_id,
-                    target_lang: output_language_id
-                });
+
+                const internetStatus = await this.checkInternetStatus();
+
+                if(internetStatus){
+
+                    const res = await axios.post('/translate', {
+                        username: searchTerms.username,
+                        targetText: searchTerms.targetText,
+                        targetLanguage: target_language_id,
+                        outputLanguage: output_language_id
+                    });
+    
+                    const translationResponse: types.APITranslateResponse = res.data;
+                    
+    
+                    responseObject.translations = translationResponse.translations[0];
+                    responseObject.success = true;
+                    responseObject.translationsLeft = translationResponse.translationsLeft;
+                    responseObject.translationRefreshTime = translationResponse.translationRefreshTime;
+    
+                    //return translation 
+                    resolve(responseObject);
+
+                }else if(!internetStatus){
+                    
+                    responseObject.message = "no internet"
+
+                    reject(responseObject)
+                }
+
+
                 
-
-                responseObject.translations = apiResponse.data.translations[0];
-                responseObject.success = true;
-
-                //return translation 
-                resolve(responseObject);
         
             }catch (error) {
-                console.error(error);
+                console.error({...error});
+                responseObject.error = error;
                 resolve(responseObject);
             }
         })

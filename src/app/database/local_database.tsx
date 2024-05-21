@@ -93,29 +93,6 @@ class LocalDatabase{
         })
     }
 
-    // static openDatabase = (): Promise<SQLiteDatabase> =>{
-
-    //     return new Promise(async(resolve, reject)=>{
-
-    //         try{
-
-    //             const db = await SQLite.openDatabase({
-    //                 name: "vocabpanda.db",
-    //                 location: "default"
-    //             });
-
-    //             //Execute code to allow foreign keys
-    //             await db.executeSql('PRAGMA foreign_keys = ON');
-
-    //             resolve(db);
-
-    //         }catch(e){
-
-    //             reject(e);
-    //         }
-    //     })
-    // }
-
 
     //FOR DEVELOPMENT -= DROP ENTIRE DATABASE
 
@@ -345,7 +322,7 @@ class LocalDatabase{
         return sqlFormattedDate
     }
 
-    static getUserId(username: string){
+    static getUserId(username: string): Promise<string>{
         return new Promise(async(resolve, reject)=>{
 
             try{

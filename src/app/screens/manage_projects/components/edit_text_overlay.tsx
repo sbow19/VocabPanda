@@ -22,6 +22,9 @@ import UserContent from "app/database/user_content"
 import CurrentUserContext from "app/context/current_user"
 import ActivityIndicatorStatus from "app/context/activity_indicator_context"
 import { showMessage } from "react-native-flash-message"
+import BackendAPI from "app/api/backend"
+
+import * as types from '@customTypes/types.d'
 
 
 
@@ -193,11 +196,36 @@ const EditTextView: React.FC  = props=>{
 
                                 editTextOverlayObject.setEntryToEdit(updatedEntry[0]);
 
+                                const parsedUpdatedEntry = UserContent.convertEntryArrayToObject(updatedEntry[0])
+
 
                                 showMessage({
                                     type: "success",
                                     message: "Entry updated sucessfully!"
+                                });
+
+                                //Send new entry details to backend or retain here.
+                                //Handle backend communication errors seperately here
+
+                                
+                                const newEntryDetailsObject: types.APIEntryObject = {
+
+                                    entryDetails: parsedUpdatedEntry,
+                                    updateType: "update"
+                                }
+
+                                BackendAPI.sendEntryInfo(newEntryDetailsObject)
+                                .then((entryAPIResponseObject)=>{
+
+                                    console.log(entryAPIResponseObject)
+
                                 })
+                                .catch((entryAPIResponseObject)=>{
+
+                                    console.log(entryAPIResponseObject) 
+
+                                });
+
 
                             }catch(e){
 

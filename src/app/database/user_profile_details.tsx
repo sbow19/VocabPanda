@@ -1,6 +1,5 @@
 /* eslint-disable */
 
-import BackendAPI from "app/api/backend";
 import * as types from '@customTypes/types.d'
 import LocalDatabase from "app/database/local_database";
 import SQLStatements from "app/database/prepared_statements";
@@ -175,8 +174,6 @@ class UserDetails extends LocalDatabase{
 
                 defaultAppSettings.lastLoggedIn = lastLoggedIn;
 
-      
-
                 //get premium
 
                 const premium = await this.checkPremiumStatus(username);
@@ -194,7 +191,7 @@ class UserDetails extends LocalDatabase{
 
                 const playsRefreshTimeRaw = await UserDetails.getPlaysRefreshTimeLeft(userId);
 
-                defaultAppSettings.playsRefreshTime = playsRefreshTimeRaw["games_refresh"]
+                defaultAppSettings.playsRefreshTime = playsRefreshTimeRaw["games_refresh"];
 
 
                 //Get translations left
@@ -206,6 +203,8 @@ class UserDetails extends LocalDatabase{
                 //Get translations refresh time left
 
                 const translationsRefreshTimeRaw = await UserDetails.getTranslationsRefreshTimeLeft(userId);
+
+                console.log(translationsRefreshTimeRaw);
 
                 defaultAppSettings.translationsRefreshTime = translationsRefreshTimeRaw["translations_refresh"]
 
@@ -260,6 +259,7 @@ class UserDetails extends LocalDatabase{
         })
     };
 
+
     static getUserProjects(userId: string){
         return new Promise(async(resolve, reject)=>{
 
@@ -284,13 +284,13 @@ class UserDetails extends LocalDatabase{
 
                 }else if (resultArrayProjects.length >= 1){
 
-                    const projectArray: Array<types.ProjectObject> = [];
+                    const projectArray: Array<types.ProjectDetails> = [];
 
                     //Cycle through projects identified in projects table and add details to app setting object.
 
                     for(let project of resultArrayProjects){
 
-                        let projectObject: types.ProjectObject = {
+                        let projectObject: types.ProjectDetails = {
                             projectName: project["project"],
                             targetLanguage: project["target_lang"],
                             outputLanguage: project["outputLang"]
@@ -454,15 +454,16 @@ class UserDetails extends LocalDatabase{
            
     };
 
-    static deleteAccount = (username: string, password: string) : Promise<types.DeleteAccountResponseObject> =>{
+    static deleteAccount = (username: string, password: string) : Promise<types.LocalOperationResponse> =>{
 
-        return new Promise(async (resolve)=>{
+        return new Promise(async (resolve, reject)=>{
 
-            const resultObject: types.DeleteAccountResponseObject = {
-                username: username, 
-                deletionSuccessful: false,
-                message: ""
-            };
+            let deleteAccountResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "remove",
+                contentType: "account",
+                message: "operation unsuccessful" 
+            }
 
             try{
 
@@ -478,9 +479,8 @@ class UserDetails extends LocalDatabase{
                 if(resultArray.length === 0){
                     //If username does not match any entries, then login failed
 
-                    resultObject.deletionSuccessful = false
-                    resultObject.message = "No matches for username."
-                    resolve(resultObject);
+                    deleteAccountResponse.error = "No matches for username."
+                    reject(deleteAccountResponse);
                 
                 }else if(resultArray.length === 1){
                     //If username matches one user, then attempt password match
@@ -493,26 +493,23 @@ class UserDetails extends LocalDatabase{
                         ],
                         "User deleted successfully");
 
-                        resultObject.deletionSuccessful = true
-                        resultObject.username = resultArray[0].username
-                        resolve(resultObject);
+                        deleteAccountResponse.success = true;
+                        resolve(deleteAccountResponse);
                         }
                         
                     }else{
-                        resolve(resultObject);
+                        deleteAccountResponse.error = "Password incorrect"
+                        throw deleteAccountResponse;
                     }
-            }catch(e){
+            }catch(deleteAccountResponse){
 
-                console.log(e);
-                console.trace();
-                resultObject.message = "Account deletion failed"
-                resolve(resultObject)
+                reject(deleteAccountResponse)
 
             }
         })
     };      
        
-    //TODO - update to sqllite storage
+
     static upgradeToPremium(username: string, endTime: string){
         return new Promise(async(resolve,reject)=>{
 
@@ -720,14 +717,11 @@ class UserDetails extends LocalDatabase{
                 //Get userId 
                 const userId = await super.getUserId(username);
 
-                //Get remaining translations
-
-                const newValue = translationsLeft - 1;
 
                 //Get new db transaction, and update time in database
 
                 await super.transactionPromiseWrapper(SQLStatements.updateStatements.updateTranslationsLeft, [
-                    newValue,
+                    translationsLeft,
                     userId
                 ],
                "Set translations left");
@@ -818,7 +812,7 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static setTranslationsRefreshTimeLeft(username: string){
+    static setTranslationsRefreshTimeLeft(username: string, translationRefreshTime){
         return new Promise(async(resolve, reject)=>{
 
             try{
@@ -826,37 +820,13 @@ class UserDetails extends LocalDatabase{
                 //Get userId 
                 const userId = await this.getUserId(username);
 
-                //Check whether time exists
-                const checkValue = await this.getTranslationsRefreshTimeLeft(userId);
-
-                if(checkValue["translations_refresh"] !== null){
-                    //If there is already a time set, don't refresh it
-                    resolve(checkValue["translations_refresh"]);
-                    return 
-                };
-
-                //Add an week in milliseconds
-
-                const currentTime = new Date();
-                const WEEK_IN_MILLISECONDS = 604800000;
-                const currentTimeMillis = currentTime.getTime();
-
-                // Calculate the new time by adding a week
-                const newTimeMillis = currentTimeMillis + WEEK_IN_MILLISECONDS;
-
-                // Create a new Date object with the calculated time
-                const newTime = new Date(newTimeMillis);
-
-                const formattedTime = newTime.toISOString();
-                //Get new db transaction, and update time in database.
-
                 await this.transactionPromiseWrapper(SQLStatements.refreshStatements.setTranslationRefreshTime, [
-                    formattedTime,
+                    translationRefreshTime,
                     userId
                 ],
                 "Updated translations refresh time");
 
-                resolve(newTime); // Resolves to new time
+                resolve(translationRefreshTime); // Resolves to new time
                 
             } catch(e){
                 console.log("Could not update translations refresh time left.")
@@ -980,19 +950,11 @@ class UserDetails extends LocalDatabase{
                 ],
                 "Fetched plays refresh time");
 
-                const resultArray = super.parseRowResults(resultArrayRaw);
 
-                if(resultArray.length === 0){
 
-                    throw "Error: no plays refresh time found."
+                resolve(resultArrayRaw);
 
-                }else if (resultArray.length === 1){
-
-                    const nextPlaysRefreshTime = resultArray[0];
-
-                    resolve(nextPlaysRefreshTime);
-
-                };
+                
 
             } catch(e){
 
@@ -1033,7 +995,7 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static getPlaysLeft(userId: string){
+    static getPlaysLeft=(userId: string): Promise<number> =>{
 
         return new Promise(async(resolve, reject)=>{
 
@@ -1138,6 +1100,23 @@ class UserDetails extends LocalDatabase{
 
             }
         })
+
+    };
+
+    //Misc functions 
+
+    static convertUserSettingsObject(settingsObject): types.UserSettings{
+
+        const userSettings: types.UserSettings = {
+            userId: settingsObject["user_id"],
+            gameNoOfTurns: settingsObject["slider_val"],
+            gameTimerOn: settingsObject["timer_on"],
+            defaultTargetLanguage: settingsObject["target_lang"],
+            defaultOutputLanguage: settingsObject["output_lang"],
+            defaultProject: settingsObject["default_project"]
+        };
+
+        return userSettings;
 
     };
 

@@ -92,23 +92,15 @@ export type WindowDimensions = {
     WIDTH: number
 }
 
-export type users = {
-
-    user: userDetails
-}
-
-export type userDetails = {
-    email: string
+export type UserDetails = {
+    email?: string
+    password: string
+    userId: string
+    username: string
     
 }
 
-export type ProjectObject = {
 
-    projectName: string
-    targetLanguage: string
-    outputLanguage: string
-
-}
 
 export type AppSettingsObject = {
 
@@ -119,7 +111,7 @@ export type AppSettingsObject = {
         outputLanguage?: string
     }
 
-    projects?: Array<ProjectObject | null>
+    projects?: Array<ProjectDetails | null>
 
     lastLoggedIn: string
 
@@ -220,11 +212,12 @@ export type LoginResultObject = {
     password: string| ""
 }
 
-export type DeleteAccountResponseObject = {
-
-    username: string
-    deletionSuccessful: boolean
-    message: string
+export type LocalOperationResponse = {
+    success: Boolean
+    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
+    error?: Error | string
+    operationType?: "create" | "update" | "remove" | ""
+    contentType?: "project" | "tags" | "entry" | "account" | "settings"
 }
 
 export type CreateAccountResponse = {
@@ -256,20 +249,7 @@ export type ProjectLengthResponseObject = {
 
 
 
-export type TranslateCallObject = {
 
-    targetText: string, 
-    targetLanguage: string,
-    outputLanguage: string,
-    username: string
-}
-
-export type TranslateResponseObject = {
-
-    success: boolean
-    translations: any[]
-
-}
 
 export type FullTextObject = {
     targetLanguageText: string,
@@ -279,19 +259,100 @@ export type FullTextObject = {
 };
 
 
-//Entry related types
+//API types
+
+export type APIProjectObject = {
+    updateType: "create" | "remove" | "update" 
+    projectDetails: ProjectDetails
+}
 
 export type APIEntryObject = {
     updateType: "create" | "remove" | "update" 
     entryDetails: EntryDetails
 }
 
-export type APIEntryResponse = {
-    success: Boolean
+export type APISettingsObject = {
+    updateType: "create" | "remove" | "update" 
+    userSettings: UserSettings
+}
+
+export type APITagsObject = {
+    updateType: "create" | "remove" | "update" 
+    tagDetails: string
+}
+
+export type APIAccountObject<AccountOperationDetails> = {
+    updateType: "change password" | "delete account" | "upgrade" | "downgrade" | "create account" | "login"
+    accountOperationDetails: AccountOperationDetails
+
+}
+
+export type AccountOperationDetails = APICreateAccount | APIDeleteAccount | APIDowngradeUser | APIUpgradeUser | APIUpdatePassword  | APILoginUser
+
+
+
+export type APIDeleteAccount = {
+
+    userId: string
+    password: string
+
+}
+
+export type APIUpdatePassword = {
+
+    userId: string
+    oldPassword: string
+    newPassword: string
+
+}
+
+export type APICreateAccount = {
+
+    username: string
+    password: string
+    email: string
+
+}
+
+// export type APIUpgradeUser = {
+
+// }
+
+// export type APIDowngradeUser = {
+
+// }
+
+export type APITranslateCall = {
+
+    targetText: string, 
+    targetLanguage: string,
+    outputLanguage: string,
+    username: string
+}
+
+export type APITranslateResponse = {
+
+    success: boolean
+    translations: any[]
+    translationsLeft: number
+    translationRefreshTime: number
     message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
+
+}
+
+
+export type APIOperationResponse = {
+    success: Boolean
+    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful" | "buffer flushing"
     error?: Error
     operationType?: "create" | "update" | "remove" | ""
-    contentType?: "project" | "tags" | "entry" | "user"
+    contentType?: "project" | "tags" | "entry" | "account" | "settings"
+}
+
+export interface APIAccountOperationResponse extends APIOperationResponse {
+    accountOperation: "change password" | "delete account" | "upgrade" | "downgrade" | "create account" | "verify email"
+    userId?: string
+    customResponse: string
 }
 
 export type EntryDetails = {
@@ -308,4 +369,49 @@ export type EntryDetails = {
     username: string
     entryId: string
 }
+
+export type ProjectDetails = {
+
+    projectName: string
+    targetLanguage: string
+    outputLanguage: string
+    userId?: string
+
+}
+
+export type UserSettings = {
+    gameTimerOn: boolean
+    gameNoOfTurns: number
+    defaultTargetLanguage: string
+    defaultOutputLanguage: string
+    defaultProject: string
+    userId: string
+}
+
+//BUFFER TYPES 
+
+export type BufferKey = "entry" | "project" | "tags" | "account" | "settings" | "translate" 
+
+export type BufferStorageResponse = {
+    storageSuccessful: Boolean
+    storageURL: string
+}
+
+export type BufferFlushResponse = {
+    flushSuccessful: Boolean
+}
+
+export type BufferStorageObject = {
+
+    entry: any[],
+    settings: any[],
+    project: any[],
+    account: any[],
+    tags: any[],
+    translate: any[]
+
+}
+
+//Generic API Request
+export type APIRequest =  APIEntryObject | APIProjectObject | APITranslateCall | APIAccountObject<AccountOperationDetails> | APISettingsObject
 

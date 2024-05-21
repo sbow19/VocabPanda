@@ -147,17 +147,9 @@ const GameHome: React.FC = props=>{
             gameMode: "Search Results",
             resultArray: props.route.params.resultArray,
             project: ""
-        }); 
+        });
 
-        const playsLeft = appSettings.playsLeft - 1
-
-        await UserDetails.setPlaysLeft(currentUser, playsLeft);
-        const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
-
-        appSettingsHandler({
-            playsLeft,
-            playsRefreshTime
-        }, "subtractPlay"); // Update play left
+        appSettingsHandler(appSettings.playsLeft, "subtractPlay"); // Update play left
 
 
         return
@@ -197,15 +189,7 @@ const GameHome: React.FC = props=>{
                 project: ""
             })
 
-            const playsLeft = appSettings.playsLeft - 1;
-
-            await UserDetails.setPlaysLeft(currentUser, playsLeft);
-            const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
-
-            appSettingsHandler({
-                playsLeft,
-                playsRefreshTime
-            }, "subtractPlay"); // Update play left
+            appSettingsHandler(appSettings.playsLeft, "subtractPlay"); // Update play left
     
             return
 
@@ -236,15 +220,7 @@ const GameHome: React.FC = props=>{
                 project: project
             })
 
-            const playsLeft = appSettings.playsLeft - 1
-
-            await UserDetails.setPlaysLeft(currentUser, playsLeft);
-            const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
-
-            appSettingsHandler({
-                playsLeft,
-                playsRefreshTime
-            }, "subtractPlay"); // Update play left
+            appSettingsHandler(appSettings.playsLeft, "subtractPlay"); // Update play left
     
             return
         }
@@ -261,15 +237,7 @@ const GameHome: React.FC = props=>{
             project: ""
         })
 
-        const playsLeft = appSettings.playsLeft - 1
-
-        await UserDetails.setPlaysLeft(currentUser, playsLeft);
-        const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
-
-        appSettingsHandler({
-            playsLeft,
-            playsRefreshTime
-        }, "subtractPlay"); // Update play left
+        appSettingsHandler(appSettings.playsLeft, "subtractPlay"); // Update play left
 
         return
 
@@ -297,15 +265,7 @@ const GameHome: React.FC = props=>{
             project: ""
         })
         
-        const playsLeft = appSettings.playsLeft - 1
-
-        await UserDetails.setPlaysLeft(currentUser, playsLeft);
-        const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
-
-        appSettingsHandler({
-            playsLeft,
-            playsRefreshTime
-        }, "subtractPlay"); // Update play left
+        appSettingsHandler(appSettings.playsLeft, "subtractPlay"); // Update play left
 
         return
     };

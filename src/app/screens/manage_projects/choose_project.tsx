@@ -34,6 +34,7 @@ import { showMessage } from 'react-native-flash-message';
 
 import UpgradePrompt from 'app/premium/upgrade_overlay';
 import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
+import BackendAPI from 'app/api/backend';
 
 
 
@@ -150,7 +151,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                 initialValues={{projectName: ""}}
                 onSubmit={async(values, actions)=>{
 
-                    const projectObject: types.ProjectObject = {
+                    const projectObject: types.ProjectDetails = {
 
                         projectName: values.projectName,
                         targetLanguage: targetLanguage,
@@ -183,13 +184,46 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
                             setActivityIndicator(true);
                             await UserContent.addProject(currentUser, projectObject);
-                            setActivityIndicator(false)
+                            setActivityIndicator(false);
 
                             setAppSettingsHandler(projectObject, "addProject");
 
                             showMessage({
                                 type: "info",
                                 message: "Project added successfully!."
+                            })
+
+                           
+                            //Send project details to backend or retain here.
+                            //Handle backend communication errors seperately here
+                            UserContent.getUserId(currentUser)
+                            .then((userId: string)=>{
+
+                                projectObject.userId = userId
+
+                                const newProjectDetailsObject: types.APIProjectObject = {
+
+                                    projectDetails: projectObject,
+                                    updateType: "create"
+                                }
+
+                                BackendAPI.sendProjectInfo(newProjectDetailsObject)
+                                .then((projectAPIResponseObject)=>{
+
+                                    console.log(projectAPIResponseObject)
+
+                                })
+                                .catch((projectAPIResponseObject)=>{
+
+                                    console.log(projectAPIResponseObject) 
+
+                                });
+
+                            })
+                            .catch((e)=>{
+
+                                console.log(e, "Unable to get user id");
+                                
                             })
 
                         }catch(e){

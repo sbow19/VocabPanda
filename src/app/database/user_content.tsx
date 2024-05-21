@@ -12,11 +12,9 @@ class UserContent extends LocalDatabase {
 
     //Managing Projects
 
-    static addProject= (username: string, projectObject: types.ProjectObject)=>{
+    static addProject= (username: string, newProjectDetails: types.ProjectDetails)=>{
 
         return new Promise(async(resolve, reject)=>{
-
-            console.log(projectObject)
 
             try{
 
@@ -28,9 +26,9 @@ class UserContent extends LocalDatabase {
 
                 await this.transactionPromiseWrapper(SQLStatements.addStatements.addProject, [
                         userId,
-                        projectObject.projectName,
-                        projectObject.targetLanguage,
-                        projectObject.outputLanguage
+                        newProjectDetails.projectName,
+                        newProjectDetails.targetLanguage,
+                        newProjectDetails.outputLanguage
                 ],
                 "Project added successfully");
             
