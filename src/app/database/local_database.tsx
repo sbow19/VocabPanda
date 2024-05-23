@@ -14,7 +14,7 @@ import db from './db_util';
 
 class LocalDatabase{
 
-    static transactionPromiseWrapper = (sqlStatement: string, args: string[], successMessage = null)=>{
+    static transactionPromiseWrapper = (sqlStatement: string, args: string[], successMessage = null): Promise<SQLite.ResultSet>=>{
         return new Promise(async(resolve, reject)=>{
 
 
@@ -30,13 +30,13 @@ class LocalDatabase{
                             resultArray = result
                         });        
                 },
-                async (error)=>{
+                (error)=>{
 
                     console.log("Error occured", error)
                     reject(error)
 
                 },
-                async (success)=>{
+                (success)=>{
                     console.log("Transaction successful: ", successMessage)
                     resolve(resultArray)
                     

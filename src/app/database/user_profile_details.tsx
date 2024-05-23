@@ -8,14 +8,16 @@ class UserDetails extends LocalDatabase{
 
     //Login events
 
-    static signIn = (user:string, password:string):Promise<types.LoginResultObject>=>{
+    static signIn = (user:string, password:string):Promise<types.APILoginResult>=>{
         return new Promise(async(resolve, reject)=>{
 
-            const resultObject: types.LoginResultObject = {
+            const resultObject: types.APILoginResult = {
+                
                 loginSuccess: false,
                 username: "",
                 identifierType: "",
-                password: ""
+                password: "",
+                userId: ""
             };
 
                 try{
@@ -35,6 +37,7 @@ class UserDetails extends LocalDatabase{
                         if(userPassword === password){
                             resultObject.loginSuccess = true
                             resultObject.username = resultArrayUsername[0].username
+                            resultObject.userId = resultArrayUsername[0].id
                             resolve(resultObject);
                             return // Break from event loop here
                         }
@@ -55,6 +58,7 @@ class UserDetails extends LocalDatabase{
                         if(userPassword === password){
                             resultObject.loginSuccess = true
                             resultObject.username = resultArrayEmail[0].username
+                            resultObject.userId = resultArrayEmail[0].id
                             resolve(resultObject);
                         }
                     }
@@ -495,7 +499,7 @@ class UserDetails extends LocalDatabase{
 
                         deleteAccountResponse.success = true;
                         resolve(deleteAccountResponse);
-                        }
+                    }
                         
                     }else{
                         deleteAccountResponse.error = "Password incorrect"
@@ -507,8 +511,43 @@ class UserDetails extends LocalDatabase{
 
             }
         })
-    };      
-       
+    };    
+    
+    static deleteAccountBackend = (userId: string) : Promise<types.LocalOperationResponse> =>{
+
+        return new Promise(async (resolve, reject)=>{
+
+            let deleteAccountResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "remove",
+                contentType: "account",
+                message: "operation unsuccessful" 
+            }
+
+            try{
+
+                //Delete account
+                const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteUserById,[
+                    userId
+                ],
+                "Deleted user");
+
+                
+                deleteAccountResponse.message = "operation successful";
+                deleteAccountResponse.success = true;
+
+                resolve(deleteAccountResponse);
+                
+            }catch(deleteAccountResponse){
+
+                reject(deleteAccountResponse)
+
+            }
+        })
+    };  
+
+
+   
 
     static upgradeToPremium(username: string, endTime: string){
         return new Promise(async(resolve,reject)=>{
@@ -1119,6 +1158,101 @@ class UserDetails extends LocalDatabase{
         return userSettings;
 
     };
+
+    /* Backend syncing related functions */
+
+    //
+    static syncUserSettings = (userId:string, userSettings: types.UserSettings): Promise<types.LocalOperationResponse<string>>=>{
+        return new Promise(async(resolve, reject)=>{
+
+            let syncUserSettingsResponse: types.LocalOperationResponse<string> = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful" 
+            }
+
+            try{
+
+                //Start transaction
+                const result = await super.transactionPromiseWrapper(SQLStatements.updateStatements.syncUserSettings, [
+                    userSettings.gameTimerOn,
+                    userSettings.gameNoOfTurns,
+                    userSettings.defaultTargetLanguage,
+                    userSettings.defaultOutputLanguage,
+                    userSettings.defaultProject,
+                    userId
+                ],
+                "User settings updated");
+
+                if(result.rowsAffected === 0){
+                    //User settings not updated - no user found
+                    
+                    syncUserSettingsResponse.customResponse = "No user settings updated"
+                    reject(syncUserSettingsResponse);
+
+                }else if (result.rowsAffected === 1){
+                    
+                    syncUserSettingsResponse.message = "operation successful"
+                    syncUserSettingsResponse.success = true;
+                    resolve(syncUserSettingsResponse);
+                }
+
+
+            }catch(e){
+
+                syncUserSettingsResponse.error = e;
+                reject(syncUserSettingsResponse);
+
+            }
+
+        })
+    }
+    static syncPremiumStatus =  (userId:string, userPremiumStatus:boolean ): Promise<types.LocalOperationResponse<string>>=>{
+
+        return new Promise(async(resolve, reject)=>{
+
+            let syncUserPremiumStatusResponse: types.LocalOperationResponse<string> = {
+                success: false,
+                operationType: "update",
+                contentType: "account",
+                message: "operation unsuccessful" 
+            }
+
+            try{
+
+                //Start transaction
+                const result = await super.transactionPromiseWrapper(SQLStatements.updateStatements.syncPremiumStatus, [
+                    userPremiumStatus,
+                    userId
+                ],
+                "User premium status updated.");
+
+                if(result.rowsAffected === 0){
+                    //User premium status not updated - no user found
+                    
+                    syncUserPremiumStatusResponse.customResponse = "No user found"
+                    reject(syncUserPremiumStatusResponse);
+
+                }else if (result.rowsAffected === 1){
+                    
+                    syncUserPremiumStatusResponse.message = "operation successful"
+                    syncUserPremiumStatusResponse.success = true;
+                    resolve(syncUserPremiumStatusResponse);
+                }
+
+
+            }catch(e){
+
+                syncUserPremiumStatusResponse.error = e;
+                reject(syncUserPremiumStatusResponse);
+
+            }
+
+        })
+        
+    };
+       
 
 }
 

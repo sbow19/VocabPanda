@@ -274,7 +274,39 @@ const SQLStatements = {
           "output_language" = ?
         
         WHERE (entry_id = ?)
-        AND (user_id = ?);`
+        AND (user_id = ?);`,
+
+      syncUserEntry: `UPDATE "user_entries" SET 
+        
+        "target_language_text" = ?,
+        "output_language_text" = ?,
+        "target_language" = ?,
+        "output_language" = ?,
+        "updated_at" = ?,
+        "tags" = ?
+      
+      WHERE (entry_id = ?)
+      AND (user_id = ?);`,
+      
+      syncUserSettings: `
+      UPDATE user_settings
+      SET
+        "timer_on" = ?,
+        "slider_val" = ?,
+        "target_lang" = ?,
+        "output_lang" = ?,
+        "default_project" = ?
+      WHERE
+        "user_id" = ?
+      ;`,
+
+      syncPremiumStatus: `
+      UPDATE user_details
+      SET
+        "premium" = ?
+      WHERE
+        "user_id" = ?
+      ;`
 
     },
 
@@ -285,13 +317,14 @@ const SQLStatements = {
                       (project = ?);`,
       
       deleteUser: `DELETE FROM users WHERE (username = ?);`,
-
+      deleteUserById: `DELETE FROM users WHERE (id = ?);`,
       deleteEntry: `DELETE FROM user_entries WHERE (entry_id = ?) AND (user_id = ?);`
 
     },
 
     addStatements: {
-      addProject: `INSERT INTO projects VALUES (?, ?, ?, ?);`,   
+      addProject: `INSERT INTO projects VALUES (?, ?, ?, ?);`,
+      syncProject: `INSERT INTO projects VALUES (?, ?, ?, ?);`, 
       addUserEntry: `INSERT INTO "user_entries" (
         "user_id",
         "username",
@@ -302,7 +335,20 @@ const SQLStatements = {
         "output_language",
         "tags",
         "project"
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+
+      syncUserEntry: `INSERT INTO "user_entries" (
+        "user_id",
+        "username",
+        "entry_id",
+        "target_language_text",
+        "target_language",
+        "output_language_text",
+        "output_language",
+        "tags",
+        "created_at",
+        "project"
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
     },
 
     getStatements: {

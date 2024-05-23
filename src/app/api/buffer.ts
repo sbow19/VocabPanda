@@ -240,8 +240,6 @@ class BufferManager {
 
                 const existingRequests = await JSON.parse(existingRequestsRaw);
 
-                
-
                 const existingRequestsMainQueue = existingRequests.queue_1; 
 
                 const requestsLength = existingRequestsMainQueue.length;

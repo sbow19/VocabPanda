@@ -25,6 +25,7 @@ import { showMessage } from "react-native-flash-message"
 import CurrentUserContext from "app/context/current_user"
 import BackendAPI from "app/api/backend"
 import LoadingStatusInGame from "app/context/loadingInGame"
+import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
  
 
 
@@ -38,6 +39,8 @@ const LoginScreen: React.FC = props=>{
 
     //Set is in game loading 
     const [, setIsLoadingInGame] = React.useContext(LoadingStatusInGame);
+
+    const [,setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
 
     return(
         <TouchableOpacity
@@ -53,6 +56,10 @@ const LoginScreen: React.FC = props=>{
                     onSubmit={async(values, actions)=>{
 
                         try{
+
+                            setActivityIndicator(true);
+
+    
 
                             const resultObject = await UserDetails.signIn(
                                 values.user,
@@ -90,10 +97,14 @@ const LoginScreen: React.FC = props=>{
                                 message: "Error occurred while logging in.",
                                 type: "warning"
                             });
-                        };
 
-                        actions.resetForm();
+                        }finally{
+                            setActivityIndicator(false);
+                            actions.resetForm();
 
+                        }
+
+                        
                     }}
             
                 >

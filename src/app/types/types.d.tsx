@@ -7,6 +7,8 @@ import { ViewStyle } from "react-native";
 import { SQLiteDatabase } from "react-native-sqlite-storage";
 import { BooleanSchema } from "yup";
 
+//Style types
+
 export type CoreColours = {
     black: "#3E3B3F"
     white: "#F5F5F5"
@@ -92,6 +94,9 @@ export type WindowDimensions = {
     WIDTH: number
 }
 
+
+//Local types
+
 export type UserDetails = {
     email?: string
     password: string
@@ -99,8 +104,6 @@ export type UserDetails = {
     username: string
     
 }
-
-
 
 export type AppSettingsObject = {
 
@@ -204,20 +207,13 @@ export type CreateAccountCall = {
     
 }
 
-export type LoginResultObject = {
-
-    loginSuccess: boolean
-    username: string | ""
-    identifierType: "email" | "username" | ""
-    password: string| ""
-}
-
-export type LocalOperationResponse = {
+export type LocalOperationResponse<T=null> = {
     success: Boolean
     message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
     error?: Error | string
-    operationType?: "create" | "update" | "remove" | ""
+    operationType?: "create" | "update" | "remove" | "get"
     contentType?: "project" | "tags" | "entry" | "account" | "settings"
+    customResponse?: T
 }
 
 export type CreateAccountResponse = {
@@ -248,9 +244,6 @@ export type ProjectLengthResponseObject = {
 }
 
 
-
-
-
 export type FullTextObject = {
     targetLanguageText: string,
     targetLanguage: string,
@@ -259,103 +252,39 @@ export type FullTextObject = {
 };
 
 
-//API types
+//API Calls
 
+/* All API requests */
+export type APIRequest =  APIEntryObject | APIProjectObject | APITranslateCall | APIAccountObject<AccountOperationDetails> | APISettingsObject
+
+export type APICallBase = {
+    deviceType: "app" | "extension"
+    operationType: "project" | "tags" | "entry" | "account" | "settings" | "login" | "translate"
+
+}
+
+/* Projects */
 export type APIProjectObject = {
     updateType: "create" | "remove" | "update" 
     projectDetails: ProjectDetails
 }
 
+export interface ProjectDetails extends APICallBase {
+
+    projectName: string
+    targetLanguage: string
+    outputLanguage: string
+    userId?: string
+
+}
+
+/* Entries */
 export type APIEntryObject = {
     updateType: "create" | "remove" | "update" 
     entryDetails: EntryDetails
 }
 
-export type APISettingsObject = {
-    updateType: "create" | "remove" | "update" 
-    userSettings: UserSettings
-}
-
-export type APITagsObject = {
-    updateType: "create" | "remove" | "update" 
-    tagDetails: string
-}
-
-export type APIAccountObject<AccountOperationDetails> = {
-    updateType: "change password" | "delete account" | "upgrade" | "downgrade" | "create account" | "login"
-    accountOperationDetails: AccountOperationDetails
-
-}
-
-export type AccountOperationDetails = APICreateAccount | APIDeleteAccount | APIDowngradeUser | APIUpgradeUser | APIUpdatePassword  | APILoginUser
-
-
-
-export type APIDeleteAccount = {
-
-    userId: string
-    password: string
-
-}
-
-export type APIUpdatePassword = {
-
-    userId: string
-    oldPassword: string
-    newPassword: string
-
-}
-
-export type APICreateAccount = {
-
-    username: string
-    password: string
-    email: string
-
-}
-
-// export type APIUpgradeUser = {
-
-// }
-
-// export type APIDowngradeUser = {
-
-// }
-
-export type APITranslateCall = {
-
-    targetText: string, 
-    targetLanguage: string,
-    outputLanguage: string,
-    username: string
-}
-
-export type APITranslateResponse = {
-
-    success: boolean
-    translations: any[]
-    translationsLeft: number
-    translationRefreshTime: number
-    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
-
-}
-
-
-export type APIOperationResponse = {
-    success: Boolean
-    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful" | "buffer flushing"
-    error?: Error
-    operationType?: "create" | "update" | "remove" | ""
-    contentType?: "project" | "tags" | "entry" | "account" | "settings"
-}
-
-export interface APIAccountOperationResponse extends APIOperationResponse {
-    accountOperation: "change password" | "delete account" | "upgrade" | "downgrade" | "create account" | "verify email"
-    userId?: string
-    customResponse: string
-}
-
-export type EntryDetails = {
+export interface EntryDetails extends APICallBase {
     targetLanguageText: string
     targetLanguage: string
     outputLanguageText: string
@@ -370,16 +299,14 @@ export type EntryDetails = {
     entryId: string
 }
 
-export type ProjectDetails = {
+/* Settings */
 
-    projectName: string
-    targetLanguage: string
-    outputLanguage: string
-    userId?: string
-
+export interface APISettingsObject extends APICallBase {
+    updateType: "create" | "remove" | "update" 
+    userSettings: UserSettings
 }
 
-export type UserSettings = {
+export interface UserSettings extends APICallBase {
     gameTimerOn: boolean
     gameNoOfTurns: number
     defaultTargetLanguage: string
@@ -387,6 +314,141 @@ export type UserSettings = {
     defaultProject: string
     userId: string
 }
+
+/* Tags */
+
+export type APITagsObject = {
+    updateType: "create" | "remove" | "update" 
+    tagDetails: string
+}
+
+
+/* Plays */
+
+export interface APIPlaysObject extends APICallBase {
+    updateType: "create" | "remove" | "update" 
+    playsDetails: PlaysDetails
+}
+
+export interface PlaysDetails extends APICallBase {
+
+    playsLeft: number
+    playsRefreshTime: string
+    userId: string
+   
+}
+
+/* Account */
+
+export type APIAccountObject<AccountOperationDetails> = {
+    updateType: "change password" | "delete account" | "upgrade" | "downgrade" | "create account" | "login"
+    accountOperationDetails: AccountOperationDetails
+
+}
+
+export type AccountOperationDetails = APICreateAccount | APIDeleteAccount | APIDowngradeUser | APIUpgradeUser | APIUpdatePassword  | APILoginResult
+       
+export interface APIDeleteAccount extends APICallBase {
+
+    userId: string
+    password: string
+
+}
+
+export interface APIUpdatePassword extends APICallBase {
+
+    userId: string
+    oldPassword: string
+    newPassword: string
+
+}
+
+export interface APICreateAccount extends APICallBase {
+
+    username: string
+    password: string
+    email: string
+
+}
+
+export interface APILoginResult extends APICallBase {
+
+    loginSuccess: boolean
+    username: string | ""
+    identifierType: "email" | "username" | ""
+    password: string| ""
+    userId: string
+}
+
+// export type APIUpgradeUser = {
+
+// }
+
+// export type APIDowngradeUser = {
+
+// }
+
+export type APIGenerateKeyRequest = {
+    deviceType: "app" | "extension"
+    deviceId: string
+}
+
+/* Translation call */
+
+export interface APITranslateCall extends APICallBase {
+
+    targetText: string, 
+    targetLanguage: string,
+    outputLanguage: string,
+    username: string
+}
+
+
+
+
+//API Responses
+
+export type APITranslateResponse = {
+
+    success: boolean
+    translations: any[]
+    translationsLeft: number
+    translationRefreshTime: number
+    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
+
+}
+
+export type APIOperationResponse<T> = {
+    success: Boolean
+    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful" | "buffer flushing"
+    error?: Error
+    operationType?: "create" | "update" | "remove" | ""
+    contentType?: "project" | "tags" | "entry" | "account" | "settings"
+    customResponse?: T
+}
+
+export interface APIAccountOperationResponse<T = null> extends APIOperationResponse<T> {
+    accountOperation: "change password" | "delete account" | "upgrade" | "downgrade" | "create account" | "verify email" | "login"
+    userId?: string
+    
+}
+
+export type APIPostLoginSetUp = {
+    //When user logs in, front end is updated with any changes that have occurred with the account elsewhere
+    userId: string
+    userSettings: UserSettings
+    userPremiumStatus: boolean
+    userDeleted:  boolean
+    userContent: [] //Chronological list of user entry and project operations
+}
+
+export interface APIKeyOperationResponse<T = null> extends APIOperationResponse<T> {
+
+    apiOperationType: "generate api key"
+    APIKey: string
+
+}
+
 
 //BUFFER TYPES 
 
@@ -412,6 +474,29 @@ export type BufferStorageObject = {
 
 }
 
-//Generic API Request
-export type APIRequest =  APIEntryObject | APIProjectObject | APITranslateCall | APIAccountObject<AccountOperationDetails> | APISettingsObject
+export interface BufferSyncResult extends APIAccountOperationResponse {
+    deleteAccount: boolean
+    operationStatus: {
+        userSettingsSync: boolean
+        premiumStatusSync: boolean
+        userContentSync: {
+            valid: boolean
+            failedContent?: Array<any>
+            failedContentIndex?: number
+        }
+    }
+}
+
+
+//Sync related types
+
+/* Entries from backend extension buffer */
+export type UserContentExtensionBuffer = {
+    operationType: "add" | "update" | "get" | "delete"
+    contentType: "tags" | "entry" | "project"
+    userContent: EntryDetails | ProjectDetails
+}
+
+ 
+
 

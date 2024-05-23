@@ -10,6 +10,10 @@ import NetInfo from "@react-native-community/netinfo";
 import axiosConfig from './axios_config';
 
 import LocalDatabase from 'app/database/local_database';
+import UserContent from 'app/database/user_content';
+import UserDetails from 'app/database/user_profile_details';
+import BufferManager from './buffer';
+import SyncManager from './sync_manager';
 
 class BackendAPI {
 
@@ -73,33 +77,45 @@ class BackendAPI {
     };
     
     //Request API key for device when first opened
-    static requestAPIKey():Promise<{message:string, APIKey: string}>{
+    static requestAPIKey():Promise<types.APIKeyOperationResponse>{
         return new Promise(async(resolve, reject)=>{
+
+            const apiKeyResponse: types.APIKeyOperationResponse = {
+                success: false,
+                message: "operation unsuccessful",
+                operationType: "create",
+                apiOperationType: "generate api key",
+                APIKey: ""
+            }
 
             try{
                 const uniqueDeviceId = await DeviceInfo.getUniqueId(); //Gets unique device id;
 
-                let res = await axios.post("/generateapikey",{
-                    deviceId: uniqueDeviceId
-                });
+                const keyRequest: types.APIGenerateKeyRequest = {
+                    deviceId: uniqueDeviceId,
+                    deviceType: "app"
+                }
 
-                console.log(res, "Request API response")
+                let res = await axios.post("/generateapikey", keyRequest);
 
-                resolve(res.data);
+                const apiKeyResponse: types.APIKeyOperationResponse = res.data;
+
+                resolve(apiKeyResponse);
 
             }catch(err){
+
+                apiKeyResponse.error = err;
 
                 //Trigger error status for creating app --> monitor error
                 console.log(err.message)
                 console.log(err.request);
                 console.log(err.response)
-                reject(err);
+                reject(apiKeyResponse);
             }
         })
     };
 
     //Account logic
-
     static sendAccountInfo(accountObject: types.APIAccountObject<types.AccountOperationDetails>): Promise<types.APIAccountOperationResponse>{
         return new Promise(async (resolve, reject)=>{
 
@@ -115,6 +131,8 @@ class BackendAPI {
 
                 const internetStatus = await this.checkInternetStatus();
             
+                //Add operation type to account Object to indicate to backend the type of request type
+                accountObject.accountOperationDetails.operationType = "account";
 
                 if(internetStatus){
 
@@ -199,6 +217,9 @@ class BackendAPI {
 
                 let res; // initiate response object
 
+                //Add operation type to account Object to indicate to backend the type of request type
+                entryObject.entryDetails.operationType = "entry";
+
                 switch(entryObject.updateType){
                     case "create":
                         res = await axios.post("/app/entries/addentry", entryObject.entryDetails);
@@ -262,6 +283,9 @@ class BackendAPI {
 
                 let res; // initiate response object
 
+                //Add operation type to account Object to indicate to backend the type of request type
+                projectObject.projectDetails.operationType = "project";
+
                 switch(projectObject.updateType){
                     case "create":
                         res = await axios.post("/app/entries/newproject", projectObject.projectDetails);
@@ -322,27 +346,30 @@ class BackendAPI {
 
                 let res; // initiate response object
 
+                //Add operation type to account Object to indicate to backend the type of request type
+                settingsObject.operationType = "settings";
 
-                    res = await axios.post("/app/settings/update", settingsObject);
-                        
 
-                    console.log(res, "User settings response");
+                res = await axios.post("/app/settings/update", settingsObject);
+                    
 
-                    settingsAPIResponse = res.data; //Replace response with response object from backend
+                console.log(res, "User settings response");
 
-                    //Response object
+                settingsAPIResponse = res.data; //Replace response with response object from backend
 
-                    if(settingsAPIResponse.success){
-                        //If the operatoin was successful
-                        resolve(settingsAPIResponse)
+                //Response object
 
-                    }else if(!settingsAPIResponse.success) {
+                if(settingsAPIResponse.success){
+                    //If the operatoin was successful
+                    resolve(settingsAPIResponse)
 
-                        //If the operation failed
-                        reject(settingsAPIResponse)
+                }else if(!settingsAPIResponse.success) {
 
-                        //Add details to buffer
-                    }
+                    //If the operation failed
+                    reject(settingsAPIResponse)
+
+                    //Add details to buffer
+                }
 
             }catch(e){
 
@@ -362,7 +389,7 @@ class BackendAPI {
 
 
     //UPdate user plays left
-    static updatePlaysLeft = (userId, playsLeft, playsRefreshTime): Promise<types.APIOperationResponse> =>{
+    static updatePlaysLeft = (userId: string, playsLeft: number, playsRefreshTime: string): Promise<types.APIOperationResponse> =>{
         return new Promise(async(resolve, reject)=>{
 
             let playsAPIResponse: types.APIOperationResponse = {
@@ -376,9 +403,16 @@ class BackendAPI {
 
                 let res; // initiate response object
 
-                const playsObject = {
-                    playsLeft: playsLeft,
-                    playsRefreshTime: playsRefreshTime
+                const playsObject: types.APIPlaysObject = {
+
+                    updateType: "update",
+                    playsDetails: {
+                        playsLeft: playsLeft,
+                        playsRefreshTime: playsRefreshTime,
+                        userId: userId
+                    },
+                    operationType: "account"
+                    
                 } 
 
                 res = await axios.post("/app/game/updateplays", playsObject);
@@ -420,21 +454,57 @@ class BackendAPI {
 
     //Loggred in account call
 
-    static sendLoggedInEvent(logInResultObject: types.LoginResultObject):Promise<boolean>{
+    static sendLoggedInEvent(logInResultObject: types.APILoginResult):Promise<types.BufferSyncResult>{
         return new Promise(async(resolve, reject)=>{
 
+        
+            let syncResult: types.BufferSyncResult = {
+                deleteAccount: false
+            } 
+
             try{
+                logInResultObject.operationType = "login";
 
                 const res = await axios.post('/app/login', logInResultObject);
 
-                const APIUpdateResponseObject = res.data;
+                const APILoginResponse: types.APIAccountOperationResponse<types.APIPostLoginSetUp> = res.data;
 
-                resolve(APIUpdateResponseObject);
+
+                if(APILoginResponse.success){
+                    //If the operatoin was successful, trigger app sync
+
+                    /* Synce user setttings with frontend */
+                    syncResult = await SyncManager.processLoginSync(APILoginResponse.userId, APILoginResponse.customResponse);
+
+                    /* Send sync result back to backend to process futher */
+
+                    const confResult = await axios.post("app/login/syncresult", syncResult); // --> TODO add interceptor to handle this particular request, given its complexity.
+                    
+                    //If local syncing successful, then we load the app. If not, then we re attempt wholesale sync with backend
+                    //Intervening network errors must be handled. If sync successful, then user can carry on. If unsuccessful, then resynnc with backend must take place on  reload
+                    //Any new entries in local buffer must be sent to backend after reconnection. Then  wholesale syncing must take place
+
+                    resolve()
+
+                    
+                    
+                }else if(!APILoginResponse.success) {
+
+                    //If the operation failed then failure
+                    reject(APILoginResponse);
+                }
 
             }catch(e){
 
-                console.log({...e})
-                reject(e);
+                console.log({...e}, "BackendAPI.sendEntryInfo");
+
+                //Add details to buffer - call this function later
+
+                syncResult.error = e;
+                syncResult.success = false;
+                syncResult.message = "misc error"
+
+                reject(syncResult);
 
             }
           
@@ -501,6 +571,7 @@ class BackendAPI {
 
             try{
 
+
                 const internetStatus = await this.checkInternetStatus();
 
                 if(internetStatus){
@@ -509,7 +580,8 @@ class BackendAPI {
                         username: searchTerms.username,
                         targetText: searchTerms.targetText,
                         targetLanguage: target_language_id,
-                        outputLanguage: output_language_id
+                        outputLanguage: output_language_id,
+                        operationType: "translate"
                     });
     
                     const translationResponse: types.APITranslateResponse = res.data;

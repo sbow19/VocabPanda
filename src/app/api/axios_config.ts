@@ -24,6 +24,11 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
 
         try{
 
+            //Add "app" type operation type to request
+
+            const requestData: types.APICallBase = config.data;
+
+            requestData.deviceType = "app";
 
             const urls = [
                 "/account/createaccount",
@@ -42,8 +47,7 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
 
             }
             else if(!internetStatus.isInternetReachable && !axios.defaults.bufferStatus){
-                
-                const requestData = config.data;
+            
 
                 //Add to main queue if retry not processed.
                 if(!config.__storageProcessed){
@@ -59,8 +63,6 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
             } 
             else if (internetStatus.isInternetReachable && axios.defaults.bufferStatus){
 
-
-                const requestData = config.data;
 
                 //Add to secondary buffer if retry not processed
 
