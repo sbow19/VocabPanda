@@ -323,8 +323,7 @@ const SQLStatements = {
     },
 
     addStatements: {
-      addProject: `INSERT INTO projects VALUES (?, ?, ?, ?);`,
-      syncProject: `INSERT INTO projects VALUES (?, ?, ?, ?);`, 
+      addProject: `INSERT INTO projects VALUES (?, ?, ?, ?);`, 
       addUserEntry: `INSERT INTO "user_entries" (
         "user_id",
         "username",

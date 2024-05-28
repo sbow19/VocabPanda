@@ -106,7 +106,7 @@ class UserContent extends LocalDatabase {
         })
     };
 
-    static addProjectBackend = (userId: string, projectObject: types.ProjectDetails): Promise<string> =>{
+    static addProjectBackend = (userId: string, projectObject: types.ProjectDetails): Promise<types.LocalOperationResponse<string>> =>{
 
         return new Promise (async(resolve, reject)=>{
 
@@ -120,126 +120,142 @@ class UserContent extends LocalDatabase {
             try{
 
                 //Start transaction
-                const result = await this.transactionPromiseWrapper(SQLStatements.updateStatements.syncUserEntry, 
+                const result = await this.transactionPromiseWrapper(SQLStatements.addStatements.addProject, 
                     [
                         userId,
-                        
+                        projectObject.projectName,
+                        projectObject.targetLanguage,
+                        projectObject.outputLanguage
                     ]
-                    , 
-                    "Updated user entry"
+                    ,"Synced new project"
                 );
 
                 if(result.rowsAffected === 0){
 
-                    updateEntryResponse.customResponse = "row could not be updated";
-                    reject(updateEntryResponse);
+                    addProjectResponse.customResponse = "project could not be added";
+                    reject(addProjectResponse);
 
                 }else if (result.rowsAffected === 1){
 
-                    updateEntryResponse.message = "operation successful";
-                    updateEntryResponse.success = true;
-                    resolve(updateEntryResponse);
+                    addProjectResponse.message = "operation successful";
+                    addProjectResponse.success = true;
+                    resolve(addProjectResponse);
                 }
                 
 
             }catch(e){
 
-                updateEntryResponse.error = e;
-                updateEntryResponse.customResponse = "row could not be updated";
+                addProjectResponse.error = e;
+                addProjectResponse.customResponse = "project could not be added";
 
                 console.log(e);
                 console.trace();
-                reject(updateEntryResponse);
+                reject(addProjectResponse);
             }
 
         })
     };
 
-    static deleteProjectBackend = (userId: string, projectObject: types.ProjectDetails): Promise<string> =>{
+    static deleteProjectBackend = (userId: string, projectObject: types.ProjectDetails): Promise<types.LocalOperationResponse<string>> =>{
 
         return new Promise (async(resolve, reject)=>{
 
+            let deleteProjectResponse: types.LocalOperationResponse<string> = {
+                success: false,
+                operationType: "remove",
+                contentType: "project",
+                message: "operation unsuccessful" 
+            }
+
             try{
-                //Get user id
-
-                const userId = await super.getUserId(username);
-
-                //Get entry id
-
-                const entryId = uuid.v4();
 
                 //Start transaction
-
-
-                await this.transactionPromiseWrapper(SQLStatements.addStatements.addUserEntry, 
+                const result = await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteProject, 
                     [
                         userId,
-                        username,
-                        entryId,
-                        entryObject.targetLanguageText, 
-                        entryObject.targetLanguage, 
-                        entryObject.outputLanguageText, 
-                        entryObject.outputLanguage, 
-                        0,
-                        entryObject.project
+                        projectObject.projectName
                     ]
-                    , 
-                    "Added user entry"
-                )
-                resolve(entryId);
+                    ,
+                    "Synced project deletion"
+                );
+
+                if(result.rowsAffected === 0){
+
+                    deleteProjectResponse.customResponse = "project could not be deleted";
+                    reject(deleteProjectResponse);
+
+                }else if (result.rowsAffected === 1){
+
+                    deleteProjectResponse.message = "operation successful";
+                    deleteProjectResponse.success = true;
+                    resolve(deleteProjectResponse);
+                }
+                
 
             }catch(e){
 
+                deleteProjectResponse.error = e;
+                deleteProjectResponse.customResponse = "project could not be deleted";
+
                 console.log(e);
                 console.trace();
-                reject(e);
+                reject(deleteProjectResponse);
             }
 
         })
     };
 
-    static updateProjectBackend = (userId: string, projectObject: types.ProjectDetails): Promise<string> =>{
 
-        return new Promise (async(resolve, reject)=>{
+    /* Update projects only relevant when project default languages are used. These are not currently used in the app, so no need to update project */
 
-            try{
-                //Get user id
+    // static updateProjectBackend = (userId: string, projectObject: types.ProjectDetails): Promise<types.LocalOperationResponse<string>> =>{
 
-                const userId = await super.getUserId(username);
+    //     return new Promise (async(resolve, reject)=>{
 
-                //Get entry id
+    //         let updateProjectResponse: types.LocalOperationResponse<string> = {
+    //             success: false,
+    //             operationType: "update",
+    //             contentType: "project",
+    //             message: "operation unsuccessful" 
+    //         }
 
-                const entryId = uuid.v4();
+    //         try{
 
-                //Start transaction
+    //             //Start transaction
+    //             const result = await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteProject, 
+    //                 [
+    //                     userId,
+    //                     projectObject.projectName
+    //                 ]
+    //                 ,
+    //                 "Synced project deletion"
+    //             );
 
+    //             if(result.rowsAffected === 0){
 
-                await this.transactionPromiseWrapper(SQLStatements.addStatements.addUserEntry, 
-                    [
-                        userId,
-                        username,
-                        entryId,
-                        entryObject.targetLanguageText, 
-                        entryObject.targetLanguage, 
-                        entryObject.outputLanguageText, 
-                        entryObject.outputLanguage, 
-                        0,
-                        entryObject.project
-                    ]
-                    , 
-                    "Added user entry"
-                )
-                resolve(entryId);
+    //                 deleteProjectResponse.customResponse = "project could not be deleted";
+    //                 reject(deleteProjectResponse);
 
-            }catch(e){
+    //             }else if (result.rowsAffected === 1){
 
-                console.log(e);
-                console.trace();
-                reject(e);
-            }
+    //                 deleteProjectResponse.message = "operation successful";
+    //                 deleteProjectResponse.success = true;
+    //                 resolve(deleteProjectResponse);
+    //             }
+                
 
-        })
-    };
+    //         }catch(e){
+
+    //             deleteProjectResponse.error = e;
+    //             deleteProjectResponse.customResponse = "project could not be deleted";
+
+    //             console.log(e);
+    //             console.trace();
+    //             reject(deleteProjectResponse);
+    //         }
+
+    //     })
+    // };
 
     //Entries
 
@@ -704,20 +720,23 @@ class UserContent extends LocalDatabase {
 
                             }else if(userEntry.operationType === "update"){
 
-                                await this.updateProjectBackend(userId, userEntry.userContent);
+                                /* Update project currently not needed for app */
+                                //await this.updateProjectBackend(userId, userEntry.userContent);
                                 
                             }
 
                             break
                         case "tags":
+                            /* Tags currently not required for front end */
+                            
                             //Choose user tags operations from this class
-                            if(userEntry.operationType === "add"){
+                            // if(userEntry.operationType === "add"){
 
-                            }else if(userEntry.operationType === "delete"){
+                            // }else if(userEntry.operationType === "delete"){
 
-                            }else if(userEntry.operationType === "update"){
+                            // }else if(userEntry.operationType === "update"){
                                 
-                            }
+                            // }
 
                             break
                     }
@@ -753,6 +772,135 @@ class UserContent extends LocalDatabase {
 
                 
     };
+
+    static syncBackendContent = (userId: string, backendContent: types.BackendContent): Promise<types.LocalOperationResponse<string>>=>{
+        return new Promise(async (resolve, reject)=>{
+
+            /*
+                We start by making a copy of user database in memory.
+                THen we delete current database content
+                Then we add projects. 
+                Then we add entries.
+                Then we add tags.
+
+                A failure in this process will trigger a failed result object to the backend
+                We then reassign the copied db to the actual db, effectively rollin  back the transaction
+            */
+            const localSyncResponse: types.LocalOperationResponse<string> = {
+                success: false,
+                operationType: "sync",
+                contentType: "account",
+                message: "operation unsuccessful",
+                customResponse: ""
+            }
+
+            try{
+                //Delete current user content from database
+                const result = await this.transactionPromiseWrapper(SQLStatements.updateStatements.wipeUserContent, [
+                    userId
+                ], "User database wiped");
+
+                //Check whether any rows affected 
+                if(result.rowsAffected === 0){
+
+                    localSyncResponse.customResponse = "Total sync failed";
+                    reject(localSyncResponse);
+
+                }else if (result.rowsAffected === 1){
+
+                    localSyncResponse.message = "operation successful";
+                    localSyncResponse.success = true;
+                    resolve(localSyncResponse);
+                }
+
+            }catch(e){
+
+                //Else reject if there is some other unknown error
+                localSyncResponse.customResponse = "Total sync failed";
+                reject(localSyncResponse);
+
+            }
+
+            /* ADDING PROJECTS */
+
+            try{
+                const projectsArray = backendContent.projects;
+
+                //Set up Promise.all
+                const promiseArray = [];
+
+                for(let project of projectsArray){
+                    const promise = this.addProjectBackend(userId, project);
+                    promiseArray.push(promise);
+                }
+
+                //Wait for all promises to resolve. If one fails, then the error will be caught in the catch block
+                await Promise.all(promiseArray);
+
+            }catch(e){
+                //Error adding projet
+                const addingProjectError = e as types.LocalOperationResponse;
+
+                localSyncResponse.customResponse = "Total sync failed";
+                localSyncResponse.error = addingProjectError;
+                reject(localSyncResponse);
+
+            }
+
+            /* ADDING ENTRIES */
+            try{
+                const entriesArray = backendContent.entries;
+
+                //Set up Promise.all
+                const promiseArray = [];
+
+                for(let entry of entriesArray){
+                    const promise = this.addNewEntryBackend(userId, entry);
+                    promiseArray.push(promise);
+                }
+
+                //Wait for all promises to resolve. If one fails, then the error will be caught in the catch block
+                await Promise.all(promiseArray);
+
+            }catch(e){
+                //Error adding projet
+                const addingEntryError = e as types.LocalOperationResponse;
+
+                localSyncResponse.customResponse = "Total sync failed";
+                localSyncResponse.error = addingEntryError;
+                reject(localSyncResponse);
+
+            }
+
+            /* ADDING TAGS */
+            // try{
+            //     const entriesArray = backendContent.entries;
+
+            //     //Set up Promise.all
+            //     const promiseArray = [];
+
+            //     for(let entry of entriesArray){
+            //         const promise = this.addNewEntryBackend(userId, entry);
+            //         promiseArray.push(promise);
+            //     }
+
+            //     //Wait for all promises to resolve. If one fails, then the error will be caught in the catch block
+            //     await Promise.all(promiseArray);
+
+            // }catch(e){
+            //     //Error adding projet
+            //     const addingEntryError = e as types.LocalOperationResponse;
+
+            //     localSyncResponse.customResponse = "Total sync failed";
+            //     localSyncResponse.error = addingEntryError;
+            //     reject(localSyncResponse);
+
+            // }
+
+            /* Resolve */
+            resolve(localSyncResponse);
+        })
+    }
 
 
 }

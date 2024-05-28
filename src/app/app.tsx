@@ -105,32 +105,7 @@ const VocabPandaApp: React.FC = () => {
 
                     setIsOnline(isUserOnline.isInternetReachable);
 
-                    /*
-                        Set event listener for internet connection
-                    */
-
-                    NetInfo.addEventListener((state)=>{
-                        setIsOnline(state.isInternetReachable);
-
-                        if(state.isInternetReachable && !bufferFlushState){
-
-                            setBufferFlushingState(true); //Set buffer flushing status
-                            
-                            BufferManager.flushRequests()
-                            .then((bufferFlushResponse)=>{
-
-                                //Once flushing has complete, then we set buffer flushing status to false
-                                setBufferFlushingState(false);
-                            })
-                            .catch((bufferFlushError)=>{
-
-                                console.log("Buffer flushing error app module")
-                                setBufferFlushingState(false);
-
-                                //Handle buffer flush error. 
-                            })
-                        }
-                    });
+                   
             
                     //If all loading actions completed successfully, then no issues.
                     setIsLoadingInitial(false);
@@ -234,6 +209,10 @@ const MainApp: React.FC = ()=>{
     /* Get buffer flushing context */
 
     const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
+
+    /*is user online status */
+
+    const [isOnline, setIsOnline] = React.useContext(InternetStatus);
 
     const sendSettingsInfoTimeout = React.useRef("");
 
@@ -477,8 +456,42 @@ const MainApp: React.FC = ()=>{
                   - Make sure that there are built in safeguards for: 
                     - too much data on local device
                     - dropping of internet connection mid-update
+
+                /* Set axios current suer header*/
+
+                const userId = await UserDetails.getUserId(currentUser);
+
+                axios.defaults.userId = userId;
                 
+
+                /*
+                    Set event listener for internet connection
                 */
+
+                NetInfo.addEventListener((state)=>{
+                    setIsOnline(state.isInternetReachable);
+
+                    if(state.isInternetReachable && !bufferFlushState){
+
+                        setBufferFlushingState(true); //Set buffer flushing status
+                        
+                        BufferManager.flushRequests(userId)
+                        .then((bufferFlushResponse)=>{
+
+                            //Once flushing has complete, then we set buffer flushing status to false
+                            setBufferFlushingState(false);
+                        })
+                        .catch((bufferFlushError)=>{
+
+                            console.log("Buffer flushing error app module")
+                            setBufferFlushingState(false);
+
+                            //Handle buffer flush error. 
+                        })
+                    }
+                });
+
+                
 
                 /* Check for premium update */
 
@@ -631,7 +644,13 @@ const MainApp: React.FC = ()=>{
 
                 //If the internet is on but the buffer is not currently being flushed, then trigger flush.
                 if(isUserOnline.isInternetReachable && !bufferFlushState){
-                    BufferManager.flushRequests();
+
+                    try{
+                        await BufferManager.flushRequests(userId);
+                    }catch(e){
+                        //Some error with flushing requests
+                    }
+                    
                 }
                 
             }, 180000);

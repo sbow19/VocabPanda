@@ -10,10 +10,7 @@ import NetInfo from "@react-native-community/netinfo";
 import axiosConfig from './axios_config';
 
 import LocalDatabase from 'app/database/local_database';
-import UserContent from 'app/database/user_content';
-import UserDetails from 'app/database/user_profile_details';
 import BufferManager from './buffer';
-import SyncManager from './sync_manager';
 
 class BackendAPI {
 
@@ -202,311 +199,49 @@ class BackendAPI {
         })
     };
 
-    //User entries logic 
-    static sendEntryInfo(entryObject: types.APIEntryObject): Promise<types.APIOperationResponse>{
+    //Logged in account call
+    static loginSync(logInResultObject: types.LoginResult):Promise<types.LocalBufferOperation>{
         return new Promise(async(resolve, reject)=>{
 
-            let entryAPIResponseObject: types.APIOperationResponse = {
-                success: false,
-                operationType: entryObject.updateType,
-                contentType: "entry",
-                message: "operation unsuccessful"
-            }
+            //First --> Attempt to send buffers altogether
+            //Second --> If network error, then keep buffers,
+            //Third --> If backend local content sync error, then full sync proceeds
+            //Fourth --> Backend sends sync content from backend, including buffer content
+            //Fifth --> process backend content
+            //Sixth --> Proceed with app
+
+            const userId = logInResultObject.userId
 
             try{
+                //Fetch buffers
 
-                let res; // initiate response object
+                const buffers = await BufferManager.retrieveBuffers(userId);
 
-                //Add operation type to account Object to indicate to backend the type of request type
-                entryObject.entryDetails.operationType = "entry";
+                //Assign buffer content to login object
+                logInResultObject.buffers.bufferQueue = buffers.customResponse.queue_1; //Main content buffer queue
+                logInResultObject.buffers.syncRequests = buffers.customResponse.sync_buffer; //Sync requests
+                logInResultObject.buffers.responseQueue = buffers.customResponse.response_buffer; //Sync results responses
+                logInResultObject.buffers.acknowledgements = buffers.customResponse.acknowledgements; //Acknowledgement of BE operations
 
-                switch(entryObject.updateType){
-                    case "create":
-                        res = await axios.post("/app/entries/addentry", entryObject.entryDetails);
-                        break
-                    case "update":
-                        res = await axios.post("/app/entries/updateentry", entryObject.entryDetails);
-                        break
-                    case "remove":
-                        res = await axios.post("/app/entries/deleteentry", entryObject.entryDetails);
-                        break
+                //Send login result object to backend
+                await axios.post("/app/login", logInResultObject);
 
-                }
+                //If FE successfully syncs with backend, then we continue with the app. Buffer will be cleared if successfully cleared or not
+                //From buffer storage if positive response received from backend. 
 
-                console.log(res, "Entry API response");
-
-                entryAPIResponseObject = res.data; //Replace response with response object from backend
-
-                //Response object
-
-                if(entryAPIResponseObject.success){
-                    //If the operatoin was successful
-                    resolve(entryAPIResponseObject)
-
-                }else if(!entryAPIResponseObject.success) {
-
-                    //If the operation failed
-                    reject(entryAPIResponseObject)
-
-                    //Add details to buffer
-                }
-
-
+                resolve()
 
             }catch(e){
+                //Failure means that: buffers may remain in storage, depending on the type of error, or total sync, in which case buffers will be deleted
 
-                console.log({...e}, "BackendAPI.sendEntryInfo");
+                reject()
 
-                entryAPIResponseObject.error = e;
-                entryAPIResponseObject.success = false;
-                entryAPIResponseObject.message = "misc error"
-
-                reject(entryAPIResponseObject);
             }
 
-        })
-    }
-
-    //User project logic 
-    static sendProjectInfo(projectObject: types.APIProjectObject): Promise<types.APIOperationResponse>{
-        return new Promise(async(resolve, reject)=>{
-
-            let projectAPIResponseObject: types.APIOperationResponse = {
-                success: false,
-                operationType: projectObject.updateType,
-                contentType: "project",
-                message: "operation unsuccessful"
-            }
-
-            try{
-
-
-                let res; // initiate response object
-
-                //Add operation type to account Object to indicate to backend the type of request type
-                projectObject.projectDetails.operationType = "project";
-
-                switch(projectObject.updateType){
-                    case "create":
-                        res = await axios.post("/app/entries/newproject", projectObject.projectDetails);
-                        break
-                    case "remove":
-                        res = await axios.post("/app/entries/deleteproject", projectObject.projectDetails);
-                        break
-
-                }
-
-                console.log(res, "Project API response");
-
-                projectAPIResponseObject = res.data; //Replace response with response object from backend
-
-                //Response object
-
-                if(projectAPIResponseObject.success){
-                    //If the operatoin was successful
-                    resolve(projectAPIResponseObject)
-
-                }else if(!projectAPIResponseObject.success) {
-
-                    //If the operation failed
-                    reject(projectAPIResponseObject)
-
-                    //Add details to buffer
-                }
-
-
-
-            }catch(e){
-
-                console.log({...e}, "Project api error")
-                //Add details to buffer - call this function later
-
-                projectAPIResponseObject.error = e;
-                projectAPIResponseObject.success = false;
-                projectAPIResponseObject.message = "misc error"
-
-                reject(projectAPIResponseObject);
-            }
-
-        })
-    }
-
-    //User settings logic 
-    static sendSettingsInfo(settingsObject: types.UserSettings): Promise<types.APIOperationResponse>{
-        return new Promise(async(resolve, reject)=>{
-
-            let settingsAPIResponse: types.APIOperationResponse = {
-                success: false,
-                operationType: "update",
-                contentType: "settings",
-                message: "operation unsuccessful"
-            }
-
-            try{
-
-                let res; // initiate response object
-
-                //Add operation type to account Object to indicate to backend the type of request type
-                settingsObject.operationType = "settings";
-
-
-                res = await axios.post("/app/settings/update", settingsObject);
+                           
                     
-
-                console.log(res, "User settings response");
-
-                settingsAPIResponse = res.data; //Replace response with response object from backend
-
-                //Response object
-
-                if(settingsAPIResponse.success){
-                    //If the operatoin was successful
-                    resolve(settingsAPIResponse)
-
-                }else if(!settingsAPIResponse.success) {
-
-                    //If the operation failed
-                    reject(settingsAPIResponse)
-
-                    //Add details to buffer
-                }
-
-            }catch(e){
-
-                console.log({...e}, "BackendAPI.sendEntryInfo");
-
-                //Add details to buffer - call this function later
-
-                settingsAPIResponse.error = e;
-                settingsAPIResponse.success = false;
-                settingsAPIResponse.message = "misc error"
-
-                reject(settingsAPIResponse);
-            }
-
-        })
-    }
-
-
-    //UPdate user plays left
-    static updatePlaysLeft = (userId: string, playsLeft: number, playsRefreshTime: string): Promise<types.APIOperationResponse> =>{
-        return new Promise(async(resolve, reject)=>{
-
-            let playsAPIResponse: types.APIOperationResponse = {
-                success: false,
-                operationType: "update",
-                contentType: "account",
-                message: "operation unsuccessful"
-            }
-
-            try{
-
-                let res; // initiate response object
-
-                const playsObject: types.APIPlaysObject = {
-
-                    updateType: "update",
-                    playsDetails: {
-                        playsLeft: playsLeft,
-                        playsRefreshTime: playsRefreshTime,
-                        userId: userId
-                    },
-                    operationType: "account"
-                    
-                } 
-
-                res = await axios.post("/app/game/updateplays", playsObject);
-                    
-
-                console.log(res, "User settings response");
-
-                playsAPIResponse = res.data; //Replace response with response object from backend
-
-                //Response object
-
-                if(playsAPIResponse.success){
-                    //If the operatoin was successful
-                    resolve(playsAPIResponse)
-
-                }else if(!playsAPIResponse.success) {
-
-                    //If the operation failed
-                    reject(playsAPIResponse)
-
-                    //Add details to buffer
-                }
-
-
-            }catch(e){
-
-                console.log(e, "BackendAPI.sendEntryInfo");
-
-                //Add details to buffer - call this function later
-
-                playsAPIResponse.error = e;
-                playsAPIResponse.success = false;
-                playsAPIResponse.message = "misc error"
-
-                reject(playsAPIResponse);
-            }
-        })
-    }
-
-    //Loggred in account call
-
-    static sendLoggedInEvent(logInResultObject: types.APILoginResult):Promise<types.BufferSyncResult>{
-        return new Promise(async(resolve, reject)=>{
-
-        
-            let syncResult: types.BufferSyncResult = {
-                deleteAccount: false
-            } 
-
-            try{
-                logInResultObject.operationType = "login";
-
-                const res = await axios.post('/app/login', logInResultObject);
-
-                const APILoginResponse: types.APIAccountOperationResponse<types.APIPostLoginSetUp> = res.data;
-
-
-                if(APILoginResponse.success){
-                    //If the operatoin was successful, trigger app sync
-
-                    /* Synce user setttings with frontend */
-                    syncResult = await SyncManager.processLoginSync(APILoginResponse.userId, APILoginResponse.customResponse);
-
-                    /* Send sync result back to backend to process futher */
-
-                    const confResult = await axios.post("app/login/syncresult", syncResult); // --> TODO add interceptor to handle this particular request, given its complexity.
-                    
-                    //If local syncing successful, then we load the app. If not, then we re attempt wholesale sync with backend
-                    //Intervening network errors must be handled. If sync successful, then user can carry on. If unsuccessful, then resynnc with backend must take place on  reload
-                    //Any new entries in local buffer must be sent to backend after reconnection. Then  wholesale syncing must take place
-
-                    resolve()
-
-                    
-                    
-                }else if(!APILoginResponse.success) {
-
-                    //If the operation failed then failure
-                    reject(APILoginResponse);
-                }
-
-            }catch(e){
-
-                console.log({...e}, "BackendAPI.sendEntryInfo");
-
-                //Add details to buffer - call this function later
-
-                syncResult.error = e;
-                syncResult.success = false;
-                syncResult.message = "misc error"
-
-                reject(syncResult);
-
-            }
+    
+            
           
         })
     }

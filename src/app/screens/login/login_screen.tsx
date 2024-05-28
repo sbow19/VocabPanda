@@ -2,7 +2,6 @@
 
 import CoreStyles from "app/shared_styles/core_styles"
 import appColours from "app/shared_styles/app_colours"
-import * as types from '@customTypes/types.d'
 import SignInTemplate from "./components/signupscreen_template"
 import VocabPandaTextInput from "app/shared/text_input"
 import AppButton from "app/shared/app_button"
@@ -23,7 +22,6 @@ import UserDetails from "app/database/user_profile_details"
 import { showMessage } from "react-native-flash-message"
 
 import CurrentUserContext from "app/context/current_user"
-import BackendAPI from "app/api/backend"
 import LoadingStatusInGame from "app/context/loadingInGame"
 import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
  
@@ -59,7 +57,6 @@ const LoginScreen: React.FC = props=>{
 
                             setActivityIndicator(true);
 
-    
 
                             const resultObject = await UserDetails.signIn(
                                 values.user,
@@ -78,9 +75,8 @@ const LoginScreen: React.FC = props=>{
                                 setIsLoggedIn(true);
                                 
 
-                                await BackendAPI.sendLoggedInEvent(resultObject);
-                                
-
+                                /* Trigger login syncing cycle*/
+                            
                             } else if (!resultObject.loginSuccess){
 
                                 showMessage({

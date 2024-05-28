@@ -3,6 +3,7 @@
 import * as types from '@customTypes/types.d'
 import LocalDatabase from "app/database/local_database";
 import SQLStatements from "app/database/prepared_statements";
+import BufferManager from 'app/api/buffer';
 
 class UserDetails extends LocalDatabase{
 
@@ -415,6 +416,10 @@ class UserDetails extends LocalDatabase{
                         null
                     ], "next translations refresh added to table");
 
+                
+                //Add new users to buffer queues
+                await BufferManager.addNewUser(id);
+
                 resolve(null);
 
                     
@@ -490,12 +495,18 @@ class UserDetails extends LocalDatabase{
                     //If username matches one user, then attempt password match
                     const userPassword = resultArray[0].password_hash;
 
+                    const userId = resultArray[0].id;
+
                     if(userPassword === password){
 
                         await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteUser, [
                             username
                         ],
                         "User deleted successfully");
+
+                        //Delete buffer storage 
+
+                        await BufferManager.deleteStorage(userId)
 
                         deleteAccountResponse.success = true;
                         resolve(deleteAccountResponse);
@@ -536,6 +547,8 @@ class UserDetails extends LocalDatabase{
                 deleteAccountResponse.message = "operation successful";
                 deleteAccountResponse.success = true;
 
+                await BufferManager.deleteStorage(userId)
+
                 resolve(deleteAccountResponse);
                 
             }catch(deleteAccountResponse){
@@ -547,96 +560,7 @@ class UserDetails extends LocalDatabase{
     };  
 
 
-   
 
-    static upgradeToPremium(username: string, endTime: string){
-        return new Promise(async(resolve,reject)=>{
-
-            try{
-                const allAppSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
-
-                const allAppSettings =  JSON.parse(allAppSettingsRaw)
-
-                if(allAppSettings[userName]){
-    
-                    /* If app settings already exists on user, just add login time and resolve promise */
-                    
-                    allAppSettings[userName].gamesLeft = 
-                    {
-                        gamesLeft: 10,
-                        refreshBaseTime: "",
-                        refreshNeeded: false
-                    }
-
-                    allAppSettings[userName].translationsLeft = 
-                    {
-                        translationsLeft: 250,
-                        refreshBaseTime: "",
-                        refreshNeeded: false
-                    }
-
-                    /*Set premium details*/
-                    allAppSettings[userName].premium = {
-                        premium: true,
-                        endTime: endTime
-                    }
-
-                    const stringifiedSettings = JSON.stringify(allAppSettings)
-    
-                    await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
-
-                    resolve("User exists")
-                }
-            }catch(e){
-                reject(e)
-            }
-    })
-    };
-
-    static downgradeToFree(userName: string){
-
-        return new Promise(async(resolve,reject)=>{
-
-            try{
-                const allAppSettingsRaw = await AsyncStorage.getItem('allDefaultSettings');
-
-                const allAppSettings =  JSON.parse(allAppSettingsRaw)
-
-                if(allAppSettings[userName]){
-    
-                    /* If app settings already exists on user, just add login time and resolve promise */
-                    
-                    allAppSettings[userName].gamesLeft = 
-                    {
-                        gamesLeft: 10,
-                        refreshBaseTime: "",
-                        refreshNeeded: false
-                    }
-
-                    allAppSettings[userName].translationsLeft = 
-                    {
-                        translationsLeft: 40,
-                        refreshBaseTime: "",
-                        refreshNeeded: false
-                    }
-
-                    /*Set premium details*/
-                    allAppSettings[userName].premium = {
-                        premium: false,
-                        endTime: ""
-                    }
-
-                    const stringifiedSettings = JSON.stringify(allAppSettings)
-    
-                    await AsyncStorage.setItem('allDefaultSettings', stringifiedSettings)
-
-                    resolve("User exists")
-                }
-            }catch(e){
-                reject(e)
-            }
-    })
-    };
 
     static updateTimerValue(username: string, value: boolean){
         return new Promise(async(resolve, reject)=>{

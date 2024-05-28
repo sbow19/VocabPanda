@@ -211,7 +211,7 @@ export type LocalOperationResponse<T=null> = {
     success: Boolean
     message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
     error?: Error | string
-    operationType?: "create" | "update" | "remove" | "get"
+    operationType?: "create" | "update" | "remove" | "get" | "sync"
     contentType?: "project" | "tags" | "entry" | "account" | "settings"
     customResponse?: T
 }
@@ -252,39 +252,82 @@ export type FullTextObject = {
 };
 
 
+//BUFFER OPERATIONS 
+
+export type LocalBufferOperation<T = null> = {
+    location: "main queue" | "secondary queue" | "sync queue" | "acknowledgement queue" | "response queue" |"all"
+    operationType: "store" | "remove" | "get" | "flush" | "transfer"
+    success: boolean
+    customResponse?: T  
+}
+
+export type BufferStorageObject = {
+    queue_1: Object
+    queue_2: Object
+    sync_buffer: Object
+    response_buffer: Object
+    acknowledgements: Object
+
+}
+
+
 //API Calls
 
 /* All API requests */
-export type APIRequest =  APIEntryObject | APIProjectObject | APITranslateCall | APIAccountObject<AccountOperationDetails> | APISettingsObject
+// export type APIRequest =  APIEntryObject | APIProjectObject | APITranslateCall | APIAccountObject<AccountOperationDetails> | APISettingsObject
 
+
+/* 
+    STRUCTURE
+    - All changes made locally will be stored in a buffer, where upon a certain trigger event the buffers will attempted to be flushed.
+    - Individual changes, additions, or deletions of content will trigger a buffer flush. Therefore individual API endpoint for these changes not needed.
+    - All API calls will contain a request id, timestamp and user id to keep track of requests on both ends.
+    - Changes will be stored in a sync buffer locally in an "API object", which contains the change details and type of data changed
+    - API requests are wrapped with detail setting out the type of sync 
+*/
 export type APICallBase = {
     deviceType: "app" | "extension"
-    operationType: "project" | "tags" | "entry" | "account" | "settings" | "login" | "translate"
+    operationType: "update settings" 
+    | "translate" 
+    | "acknowledgement" 
+    | "sync request" 
+    | "sync result"
+    | "change password" 
+    | "delete account" 
+    | "upgrade" 
+    | "downgrade" 
+    | "create account" 
+    | "login"
+    | "verify email"
+    requestId: string
+    requestTimeStamp: string
+    userId: string
+    error?: Error
 
 }
 
-/* Projects */
-export type APIProjectObject = {
-    updateType: "create" | "remove" | "update" 
-    projectDetails: ProjectDetails
+export type BaseUserDetails = {
+    userId: string
+    dataType?: DataTypes
 }
 
-export interface ProjectDetails extends APICallBase {
+export type DataTypes = "content" | "settings" | "plays" | "login"
+
+
+/* Changes wrapper */
+
+export type UserData = ProjectDetails | EntryDetails | UserSettings | PlaysDetails | null
+
+
+export interface ProjectDetails extends BaseUserDetails {
 
     projectName: string
     targetLanguage: string
     outputLanguage: string
-    userId?: string
 
 }
 
-/* Entries */
-export type APIEntryObject = {
-    updateType: "create" | "remove" | "update" 
-    entryDetails: EntryDetails
-}
-
-export interface EntryDetails extends APICallBase {
+export interface EntryDetails extends BaseUserDetails {
     targetLanguageText: string
     targetLanguage: string
     outputLanguageText: string
@@ -294,90 +337,62 @@ export interface EntryDetails extends APICallBase {
     updatedAt:  string
     tags: number
     tagsArray: string[]
-    userId: string
     username: string
     entryId: string
 }
 
 /* Settings */
 
-export interface APISettingsObject extends APICallBase {
-    updateType: "create" | "remove" | "update" 
-    userSettings: UserSettings
-}
 
-export interface UserSettings extends APICallBase {
+export interface UserSettings extends BaseUserDetails {
     gameTimerOn: boolean
     gameNoOfTurns: number
     defaultTargetLanguage: string
     defaultOutputLanguage: string
     defaultProject: string
-    userId: string
-}
-
-/* Tags */
-
-export type APITagsObject = {
-    updateType: "create" | "remove" | "update" 
-    tagDetails: string
 }
 
 
 /* Plays */
 
-export interface APIPlaysObject extends APICallBase {
-    updateType: "create" | "remove" | "update" 
-    playsDetails: PlaysDetails
-}
 
-export interface PlaysDetails extends APICallBase {
+export interface PlaysDetails extends BaseUserDetails {
 
     playsLeft: number
     playsRefreshTime: string
-    userId: string
    
 }
 
-/* Account */
+/* 
+    Account operations and API wrapper
+*/
 
-export type APIAccountObject<AccountOperationDetails> = {
-    updateType: "change password" | "delete account" | "upgrade" | "downgrade" | "create account" | "login"
-    accountOperationDetails: AccountOperationDetails
+export interface APIAccountObject<T extends AccountOperationDetails> extends APICallBase {
+    accountOperationDetails: T
 
 }
 
 export type AccountOperationDetails = APICreateAccount | APIDeleteAccount | APIDowngradeUser | APIUpgradeUser | APIUpdatePassword  | APILoginResult
        
-export interface APIDeleteAccount extends APICallBase {
+export interface APIDeleteAccount extends BaseUserDetails {
 
-    userId: string
     password: string
 
 }
 
-export interface APIUpdatePassword extends APICallBase {
+export interface APIUpdatePassword extends BaseUserDetails {
 
-    userId: string
     oldPassword: string
     newPassword: string
 
 }
 
-export interface APICreateAccount extends APICallBase {
+export type APICreateAccount = {
 
     username: string
     password: string
     email: string
 
-}
-
-export interface APILoginResult extends APICallBase {
-
-    loginSuccess: boolean
-    username: string | ""
-    identifierType: "email" | "username" | ""
-    password: string| ""
-    userId: string
 }
 
 // export type APIUpgradeUser = {
@@ -388,61 +403,102 @@ export interface APILoginResult extends APICallBase {
 
 // }
 
+
+/* login and content sync and API wrapper */
+
+export interface LoginResult extends BaseUserDetails {
+
+    loginSuccess: boolean
+    username: string | ""
+    identifierType: "email" | "username" | ""
+    password: string| ""
+    buffers: LocalSyncContents
+}
+
+
+export interface LocalSyncContents extends BaseUserDetails {
+
+    syncRequests?: any
+    bufferQueue?: any
+    acknowledgements?: any
+    responseQueue?: any
+
+}
+
+export interface TotalSyncContents extends BaseUserDetails {
+    errorMessage: Object
+    offendingRequestId: string
+}
+
+
+export type APIContentCallDetails =  LocalSyncContents | TotalSyncContents | LoginResult
+
+
+/* Details to frontend of changes to send to the backend */
+export interface LocalSyncRequest<T extends APIContentCallDetails> extends APICallBase {
+    requestDetails: T //Includes content, settings, buffers, sync results etc
+    syncType: "total sync" | "local changes" | "login"
+    
+}
+
+
+/* Generate API key call */
 export type APIGenerateKeyRequest = {
     deviceType: "app" | "extension"
     deviceId: string
 }
 
 /* Translation call */
-
 export interface APITranslateCall extends APICallBase {
 
     targetText: string, 
     targetLanguage: string,
-    outputLanguage: string,
-    username: string
+    outputLanguage: string
+
+}
+
+/* FE RESPONSE TO SYNC CHANGES  
+    Result of front end syncing up with backend changes 
+    Properties set to true mean that operation completed 
+    properties set to null mean that that operation did not take place
+*/
+export interface LocalBackendSyncResult extends APICallBase {
+    deleteAccount: boolean | null
+    userSettingsSync: boolean | null
+    premiumStatusSync: boolean | null
+    userContentSync: {
+        valid: boolean
+        failedContent?: Array<any>
+        failedContentIndex?: number
+        failedMessage?: TotalSyncContents
+    } | null
+    
 }
 
 
 
 
-//API Responses
 
-export type APITranslateResponse = {
+//BACKEND Responses
+
+/* ALL backend responses will follow this structure */
+export interface BackendOperationResponse<T = null> extends APICallBase {
+    success: Boolean
+    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful" 
+    error?: Error
+    customResponse?: T
+}
+
+export interface APITranslateResponse extends BackendOperationResponse {
 
     success: boolean
     translations: any[]
     translationsLeft: number
     translationRefreshTime: number
-    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
 
 }
 
-export type APIOperationResponse<T> = {
-    success: Boolean
-    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful" | "buffer flushing"
-    error?: Error
-    operationType?: "create" | "update" | "remove" | ""
-    contentType?: "project" | "tags" | "entry" | "account" | "settings"
-    customResponse?: T
-}
-
-export interface APIAccountOperationResponse<T = null> extends APIOperationResponse<T> {
-    accountOperation: "change password" | "delete account" | "upgrade" | "downgrade" | "create account" | "verify email" | "login"
-    userId?: string
-    
-}
-
-export type APIPostLoginSetUp = {
-    //When user logs in, front end is updated with any changes that have occurred with the account elsewhere
-    userId: string
-    userSettings: UserSettings
-    userPremiumStatus: boolean
-    userDeleted:  boolean
-    userContent: [] //Chronological list of user entry and project operations
-}
-
-export interface APIKeyOperationResponse<T = null> extends APIOperationResponse<T> {
+export interface APIKeyOperationResponse<T = null> extends BackendOperationResponse<T> {
 
     apiOperationType: "generate api key"
     APIKey: string
@@ -450,45 +506,36 @@ export interface APIKeyOperationResponse<T = null> extends APIOperationResponse<
 }
 
 
-//BUFFER TYPES 
+/* Result of backend syncing up with local changes */
+export interface BackendLocalSyncResult<T=null> extends BackendOperationResponse<T> {
 
-export type BufferKey = "entry" | "project" | "tags" | "account" | "settings" | "translate" 
+    syncType: "total sync" | "local changes" | "login"
 
-export type BufferStorageResponse = {
-    storageSuccessful: Boolean
-    storageURL: string
+    //If user account details needs to be synced
+    userAccountDetails: APIAccountChanges
+
+    //Only if buffer content needs to be synced
+    partialSyncRequired: boolean
+    syncContent: Array<UserContentExtensionBuffer | null> //Chronological list of user entry and project operations
+
+    //If full sync required
+    databaseContents?: BackendContent
+    fullSyncRequired: boolean
 }
 
-export type BufferFlushResponse = {
-    flushSuccessful: Boolean
-}
-
-export type BufferStorageObject = {
-
-    entry: any[],
-    settings: any[],
-    project: any[],
-    account: any[],
-    tags: any[],
-    translate: any[]
-
-}
-
-export interface BufferSyncResult extends APIAccountOperationResponse {
-    deleteAccount: boolean
-    operationStatus: {
-        userSettingsSync: boolean
-        premiumStatusSync: boolean
-        userContentSync: {
-            valid: boolean
-            failedContent?: Array<any>
-            failedContentIndex?: number
-        }
-    }
+export type BackendContent = {
+    projects: Array<ProjectDetails | null>
+    entries: Array<EntryDetails | null>
+    tags: Array<null>
 }
 
 
-//Sync related types
+export type APIAccountChanges = {
+    //When user logs in, front end is updated with any changes that have occurred with the account elsewhere
+    userSettings: UserSettings
+    userPremiumStatus: boolean
+    userDeleted:  boolean
+}
 
 /* Entries from backend extension buffer */
 export type UserContentExtensionBuffer = {
@@ -496,6 +543,27 @@ export type UserContentExtensionBuffer = {
     contentType: "tags" | "entry" | "project"
     userContent: EntryDetails | ProjectDetails
 }
+
+
+
+/* Acknowledgements */
+
+export interface FEAcknowledgement extends APICallBase {
+}
+
+export interface BEAcknowledgement extends APICallBase {
+}
+
+
+
+
+
+
+
+
+
+
+
 
  
 

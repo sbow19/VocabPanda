@@ -4,35 +4,37 @@
 
 import UserContent from "app/database/user_content";
 import UserDetails from "app/database/user_profile_details";
-import LocalDatabase from "app/database/local_database";
 import * as types from '@customTypes/types.d'
 
 class SyncManager {
 
-    static processLoginSync = (userId: string, APILoginResponse: types.APIPostLoginSetUp): Promise<types.BufferSyncResult>=>{
+    //Sync object received from backend after signing in 
+    static processSyncContent = (SyncResponse: types.BackendLocalSyncResult): Promise<types.LocalBackendSyncResult>=>{
 
-        const loginSyncResult: types.BufferSyncResult = {
-            deleteAccount: false,
-            operationStatus: {
-                userSettingsSync: false,
-                premiumStatusSync: false,
-                userContentSync: {
-                    valid: false,
-                    failedContent: [],
-                    failedContentIndex: 0
-                }
-            }
+        const loginSyncResult: types.LocalBackendSyncResult = {
+            deleteAccount: null,
+            userSettingsSync: null,
+            premiumStatusSync: null,
+            userContentSync: {
+                valid: null,
+                failedContent: [],
+                failedContentIndex: 0
+            },
 
+            requestId: SyncResponse.requestId, 
+            userId: SyncResponse.userId,
+            requestTimeStamp: SyncResponse.requestTimeStamp,
+            operationType: "sync result"
         }
         
         return new Promise(async(resolve, reject)=>{
 
             //Delete user
-            if(APILoginResponse.userDeleted.valid){
+            if(SyncResponse.userAccountDetails.userDeleted){
 
                 try{
                     //Delete account
-                    const deleteResponse = await UserDetails.deleteAccountBackend(userId);
+                    const deleteResponse = await UserDetails.deleteAccountBackend(SyncResponse.userId);
 
                     if(deleteResponse.success){
                         //If account successfully deleted locally
@@ -47,6 +49,7 @@ class SyncManager {
 
                 }catch(e){
 
+                    loginSyncResult.deleteAccount = false;
                     //Local delete account didn't work
                     reject(loginSyncResult);
 
@@ -59,41 +62,49 @@ class SyncManager {
             //Set user settings
             try{
 
-                await UserDetails.syncUserSettings(userId, APILoginResponse.userSettings);
+                await UserDetails.syncUserSettings(SyncResponse.userId, SyncResponse.userAccountDetails.userSettings);
 
-                loginSyncResult.operationStatus.userSettingsSync = true;
+                loginSyncResult.userSettingsSync = true;
 
             }catch(e){
 
                 const syncUserSettingsResponse = e as types.LocalOperationResponse;
                 console.log(syncUserSettingsResponse);
-            
+                loginSyncResult.userSettingsSync = false;
             }
 
             //Set premium status
             try{
 
-                await UserDetails.syncPremiumStatus(userId, APILoginResponse.userPremiumStatus);
-                loginSyncResult.operationStatus.premiumStatusSync = true;
+                await UserDetails.syncPremiumStatus(SyncResponse.userId, SyncResponse.userAccountDetails.userPremiumStatus);
+                loginSyncResult.premiumStatusSync = true;
 
             }catch(e){
 
                 const syncUserPremiumStatusResponse = e as types.LocalOperationResponse;
                 console.log(syncUserPremiumStatusResponse);
+
+                loginSyncResult.premiumStatusSync = false;
                 
             }
 
-            //Sync user content
-            try{
+            //Sync user content if content found
+            if(SyncResponse.partialSyncRequired){
 
-                await UserContent.syncUserContent(userId, APILoginResponse.userContent);
-                loginSyncResult.operationStatus.userContentSync.valid = true;
+                try{
 
+                    await UserContent.syncUserContent(SyncResponse.userId, SyncResponse.syncContent);
+                    loginSyncResult.userContentSync.valid = true;
+    
+    
+                }catch(e){
+    
+                    //If some content fails to update, then backend will be updated with failed pings. Syncing with backend will commence.
+                    loginSyncResult.userContentSync.failedContent = e.failedContent;
+                    loginSyncResult.userContentSync.failedContentIndex = e.failedContentIndex;
+                    loginSyncResult.userContentSync.valid = false;
+                }
 
-            }catch(e){
-
-                loginSyncResult.operationStatus.userContentSync.failedContent = e.failedContent;
-                loginSyncResult.operationStatus.userContentSync.failedContentIndex = e.failedContentIndex;
             }
 
             resolve(loginSyncResult);
@@ -101,8 +112,50 @@ class SyncManager {
         })
 
 
-    }
+    };
 
+    //Process total sync content
+    static processTotalSyncContent = (userId: string, backendResponse:types.BackendLocalSyncResult): Promise<types.LocalBackendSyncResult> =>{
+        return new Promise(async(resolve, reject)=>{
+
+            //MAKE SURE THAT WE ROLL BACK THE TRANSACTIONS IF THERE IS A FAILURE !!!
+            const totalSyncResult: types.LocalBackendSyncResult = {
+            
+                deleteAccount: null, //Keep null
+                userSettingsSync: null, //Keep null 
+                premiumStatusSync: null, //Keep null
+                userContentSync: {
+                    valid: false,
+                    failedContent: [],
+                    failedContentIndex: 0
+                },
+                
+                userId: userId, 
+                requestId: backendResponse.requestId
+            }
+
+            //Sync user content
+            try{
+
+                //Attempt will be made to replace local data with data from backend
+                await UserContent.syncBackendContent(userId, backendResponse.databaseContents);
+
+                //If sync successful, then we resolve promise and notify backend of full sync result
+                totalSyncResult.userContentSync.valid = true;
+                resolve(totalSyncResult);
+
+
+            }catch(e){
+
+                //If some content fails to update, then backend will be updated with failed pings. Syncing with backend will commence.
+                totalSyncResult.userContentSync.failedContent = e.failedContent;
+                totalSyncResult.userContentSync.failedContentIndex = e.failedContentIndex;
+
+                reject(totalSyncResult);
+            }
+
+        })
+    }
 }
 
 export default SyncManager;
