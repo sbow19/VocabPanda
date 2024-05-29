@@ -7,7 +7,6 @@ import {
  } from "react-native";
 import React, {useContext} from "react";
 import HomeTable from "../table/table_template_home";
-import * as types from "@customTypes/types.d"
 import CurrentUserContext from "app/context/current_user";
 
 
@@ -41,7 +40,7 @@ const ActivityContent: React.FC = props=>{
                         fontSize: 14}
                     ]}
                 > 
-                    You've been busy {currentUser}! Here is a summary of your activity since you last logged in
+                    You've been busy {currentUser.username}! Here is a summary of your activity since you last logged in
                 </Text>
             </View>
 

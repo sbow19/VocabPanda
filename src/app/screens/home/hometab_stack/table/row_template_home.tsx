@@ -13,8 +13,6 @@ const HomeRowTemplate: React.FC = props=>{
 
         props.navigation.navigate("results", {
                 
-            
-
             resultArray: props.resultArray,
             project: props.project,
             gameMode: "Latest Activity - By Project"

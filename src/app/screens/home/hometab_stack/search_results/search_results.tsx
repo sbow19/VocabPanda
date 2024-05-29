@@ -25,8 +25,8 @@ const SearchResults: React.FC = props=>{
             params: {
                 reDirectContent: true,
                 gameMode: props.route.params.gameMode,
-                project: props.route.params.project,
-                resultArray: props.route.params.resultArray
+                project: props.route.params.project, //Result array given by search results
+                resultArray: props.route.params.resultArray //Result array given by search results
             }
         })
     }

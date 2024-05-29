@@ -1,9 +1,10 @@
 /* eslint-disable */
-import { Table, TableWrapper, Row, Rows, Col, Cols, Cell } from 'react-native-table-component';
+import { TableWrapper, Cell } from 'react-native-table-component';
 import { ScrollView, View, Text, ViewStyle, TouchableOpacity } from 'react-native';
 import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
+import * as types from '@customTypes/types.d'
 
 import OptionsOverlayContext from 'app/context/options_context';
 import React, { useContext } from 'react';
@@ -21,7 +22,7 @@ const RowTemplate: React.FC = props=>{
 
     const editTextOverlayObject = useContext(EditTextContext);
 
-    const resultRow = props.resultRow
+    const resultRow: types.EntryDetails = props.resultRow;
 
 
     const options =  ()=>{
@@ -39,7 +40,7 @@ const RowTemplate: React.FC = props=>{
 
                 onPress={()=>{
 
-                    optionsObject.setCurrentEntryId(resultRow["entry_id"]) //
+                    optionsObject.setCurrentEntryId(resultRow["entryId"]) //
                     optionsObject.setOptionsOverlayVisible(!optionsObject.visible)//
 
                     //Set edit entries row
@@ -70,10 +71,10 @@ const RowTemplate: React.FC = props=>{
 
                     fullTextOverlayObject.setFullText({
 
-                        target_language: resultRow["target_language_text"],
-                        target_language_lang: resultRow["target_language"],
-                        output_language: resultRow["output_language_text"],
-                        output_language_lang: resultRow["output_language"]
+                        targetLanguageText: resultRow["targetLanguageText"],
+                        targetLanguage: resultRow["targetLanguage"],
+                        outputLanguageText: resultRow["outputLanguageText"],
+                        outputLanguage: resultRow["outputLanguage"]
 
                     })
 
@@ -99,7 +100,7 @@ const RowTemplate: React.FC = props=>{
                             ]}
                     >
                          {
-                            `(${resultRow.target_language}):\n${resultRow.target_language_text}`
+                            `(${resultRow.targetLanguage}):\n${resultRow.targetLanguageText}`
                         }
                     </Text>
                 </View>
@@ -123,10 +124,10 @@ const RowTemplate: React.FC = props=>{
 
                      fullTextOverlayObject.setFullText({
 
-                        target_language: resultRow["target_language_text"],
-                        target_language_lang: resultRow["target_language"],
-                        output_language: resultRow["output_language_text"],
-                        output_language_lang: resultRow["output_language"]
+                        targetLanguageText: resultRow["targetLanguageText"],
+                        targetLanguage: resultRow["targetLanguage"],
+                        outputLanguageText: resultRow["outputLanguageText"],
+                        outputLanguage: resultRow["outputLanguage"]
 
                     })
 
@@ -151,7 +152,7 @@ const RowTemplate: React.FC = props=>{
                             ]}
                     >
                         { 
-                            `(${resultRow.output_language}):\n${resultRow.output_language_text}`
+                            `(${resultRow.outputLanguage}):\n${resultRow.outputLanguageText}`
                         }
                     </Text>
                 </View>

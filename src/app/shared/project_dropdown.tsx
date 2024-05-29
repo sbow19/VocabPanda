@@ -78,7 +78,7 @@ const ProjectDropdown: React.FC<types.CustomDropDownProps> = props=>{
 
     /* Project List */
 
-    const [projectList, setProjectList] = useState<Array<types.ProjectObject>>([])
+    const [projectList, setProjectList] = useState<Array<types.ProjectDetails>>([])
 
     /* In order to narrow down the searches in the dropdown menu, we need to do some string matching*/
 

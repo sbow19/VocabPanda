@@ -6,7 +6,6 @@ import {
     Text
  } from "react-native";
 import React, {useContext} from "react";
-import * as types from "@customTypes/types.d"
 
 
 const DefaultContent: React.FC = props=>{

@@ -26,7 +26,6 @@ import { showMessage } from 'react-native-flash-message';
 import * as yup from 'yup'
 import UserDetails from 'app/database/user_profile_details';
 
-import LocalDatabase from 'app/database/local_database';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 import BackendAPI from 'app/api/backend';
 import UserContent from 'app/database/user_content';
@@ -50,9 +49,7 @@ reNewPassword: yup.string()
 
 const Account: React.FC = props=>{
 
-
     /* Get sign in context here */
-
     const [, setIsLoggedIn] = React.useContext(LoggedInStatus)
 
     /* App settings */
@@ -87,8 +84,8 @@ const Account: React.FC = props=>{
                     onPress: ()=>{
                         /* trigger sign out procedure */
                         setIsLoggedIn(false);
-                        setCurrentUser("");
-                        setAppSettings({});
+                        setCurrentUser({}); //Reset current user
+                        setAppSettings({}); //reset app settings
                     }
                 }
             ],
@@ -248,60 +245,41 @@ const Account: React.FC = props=>{
 
                                     //Send project details to backend or retain here.
                                     //Handle backend communication errors seperately here
-                                    UserContent.getUserId(currentUser)
-                                    .then((userId: string)=>{
+                                    
+                                    const updatePasswordObject: types.APIAccountObject<types.APIUpdatePassword> = {
 
-                                        const updatePasswordObject: types.APIAccountObject<types.APIUpdatePassword> = {
+                                        accountOperationDetails: {
+                                            userId: currentUser.userId,
+                                            newPassword: values.newPassword,
+                                            oldPassword: values.oldPassword,
+                                            dataType: "password"
+                                        },
+                                        operationType: "change password"
+                                    };
 
-                                            accountOperationDetails: {
-                                                userId: userId,
-                                                newPassword: values.newPassword,
-                                                oldPassword: values.oldPassword
-                                            },
-                                            updateType: "change password"
-                                        };
-
-                                        BackendAPI.sendAccountInfo(updatePasswordObject)
-                                        .then(async(accountAPIResponse)=>{
-
-                                            console.log(accountAPIResponse);
-
-                                            if(accountAPIResponse.accountOperation){
-
-                                                const result = await UserDetails.changePassword(values.newPassword, currentUser);
-
-                                                showMessage({
-                                                    message: "Password changed successfully",
-                                                    type: "success"
-                                                });
-
-                                            }                            
-
-                                        })
-                                        .catch((accountAPIResponse)=>{
-
-                                            console.log(accountAPIResponse);
-                                            showMessage({
-                                                message: "Unable to change password.",
-                                                type: "warning"
-                                            });
+                                    const accountAPIResponse = await BackendAPI.sendAccountInfo(updatePasswordObject); 
                                         
-                                        });
+                                    console.log(accountAPIResponse);
 
-                                    })
-                                    .catch((e)=>{
+                                    if(accountAPIResponse.success && accountAPIResponse.operationType === "change password"){
 
-                                        console.log(e, "Unable to get user id");
+                                        const result = await UserDetails.changePassword(values.newPassword, currentUser.username); //Backend needs immediate acknowledgement from FE, otherwise transaction rolled back
 
                                         showMessage({
-                                            message: "Unable to change password.",
-                                            type: "warning"
+                                            message: "Password changed successfully",
+                                            type: "success"
                                         });
-                                        
-                                    })
-                                    
-                                }
-                                
+
+                                    }  else if (!accountAPIResponse.success && accountAPIResponse.operationType === "change password"){
+
+                                        showMessage({
+                                            type: "warning",
+                                            message: "Could not change password."
+                                        })
+                                    }
+                                }                         
+
+                                      
 
                             }catch(e){
 

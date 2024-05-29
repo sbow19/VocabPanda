@@ -1,13 +1,12 @@
 /* eslint-disable */
 
 import * as types from '@customTypes/types.d'
-import LocalDatabase from 'app/database/local_database'
 import UserContent from 'app/database/user_content'
 import UserDetails from 'app/database/user_profile_details'
 
 class GameLogic {
 
-    constructor(gameSettings: types.GameSettingsObject, userName: string, resultArrayParam: Array<any>){
+    constructor(gameSettings: types.GameSettingsObject, currentUser: types.CurrentUser, resultArrayParam: Array<any>){
 
         /* Turn timer on? */
         this.timerOn = gameSettings.timerOn
@@ -22,15 +21,19 @@ class GameLogic {
         this.project = gameSettings.project
 
         /* Set username */
-        this.userName = userName
+        this.username = currentUser.username
+
+        /*Set userId */
+        this.userId = currentUser.userId
+
 
         /* Set result array */
         
         this.resultArray = resultArrayParam
     }
 
-    resultArray: Array<any> = [];
-    gameArray: Array<any> = [];
+    resultArray: Array<types.EntryDetails> = [];
+    gameArray: Array<types.EntryDetails> = [];
     currentPoints = 0;
     lastRoundScore = 0;
     lastRoundAnswer = "";
@@ -42,7 +45,8 @@ class GameLogic {
     gameMode = "All Words"
     noOfTurns = 10
     project = ""
-    userName = ""
+    username = ""
+    userId = ""
     databaseObject = {}
 
     fetchArray = async()=>{
@@ -50,7 +54,7 @@ class GameLogic {
 
             if(this.gameMode === "By Project"){
 
-                const resultArray = await UserContent.getProjectEntries(this.userName, this.project);
+                const resultArray = await UserContent.getProjectEntries(this.userId, this.project);
 
                 this.resultArray = resultArray;
 
@@ -77,7 +81,7 @@ class GameLogic {
 
             if(this.gameMode === "Latest Activity"){
 
-                const resultArray = await UserDetails.getLastActivity(this.userName);
+                const resultArray = await UserDetails.getLastActivity(this.userId);
 
                 this.resultArray = resultArray;
 
@@ -92,7 +96,7 @@ class GameLogic {
 
                 /* Randomly ident */
 
-                const resultArray = await UserContent.getAllEntries(this.userName);
+                const resultArray = await UserContent.getAllEntries(this.userId);
 
                 this.resultArray = resultArray;
 
@@ -119,33 +123,31 @@ class GameLogic {
         })
     }
 
-    #setGameArray = (resultArray: Array<any>)=>{
+    #setGameArray = (resultArray: Array<types.EntryDetails>): Array<types.EntryDetails>=>{
 
-            const randomisedArray = []
-            const filteredArray = []
-            const resultArrayLength = resultArray.length
+            const randomisedArray = [];
+            const filteredArray = [];
+            const resultArrayLength = resultArray.length;
 
             
             for(let i=0; i< resultArrayLength ; i++){
-
                 filteredArray.push(resultArray[i])
-
             }
 
+            //Narrow down the length of the result array to user no of turns
             if(resultArrayLength < this.noOfTurns){
-                
                 this.noOfTurns = resultArrayLength
             }
 
+            //Then push random elements from the filtered array to the randomised array
             for(let i = 0 ; i < resultArrayLength && i < this.noOfTurns ; i++){
 
                 let filteredArrayLength = filteredArray.length
                 let randomNum = Math.floor((Math.random() * filteredArrayLength))
 
-
                 randomisedArray.push(filteredArray[randomNum])
 
-                filteredArray.splice(randomNum, 1)
+                filteredArray.splice(randomNum, 1) //Removes the element from the filtered array to avoid dupes
 
             }
 
@@ -155,7 +157,6 @@ class GameLogic {
 
     getTurnTime = () =>{
     
-
         let currentTurnContent = this.gameArray[this.turnNumber - 1]
 
         if(this.turnType === "target"){

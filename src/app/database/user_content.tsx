@@ -610,16 +610,11 @@ class UserContent extends LocalDatabase {
         })
     };
 
-    static searchTerm = (username: string, searchString: string)=>{
+    static searchTerm = (userId: string, searchString: string): Promise<Array<types.EntryDetails>>=>{
 
         return new Promise(async(resolve, reject)=>{
 
             try{
-
-                //get user_id
-                const userId = await super.getUserId(username);
-
-
                 const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.getStatements.getEntries, [
                     userId,
                     searchString,
@@ -630,10 +625,23 @@ class UserContent extends LocalDatabase {
                     searchString
                 ],
                 "Search terms fetched");
+
+                const resultArray: Array<types.SQLUserEntries> = super.parseRowResults(resultArrayRaw);
     
-                const resultArray = super.parseRowResults(resultArrayRaw);
-    
-                resolve(resultArray);
+                if(resultArray.length === 0){
+                    //Failed to retrieve new entry
+                    resolve([]);
+                } else if (resultArray.length > 0){
+
+                    const userEntryArray = resultArray.map((entry: types.SQLUserEntries)=>{
+
+                        const userEntry = this.convertSQLEntry(entry);
+                        return userEntry;
+
+                    })
+
+                    resolve(userEntryArray);
+                }
 
             }catch(e){
 
@@ -647,24 +655,34 @@ class UserContent extends LocalDatabase {
 
     };
 
-    static getAllEntries = (username: string)=>{
+    static getAllEntries = (userId: string): Promise<Array<types.EntryDetails>>=>{
 
         return new Promise(async(resolve, reject)=>{
 
-            try{
-
-                //get user_id
-                const userId = await super.getUserId(username);
+            try{;
 
                 const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.getStatements.getAllEntries, [
                     userId,
                 ],
                 "All entries fetched");
     
-                const resultArray = super.parseRowResults(resultArrayRaw);
-    
-                resolve(resultArray);
-        
+                const resultArray: Array<types.SQLUserEntries> = super.parseRowResults(resultArrayRaw);
+
+                if(resultArray.length === 0){
+                    //Failed to retrieve any entry
+                    resolve([]);
+                } else if (resultArray.length > 0){
+                    //Success
+
+                    const userEntryArray = resultArray.map((entry: types.SQLUserEntries)=>{
+
+                        const userEntry = this.convertSQLEntry(entry);
+                        return userEntry;
+
+                    })
+
+                    resolve(userEntryArray);
+                }        
             }catch(e){
 
                 console.log(e);

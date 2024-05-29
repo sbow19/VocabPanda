@@ -5,7 +5,29 @@ import { TextStyle, TextInputProps } from "react-native";
 
 import { ViewStyle } from "react-native";
 import { SQLiteDatabase } from "react-native-sqlite-storage";
-import { BooleanSchema } from "yup";
+
+/*Contexts */
+
+export type OptionsOverlay = {
+    visible: boolean //State of edit text overlay
+    setOptionsOverlayVisible: React.Dispatch<React.SetStateAction<boolean>> //Set state of edit textoverlay
+    currentEntryId: string //Current entry id
+    setCurrentEntryId: React.Dispatch<React.SetStateAction<string>>
+}
+
+export type FullTextOverlay = {
+    visible: boolean //State of edit text overlay
+    setFullTextVisible: React.Dispatch<React.SetStateAction<boolean>> //Set state of edit textoverlay
+    fullText: FullTextObject 
+    setFullText: React.Dispatch<React.SetStateAction<FullTextObject>>
+}
+
+export type EditTextOverlay = {
+    visible: boolean //State of edit text overlay
+    setEditTextVisible: React.Dispatch<React.SetStateAction<boolean>> //Set state of edit textoverlay
+    entryToEdit: EntryDetails
+    setEntryToEdit: React.Dispatch<React.SetStateAction<EntryDetails>>
+}
 
 /*  DB result objects */
 
@@ -49,7 +71,7 @@ export type LastActivityArray = [LastActivityObject, React.Dispatch<React.SetSta
 
 export type LastActivityObject = {
     lastActivity: boolean
-    lastActivityResultArray: Array<null | SQLDBResult<SQLUserEntries>>
+    lastActivityResultArray: Array<null | EntryDetails>
 }
 
 //Style types
@@ -121,6 +143,12 @@ export type CustomCardStyles = {
     alignItems?: "center"| "flex-start" | "flex-end"
 };
 
+export type LastActivitySortingObject = {
+    [project: string]: {
+        noOfAdditions: number,
+        resultArray: Array<EntryDetails>
+    }
+}
 
 export type HomescreenTemplate = {
 
@@ -359,7 +387,7 @@ export type BaseUserDetails = {
 }
 
 //When determining the operation type being sent to backend
-export type DataTypes = "project" | "entry" | "settings" | "plays" | "login"
+export type DataTypes = "project" | "entry" | "settings" | "plays" | "login" | "password"
 
 //When changing setting values in app
 export type ValueTypes = "timerOn" | 

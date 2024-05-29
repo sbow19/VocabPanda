@@ -25,13 +25,13 @@ const ResultTable = props => {
 
     /* options overlay state */
 
-    const [optionsOverlayVisible, setOptionsOverlayVisible] = React.useState(false)
+    const [optionsOverlayVisible, setOptionsOverlayVisible] = React.useState<boolean>(false)
 
     /* Options row id state */
 
-    const [currentEntryId, setCurrentEntryId] = React.useState("")
+    const [currentEntryId, setCurrentEntryId] = React.useState<string>("")
 
-    const optionsOverlayObject = {
+    const optionsOverlayObject: types.OptionsOverlay = {
         visible: optionsOverlayVisible,
         setOptionsOverlayVisible: setOptionsOverlayVisible,
         currentEntryId: currentEntryId,
@@ -39,60 +39,53 @@ const ResultTable = props => {
         
     }
 
-
     /* View full text overlay state */
 
-    const [fullTextVisible, setFullTextVisible] = React.useState(false);
+    const [fullTextVisible, setFullTextVisible] = React.useState<boolean>(false);
 
     const [fullText, setFullText] = React.useState<types.FullTextObject>({
-        target_language: "",
-        target_language_lang: "",
-        output_language: "",
-        output_language_lang: ""
+        targetLanguageText: "",
+        targetLanguage: "",
+        outputLanguageText: "",
+        outputLanguage: ""
     })
 
-    const fullTextOverlayObject = {
+    const fullTextOverlayObject: types.FullTextOverlay = {
         visible: fullTextVisible,
         setFullTextVisible: setFullTextVisible,
-        resultTextObject: fullText,
+        fullText: fullText,
         setFullText: setFullText
     }
 
     /* Edit text overlay state */
 
-    const [editTextVisible, setEditTextVisible] = React.useState(false);
+    const [editTextVisible, setEditTextVisible] = React.useState<boolean>(false);
 
-    const [entryToEdit, setEntryToEdit] = React.useState({});
+    const [entryToEdit, setEntryToEdit] = React.useState<types.EntryDetails>({});
 
 
-    const editTextOverlayObject = {
+    const editTextOverlayObject: types.EditTextOverlay = {
         visible: editTextVisible,
         setEditTextVisible: setEditTextVisible,
         entryToEdit: entryToEdit,  //Result row attached to options 
         setEntryToEdit: setEntryToEdit//Allows the refresh after editing entry
     }
 
-    const [deletedRowId, setDeletedRowId] = React.useState("")
+    const [deletedRowId, setDeletedRowId] = React.useState<string>("")
 
     /* All search results provided by project view */
-
-    const [resultRows, setResultRows] = React.useState(props.searchResults); //Set array of entries.
+    const [resultRows, setResultRows] = React.useState<Array<types.EntryDetails>>(props.searchResults); //Set array of entries.
 
     /* Displaye result rows */
-
-    const [displayedResultRows, setDisplayedResultRows] = React.useState([])
-
+    const [displayedResultRows, setDisplayedResultRows] = React.useState<Array<types.EntryDetails>>([])
 
     /* Set page number to be displayed on table */
-
-    const [pageNumber, setPageNumber] = React.useState(1);
+    const [pageNumber, setPageNumber] = React.useState<number>(1);
 
     /* No of pages */
-
     const noOfPages = React.useRef(1)
 
     /* set the no of pages*/
-
     React.useMemo(()=>{
 
         const resultRowsLength = resultRows.length;
@@ -108,7 +101,7 @@ const ResultTable = props => {
 
         const newResultRows = resultRows.map(row => {
         
-            if(row["entry_id"] === entryToEdit["entry_id"]){
+            if(row["entryId"] === entryToEdit["entryId"]){
                 return entryToEdit
             } else {
                 return row
@@ -138,7 +131,7 @@ const ResultTable = props => {
 
             let resultRow = displayedRows[i];
 
-            resultRowsComp.push(<RowTemplate {...props} key={resultRow["entry_id"]} resultRow={resultRow}/>)
+            resultRowsComp.push(<RowTemplate {...props} key={resultRow["entryId"]} resultRow={resultRow}/>)
         }
         setDisplayedResultRows(resultRowsComp)
         
@@ -150,7 +143,7 @@ const ResultTable = props => {
 
         if(typeof deletedRowId === "string"){
 
-            const newResultRows = resultRows.filter(row => row["entry_id"] != deletedRowId)
+            const newResultRows = resultRows.filter(row => row["entryId"] != deletedRowId)
 
             setResultRows(newResultRows)
             

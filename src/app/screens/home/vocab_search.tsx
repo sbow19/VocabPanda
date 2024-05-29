@@ -34,15 +34,13 @@ import UserContent from 'app/database/user_content';
 const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
 
     /* Get project context */
-
     const [appSettings,] = React.useContext(DefaultAppSettingsContext)
 
-    const [projectList,] = React.useState([]);
+    const [projectList,] = React.useState<Array<types.ProjectDetails>>([]);
 
-    const [currentProjectSelection, setCurrentProjectSelection] = React.useState("");
+    const [currentProjectSelection, setCurrentProjectSelection] = React.useState<string>("");
 
     /* Get current user context */
-
     const [currentUser,] = React.useContext(CurrentUserContext)
 
     const searchProjectHandler = async ()=>{
@@ -56,7 +54,8 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
             return
         } else {
 
-            const resultArray = await UserContent.getProjectEntries(currentUser, currentProjectSelection)
+            //Get entries linked to a project
+            const resultArray = await UserContent.getProjectEntries(currentUser.userId, currentProjectSelection)
 
             props.navigation.navigate("results", {
                 
@@ -79,15 +78,37 @@ const VocabSearch: React.FC<types.CustomButtonStylesProp> = props=>{
             return
         } else {
 
-            const resultArray = await UserContent.searchTerm(currentUser, searchTerm)
+            try{
+                const resultArray = await UserContent.searchTerm(currentUser.userId, searchTerm)
 
-            props.navigation.navigate("results", {
-                
-                resultArray: resultArray,
-                gameMode: "Search Results",
-                project: ""
-                
-            })
+                if(resultArray.length === 0){
+                    //No entries found
+                    showMessage({
+                        type: "info",
+                        message: "No entries found"
+                    })
+                }else if (resultArray.length > 0){
+                    //Entries found
+                    props.navigation.navigate("results", {
+                    
+                        resultArray: resultArray,
+                        gameMode: "Search Results",
+                        project: ""
+                        
+                    })
+                }
+            
+            }catch(e){
+                //If there is an error when searching the term
+                showMessage({
+                    type: "warning",
+                    message: "There was an error when searching the term"
+                })
+
+
+            }
+
+            
         }
     }
 

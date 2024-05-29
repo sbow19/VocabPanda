@@ -31,8 +31,7 @@ import AppButton from 'app/shared/app_button';
 const VocabGame: React.FC = (props)=>{
 
     /* Game state object */
-
-    const gameState = React.useRef([])
+    const gameState = React.useRef<GameLogic>([])
 
     /* No of turns state */
     const [currentTurn, setCurrentTurn] = React.useState(1)
@@ -47,18 +46,16 @@ const VocabGame: React.FC = (props)=>{
 
     /* Time left */
 
-    const [timeLeft, setTimeLeft] = React.useState(null)
+    const [timeLeft, setTimeLeft] = React.useState<number | null>(null)
 
     /* Trigger end turn sequence */
 
     const [endTurnSequence, setEndTurnSequence] = React.useState(false)
 
     /* Set next button */
-
     const [nextButton, setNextButton] = React.useState(false)
 
     /* countdown interval id */
-
     const interval  = React.useRef({})
 
     /* Slide Anim target content card */
@@ -80,18 +77,16 @@ const VocabGame: React.FC = (props)=>{
                 const myGameState=  new GameLogic(props.route.params, currentUser, props.route.params.resultArray);
 
                 /* Then fetch game rows used for game with this line below */
-
-                await myGameState.fetchArray()
+                await myGameState.fetchArray();
 
                 //Set game state to reference
-
                 gameState.current = myGameState;
 
-                setIsLoading(false)
+                setIsLoading(false);
         
             }
     
-            setUpGame()
+            setUpGame();
         }
     }, [isLoading])
     
@@ -104,7 +99,7 @@ const VocabGame: React.FC = (props)=>{
             
             if(!isLoading){
 
-                let thisTurnTime;
+                let thisTurnTime: number | null;
 
                 if(gameState.current.timerOn){
 
@@ -205,8 +200,6 @@ const VocabGame: React.FC = (props)=>{
 
                 setEndTurnSequence(false)
                 setNextButton(false)
-
-                
                 setCurrentTurn(currentTurn + 1)
             }
         }, 800)
@@ -262,8 +255,8 @@ const VocabGame: React.FC = (props)=>{
                         >
                             Target Language: {
                             gameState.current.turnType === "target" ? 
-                            gameState.current.gameArray[currentTurn-1].target_language : 
-                            gameState.current.gameArray[currentTurn-1].output_language
+                            gameState.current.gameArray[currentTurn-1].targetLanguage : 
+                            gameState.current.gameArray[currentTurn-1].outputLanguage
                             }
                         </Text>
                     </View>
@@ -282,8 +275,8 @@ const VocabGame: React.FC = (props)=>{
                         >    
                             {
                             gameState.current.turnType === "target" ? 
-                            gameState.current.gameArray[currentTurn-1].target_language_text : 
-                            gameState.current.gameArray[currentTurn-1].output_language_text
+                            gameState.current.gameArray[currentTurn-1].targetLanguageText : 
+                            gameState.current.gameArray[currentTurn-1].outputLanguageText
                             }
                         </Text>
                     </View>
@@ -319,8 +312,8 @@ const VocabGame: React.FC = (props)=>{
                         >
                             Output Language: {
                             gameState.current.turnType === "target" ? 
-                            gameState.current.gameArray[currentTurn-1].output_language : 
-                            gameState.current.gameArray[currentTurn-1].target_language
+                            gameState.current.gameArray[currentTurn-1].outputLanguage : 
+                            gameState.current.gameArray[currentTurn-1].targetLanguage
                             }
                         </Text>
                     </View>
@@ -339,13 +332,13 @@ const VocabGame: React.FC = (props)=>{
                                 if(gameState.current.turnType === "target"){
                                     score = gameState.current.checkAnswer(
                                         values.input, 
-                                        gameState.current.gameArray[currentTurn-1].output_language_text,
+                                        gameState.current.gameArray[currentTurn-1].outputLanguageText,
                                         timeLeft
                                     )
                                 } else if (gameState.current.turnType === "output"){
                                     score = gameState.current.checkAnswer(
                                         values.input,
-                                        gameState.current.gameArray[currentTurn-1].target_language_text,
+                                        gameState.current.gameArray[currentTurn-1].targetLanguageText,
                                         timeLeft
                                     )
                                 }
@@ -398,7 +391,7 @@ const VocabGame: React.FC = (props)=>{
     )
 }
 
-const NextButton = props=>{
+const NextButton = ({gameState, navigation, onPress})=>{
 
     const opacityValue = React.useRef(new Animated.Value(0)).current
 
@@ -426,13 +419,13 @@ const NextButton = props=>{
             }}
         >
             <AppButton
-              onPress={props.gameState.current.noOfTurns === props.gameState.current.turnNumber? props.navigation.pop : 
-            props.onPress}
+              onPress={gameState.current.noOfTurns === gameState.current.turnNumber? navigation.pop : 
+            onPress}
             >
                 <Text
                     style={CoreStyles.actionButtonText}
                 >
-                   {props.gameState.current.noOfTurns === props.gameState.current.turnNumber ? "End Game" : "Next"} 
+                   {gameState.current.noOfTurns === gameState.current.turnNumber ? "End Game" : "Next"} 
                 </Text>
             </AppButton>
 

@@ -56,11 +56,11 @@ const AppSwitch:React.FC = props =>{
 
         let switchVal;
 
-        if(appSettings.userSettings.timerOn === 0){
+        if(appSettings.userSettings.gameTimerOn === 0){
 
             switchVal = false;
 
-        }else if (appSettings.userSettings.timerOn === 1){
+        }else if (appSettings.userSettings.gameTimerOn === 1){
 
             switchVal = true;
         } 

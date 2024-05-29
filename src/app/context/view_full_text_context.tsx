@@ -3,19 +3,11 @@
 import {
     createContext
 } from 'react'
+import * as types from '@customTypes/types.d'
 
-const fulltext = {
-    visible: false,
-    setFullTextVisible: ()=>{},
-    resultTextObject: {
-        target_language: "",
-        target_language_lang: "",
-        output_language: "",
-        output_language_lang: ""
-    }
-}
+const fulltext: types.FullTextOverlay = {}
 
-const FullTextContext = createContext(fulltext)
+const FullTextContext = createContext(fulltext);
 
 
 export default FullTextContext

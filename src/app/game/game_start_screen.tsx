@@ -78,7 +78,7 @@ const GameHome: React.FC = props=>{
         const projectList = [];
 
         for(let project of appSettings.projects){
-            projectList.push(project?.projectName)
+            projectList.push(project.projectName)
         };
 
         const projectDropdownIndex = projectList.indexOf(props.route.params.project)
@@ -168,7 +168,7 @@ const GameHome: React.FC = props=>{
 
     if(gameMode === "All Words"){
 
-        const resultArray = await UserContent.getAllEntries(currentUser);
+        const resultArray = await UserContent.getAllEntries(currentUser.userId);
 
         if(resultArray.length === 0){
             showMessage({
@@ -198,7 +198,7 @@ const GameHome: React.FC = props=>{
 
     if (gameMode === "By Project") {
 
-        const resultArray = await UserContent.getProjectEntries(currentUser, project);
+        const resultArray = await UserContent.getProjectEntries(currentUser.userId, project);
 
         if(resultArray.length === 0){
             showMessage({

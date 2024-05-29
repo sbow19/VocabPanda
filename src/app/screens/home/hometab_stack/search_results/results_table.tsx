@@ -6,6 +6,7 @@ import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
 import React from 'react'
+import * as types from '@customTypes/types.d'
 
 import ResultsRowTemplate from './results_row';
 
@@ -14,12 +15,6 @@ import FullTextContext from 'app/context/view_full_text_context';
 
 import {default as MaterialIcon} from 'react-native-vector-icons/MaterialIcons'
 
-type FullTextObject = {
-    target_language: string,
-    target_language_lang: string,
-    output_language: string,
-    output_language_lang: string
-}
 
 const SearchResultTable = props => {
 
@@ -27,40 +22,37 @@ const SearchResultTable = props => {
 
     const [fullTextVisible, setFullTextVisible] = React.useState(false);
 
-    const [fullText, setFullText] = React.useState<FullTextObject>({
-        target_language: "",
-        target_language_lang: "",
-        output_language: "",
-        output_language_lang: ""
+    const [fullText, setFullText] = React.useState<types.FullTextObject>({
+        targetLanguage: "",
+        targetLanguageText: "",
+        outputLanguage: "",
+        outputLanguageText: ""
     })
 
-    const fullTextOverlayObject = {
+    const fullTextOverlayObject: types.FullTextOverlay = {
         visible: fullTextVisible,
         setFullTextVisible: setFullTextVisible,
-        resultTextObject: fullText,
+        fullText: fullText,
         setFullText: setFullText
     }
 
 
     /* All search results provided by project view */
 
-    const [resultRows, setResultRows] = React.useState(props.searchResults)
+    const [resultRows, setResultRows] = React.useState<Array<types.EntryDetails>>(props.searchResults);
 
     /* Displayed result rows */
 
-    const [displayedResultRows, setDisplayedResultRows] = React.useState([])
+    const [displayedResultRows, setDisplayedResultRows] = React.useState<Array<types.EntryDetails>>([])
 
 
     /* Set page number to be displayed on table */
-
     const [pageNumber, setPageNumber] = React.useState(1);
 
     /* No of pages */
-
     const noOfPages = React.useRef(1)
 
     /* set the no of pages*/
-
     React.useMemo(()=>{
 
         let resultRowsLength = resultRows.length;

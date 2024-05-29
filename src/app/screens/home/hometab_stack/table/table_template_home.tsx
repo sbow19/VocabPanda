@@ -1,10 +1,11 @@
 /* eslint-disable */
 
-import { Table, TableWrapper, Row, Rows, Col, Cols, Cell } from 'react-native-table-component';
-import { ScrollView, View, Text, ViewStyle, TouchableOpacity } from 'react-native';
+import { Table, TableWrapper, Cell } from 'react-native-table-component';
+import { ScrollView, View, ViewStyle} from 'react-native';
 import appColours from 'app/shared_styles/app_colours';
 import windowDimensions from 'app/context/dimensions';
 import CoreStyles from 'app/shared_styles/core_styles';
+import * as types from "@customTypes/types.d"
 
 import HomeRowTemplate from './row_template_home';
 import LastActivity from 'app/context/last_activity';
@@ -14,23 +15,21 @@ import React from 'react';
 const HomeTable = props => {
 
     /* Use last activity data here to gain access to data */
-
     const lastActivityObject = React.useContext(LastActivity)
 
 
     /* Full table content */
-
     const lastActivityDataCleanUp = ()=>{
 
-        let sortingObject = {}
-        let lastActivityResultArray = lastActivityObject.lastActivityResultArray
-        let lastActivityResultArrayLength = lastActivityObject.lastActivityResultArray.length
+        let sortingObject: types.LastActivitySortingObject = {};
+        let lastActivityResultArray = lastActivityObject.lastActivityResultArray;
+        let lastActivityResultArrayLength = lastActivityResultArray.length;
 
         for (let i=0 ; i < lastActivityResultArrayLength ; i++){
 
-            let entry = lastActivityResultArray[i]
+            let entry = lastActivityResultArray[i];
 
-
+            //Add unique projects to list
             if(!sortingObject[entry.project]){
 
                 sortingObject[entry.project] = {

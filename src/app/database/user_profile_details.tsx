@@ -448,17 +448,25 @@ class UserDetails extends LocalDatabase{
 
             try{
 
-                await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateUserPassword, [
+                const result = await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateUserPassword, [
                     newPassword,
                     username
                 ],
                 "Password updated successfully");
 
-                resultObject.changeSuccessful = true;
 
-                resolve(resultObject);
-            
-    
+                if(result.rowsAffected === 0){
+                    //Password change failed locally...
+                    reject(resultObject)
+
+                }else if(result.rowsAffected === 1){
+
+                    resultObject.changeSuccessful = true;
+
+                    resolve(resultObject);
+
+                }
+
             }catch(e){
                 console.log(e);
                 console.trace();
