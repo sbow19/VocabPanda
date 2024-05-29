@@ -198,16 +198,16 @@ const SQLStatements = {
 
       getLastActivity: `SELECT * FROM "user_entries" 
       WHERE (updated_at > ?) AND
-      (username = ?) 
+      (user_id = ?) 
       ;`,
 
       getLastLoggedIn: `SELECT ("last_logged_in") FROM "user_details"
-      WHERE username = ?
+      WHERE user_id = ?
       ;`,
 
       getAppSettings: `SELECT * FROM "user_settings" WHERE (user_id = ?);`,
 
-      getPremiumStatus: `SELECT (premium) FROM "user_details" WHERE (username = ?);`,
+      getPremiumStatus: `SELECT (premium) FROM "user_details" WHERE (user_id = ?);`,
 
       getUserId:  `SELECT id FROM "users" WHERE (username = ?);`,
 

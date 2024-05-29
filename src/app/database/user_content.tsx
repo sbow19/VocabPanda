@@ -12,19 +12,22 @@ class UserContent extends LocalDatabase {
 
     //Managing Projects
 
-    static addProject= (username: string, newProjectDetails: types.ProjectDetails)=>{
+    static addProject= (userId: string, newProjectDetails: types.ProjectDetails): Promise<types.LocalOperationResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
 
+            const projectAddResponse: types.LocalOperationResponse ={
+                success: false,
+                operationType: "create",
+                contentType: "project",
+                message: "operation unsuccessful"
+            }
+
             try{
-
-                //Get user id
-
-                const userId = await super.getUserId(username);
 
                 //Start transaction
 
-                await this.transactionPromiseWrapper(SQLStatements.addStatements.addProject, [
+                const result = await this.transactionPromiseWrapper(SQLStatements.addStatements.addProject, [
                         userId,
                         newProjectDetails.projectName,
                         newProjectDetails.targetLanguage,
@@ -32,7 +35,15 @@ class UserContent extends LocalDatabase {
                 ],
                 "Project added successfully");
             
-                resolve(null);
+                if(result.rowsAffected === 0){
+                    //Project deletion failed
+                    reject(projectAddResponse);
+                }else if (result.rowsAffected){
+
+                    projectAddResponse.success = true;
+                    projectAddResponse.message = "operation successful";
+                    resolve(projectAddResponse);
+                }
 
 
             }catch(e){
@@ -44,25 +55,36 @@ class UserContent extends LocalDatabase {
         })
     };
 
-    static deleteProject= (username: string, project: string)=>{
+    static deleteProject = (userId: string, project: string):Promise<types.LocalOperationResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
 
+            const projectDeletionResponse: types.LocalOperationResponse ={
+                success: false,
+                operationType: "remove",
+                contentType: "project",
+                message: "operation unsuccessful"
+            }
+
             try{
-
-                //Get user id
-
-                const userId = await super.getUserId(username);
 
                 //Start transaction
 
-                await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteProject, [
+                const result = await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteProject, [
                     userId,
                     project
                 ],
                 "Project successfully deleted.");
 
-                resolve(null)
+                if(result.rowsAffected === 0){
+                    //Project deletion failed
+                    reject(projectDeletionResponse);
+                }else if (result.rowsAffected){
+
+                    projectDeletionResponse.success = true;
+                    projectDeletionResponse.message = "operation successful";
+                    resolve(projectDeletionResponse);
+                }
 
             }catch(e){
                 console.log("Error deleting project.")
@@ -74,28 +96,38 @@ class UserContent extends LocalDatabase {
         })
     };
 
-    static getProjectEntries = (username: string, projectName: string): Promise<any[]> =>{
+    static getProjectEntries = (userId: string, projectName: string): Promise<Array<types.EntryDetails>> =>{
 
         return new Promise (async(resolve, reject)=>{
 
             try{
-
-                //Get user id
-
-                const userId = await super.getUserId(username);
     
-                const resultArrayRaw =  await this.transactionPromiseWrapper(SQLStatements.getStatements.getAllProjectEntries,[
+                const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.getStatements.getAllProjectEntries,[
                     userId,
                     projectName
                 ],
                 "Project entries fetched!");
 
-                const resultArray = super.parseRowResults(resultArrayRaw);
+                
+                const resultArray: Array<types.SQLDBResult<types.SQLUserEntries>> = super.parseRowResults(resultArrayRaw);
 
-                resolve(resultArray);
+                if(resultArray.length === 0){
+                    //No project entries
+                    resolve([]);
 
-                console.log(resultArray)
+                }else if (resultArray.length > 0){
+                    //1 or more project entries
 
+                    const convertedResultArray = resultArray.map((storedEntry: types.SQLUserEntries)=>{
+
+                        const convertedEntry = this.convertSQLEntry(storedEntry);
+                        return convertedEntry
+
+                    })
+                    resolve(convertedResultArray);
+
+                }
+        
             }catch(e){
 
                 console.log(e);
@@ -259,26 +291,29 @@ class UserContent extends LocalDatabase {
 
     //Entries
 
-    static addNewEntry = (username: string, entryObject: types.EntryDetails): Promise<string> =>{
+    static addNewEntry = (currentUser: types.CurrentUser, entryObject: types.EntryDetails): Promise<types.LocalOperationResponse<string>> =>{
 
         return new Promise (async(resolve, reject)=>{
 
+            const addNewEntry: types.LocalOperationResponse<string> = {
+                customResponse: "",
+                success: false,
+                message: "operation unsuccessful",
+                customResponse: ""
+            }
+
             try{
-                //Get user id
 
-                const userId = await super.getUserId(username);
-
-                //Get entry id
-
+                //Generate entry id
                 const entryId = uuid.v4();
 
+                addNewEntry.customResponse = entryId;
+
                 //Start transaction
-
-
-                await this.transactionPromiseWrapper(SQLStatements.addStatements.addUserEntry, 
+                const resultRow = await this.transactionPromiseWrapper(SQLStatements.addStatements.addUserEntry, 
                     [
-                        userId,
-                        username,
+                        currentUser.userId,
+                        currentUser.username,
                         entryId,
                         entryObject.targetLanguageText, 
                         entryObject.targetLanguage, 
@@ -289,8 +324,21 @@ class UserContent extends LocalDatabase {
                     ]
                     , 
                     "Added user entry"
-                )
-                resolve(entryId);
+                );
+
+                if(resultRow.rowsAffected === 0){
+                    //If insert failed, then we reject                    
+                    reject(addNewEntry);
+
+                }else if (resultRow.rowsAffected === 1){
+
+                    addNewEntry.success = true;
+                    addNewEntry.message = "operation successful";
+                    resolve(addNewEntry);
+                }
+
+
+                
 
             }catch(e){
 
@@ -302,24 +350,40 @@ class UserContent extends LocalDatabase {
         })
     };
 
-    static deleteEntry = (username: string, entryId: string)=>{
+    static deleteEntry = (userId: string, entryId: string): Promise<types.LocalOperationResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
 
+            const deleteEntry: types.LocalOperationResponse= {
+                success: false,
+                message: "operation unsuccessful",
+                operationType: "remove",
+                contentType:  "entry"
+           
+            }
+
             try{
 
-                console.log(entryId)
-
-                //Get user id
-                const userId = await super.getUserId(username);
-
-                await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteEntry, [
+            
+                const resultRow = await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteEntry, [
                     entryId,
                     userId
                 ],
                 "Entry deleted");
 
-                resolve(null);
+                if(resultRow.rowsAffected === 0){
+
+                    reject(deleteEntry);
+
+                }else if(resultRow.rowsAffected === 1){
+
+                    deleteEntry.success = true;
+                    deleteEntry.message = "operation successful";
+                    resolve(deleteEntry);
+
+                }
+
+                
         
 
             }catch(e){
@@ -383,25 +447,26 @@ class UserContent extends LocalDatabase {
     };
 
     static updateEntry = (
-        username: string, 
+        userId: string, 
         entryId: string,
         targetLanguageText: string,
         targetLanguage: string,
         outputLanguageText: string,
         outputLanguage: string
-    )=>{
+    ):Promise<types.LocalOperationResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
 
+            const updateEntry: types.LocalOperationResponse = {
+                customResponse: "",
+                success: false,
+                message: "operation unsuccessful",
+                operationType: "update",
+                contentType: "entry"
+            }
+
             try{
-
-                //Get user id
-                const userId = await super.getUserId(username);
-
-                //Start transaction
-    
-
-                await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateUserEntry, [
+                const resultRowRaw = await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateUserEntry, [
                         targetLanguageText,
                         outputLanguageText,
                         targetLanguage,
@@ -411,9 +476,17 @@ class UserContent extends LocalDatabase {
                 ],
                 "Update entry successful");
 
-                resolve(null)
-                
+                if(resultRowRaw.rowsAffected ===  0){
+                    //If an entry could be updated, then there is an error
+                    reject(updateEntry);
+                    return
+                } else if (resultRowRaw.rowsAffected === 1){
 
+                    updateEntry.success = true;
+                    updateEntry.message = "operation successful"
+                    resolve(updateEntry);
+                }
+               
             }catch(e){
 
                 console.log(e);
@@ -604,24 +677,38 @@ class UserContent extends LocalDatabase {
 
     };
 
-    static getEntryById = (username: string, entryId: string)=>{
+    static getEntryById = (userId: string, entryId: string): Promise<types.EntryDetails>=>{
 
         return new Promise(async(resolve, reject)=>{
 
             try{
-
-                //get user_id
-                const userId = await super.getUserId(username);
 
                 const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.getStatements.getEntryById, [
                     userId,
                     entryId
                 ],
                 "Single entry fetched");
+
+                if(resultArrayRaw.rowsAffected === 0){
+                    //Failed to retrieve new entry
+
+                    reject(null);
+                }
     
-                const resultArray = super.parseRowResults(resultArrayRaw);
+                const resultArray: Array<types.SQLDBResult<types.SQLUserEntries>> = super.parseRowResults(resultArrayRaw);
     
-                resolve(resultArray);
+                if(resultArray.length === 0){
+                    //Failed to retrieve new entry
+
+                    reject(null);
+                } else if (resultArray.length === 1){
+
+                    const userEntrySQL = resultArray[0];
+
+                    const userEntry = this.convertSQLEntry(userEntrySQL);
+
+                    resolve(userEntry);
+                }
         
             }catch(e){
 
@@ -635,7 +722,7 @@ class UserContent extends LocalDatabase {
 
     };
 
-    static convertEntryArrayToObject = (entryObject): types.EntryDetails=>{
+    static convertSQLEntry = (entryObject: types.SQLUserEntries): types.EntryDetails=>{
 
         const entryDetails: types.EntryDetails = {
             userId: entryObject["user_id"],

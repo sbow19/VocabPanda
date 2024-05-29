@@ -7,6 +7,51 @@ import { ViewStyle } from "react-native";
 import { SQLiteDatabase } from "react-native-sqlite-storage";
 import { BooleanSchema } from "yup";
 
+/*  DB result objects */
+
+export type SQLDBResult<T extends SQLResultObjects> = T;
+
+export type SQLResultObjects = SQLUserSettings | SQLUserProjects | SQLUserEntries;
+
+export type SQLUserSettings = {
+    target_lang: string
+    output_lang: string
+    slider_val: number
+    timer_on: boolean | 1 | 0
+    default_project: string
+}
+
+export type SQLUserProjects = {
+
+    project: string
+    target_lang: string 
+    output_lang: string
+
+}
+
+export type SQLUserEntries = {
+
+    user_id: string
+    username: string
+    entry_id: string
+    target_language_text: string
+    target_language: string
+    output_language_text: string
+    output_language: string
+    tags: boolean | 1 | 0
+    created_at: string
+    updated_at: string
+    project: string
+
+}
+
+export type LastActivityArray = [LastActivityObject, React.Dispatch<React.SetStateAction<LastActivityObject>>]
+
+export type LastActivityObject = {
+    lastActivity: boolean
+    lastActivityResultArray: Array<null | SQLDBResult<SQLUserEntries>>
+}
+
 //Style types
 
 export type CoreColours = {
@@ -107,29 +152,24 @@ export type UserDetails = {
 
 export type AppSettingsObject = {
 
-    userSettings?: {
-        timerOn: boolean
-        noOfTurns: number
-        targetLanguage?: string
-        outputLanguage?: string
-    }
+    userSettings?: UserSettings
 
     projects?: Array<ProjectDetails | null>
 
     lastLoggedIn: string
 
     premium: {
-        premium: boolean
-        endTime: string
+        premium: boolean | 0 | 1
+        endTime: string | null
     }
 
     playsLeft: number
 
-    playsRefreshTime: number
+    playsRefreshTime: number | null
 
     translationsLeft: number
 
-    translationsRefreshTime: number
+    translationsRefreshTime: number | null
 }
 
 export type ProjectConfig<ProjectObject> ={
@@ -177,15 +217,6 @@ export type languageObject = {
     German: "DE"
 }
 
-export type LastActivityObject = {
-    lastActivity: boolean,
-    lastActivityData: {
-        projects: Array<string| null>,
-        noOfAdditions: Array<number| null>
-    },
-    lastActivityResultArrays: Array<ResultArrayObject>
-}
-
 export type ResultArrayObject = {
     project: string
     resultArray: Array<any>
@@ -207,6 +238,11 @@ export type CreateAccountCall = {
     
 }
 
+export type CurrentUser = {
+    username: string
+    userId: string
+};
+
 export type LocalOperationResponse<T=null> = {
     success: Boolean
     message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful"
@@ -214,6 +250,11 @@ export type LocalOperationResponse<T=null> = {
     operationType?: "create" | "update" | "remove" | "get" | "sync"
     contentType?: "project" | "tags" | "entry" | "account" | "settings"
     customResponse?: T
+}
+
+export type GetAPIKey = {
+    APIKey: string
+    message: "No API key exists" | "API key exists"
 }
 
 export type CreateAccountResponse = {
@@ -252,6 +293,8 @@ export type FullTextObject = {
 };
 
 
+
+
 //BUFFER OPERATIONS 
 
 export type LocalBufferOperation<T = null> = {
@@ -262,12 +305,16 @@ export type LocalBufferOperation<T = null> = {
 }
 
 export type BufferStorageObject = {
-    queue_1: Object
-    queue_2: Object
-    sync_buffer: Object
-    response_buffer: Object
-    acknowledgements: Object
+    queue_1: { [userId: string]: Array<UserData> }
+    queue_2: { [userId: string]: Array<UserData> }
+    sync_buffer: { [userId: string]: SyncRequestObject}
+}
 
+export type SyncRequestObject = {
+
+    content: Array<UserData>,
+    responses: Array<LocalBackendSyncResult | null>,
+    acknowledgements: Array<FEAcknowledgement | null>
 }
 
 
@@ -308,15 +355,27 @@ export type APICallBase = {
 
 export type BaseUserDetails = {
     userId: string
-    dataType?: DataTypes
+    dataType: DataTypes
 }
 
-export type DataTypes = "content" | "settings" | "plays" | "login"
+//When determining the operation type being sent to backend
+export type DataTypes = "project" | "entry" | "settings" | "plays" | "login"
+
+//When changing setting values in app
+export type ValueTypes = "timerOn" | 
+"noOfTurns" | 
+"defaultProject" |
+"defaultTargetLang" |
+"defaultOutputLang" |
+"addProject" |
+"deleteProject" |
+"subtractTranslation" |
+"subtractPlay"
 
 
 /* Changes wrapper */
 
-export type UserData = ProjectDetails | EntryDetails | UserSettings | PlaysDetails | null
+export type UserData = ProjectDetails | EntryDetails | UserSettings | PlaysDetails | null | string
 
 
 export interface ProjectDetails extends BaseUserDetails {
@@ -342,8 +401,6 @@ export interface EntryDetails extends BaseUserDetails {
 }
 
 /* Settings */
-
-
 export interface UserSettings extends BaseUserDetails {
     gameTimerOn: boolean
     gameNoOfTurns: number
@@ -354,14 +411,19 @@ export interface UserSettings extends BaseUserDetails {
 
 
 /* Plays */
-
-
 export interface PlaysDetails extends BaseUserDetails {
 
     playsLeft: number
     playsRefreshTime: string
    
 }
+
+export type OperationWrapper ={
+    operationType: OperationTypes
+    userData?: UserData | string //Can be ids
+}
+
+export type OperationTypes= "create" | "update" | "remove" | "get" | "sync"
 
 /* 
     Account operations and API wrapper
@@ -474,9 +536,6 @@ export interface LocalBackendSyncResult extends APICallBase {
     } | null
     
 }
-
-
-
 
 
 //BACKEND Responses

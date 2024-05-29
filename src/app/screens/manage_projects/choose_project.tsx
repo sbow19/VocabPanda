@@ -28,13 +28,14 @@ import UpgradeBanner from 'app/shared/upgrade_banner';
 import UserContent from 'app/database/user_content';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 import CurrentUserContext from 'app/context/current_user';
+import BufferFlushingContext from 'app/context/buffer_flushing';
 
 import Dropdown from 'app/shared/dropdown';
 import { showMessage } from 'react-native-flash-message';
 
 import UpgradePrompt from 'app/premium/upgrade_overlay';
 import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
-import BackendAPI from 'app/api/backend';
+import BufferManager from 'app/api/buffer';
 
 
 
@@ -53,12 +54,15 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
 
     const [appSettings, setAppSettingsHandler] = React.useContext(DefaultAppSettingsContext);
 
+    /* Buffer flush state */
+    const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
+
 
     /* States for target language and output language */
 
-    const [targetLanguage, setTargetLanguage] = React.useState(appSettings.dropDownTargetLanguage);
+    const [targetLanguage, setTargetLanguage] = React.useState(appSettings.userSettings.defaultTargetLanguage);
 
-    const [outputLanguage, setOutputLanguage] = React.useState(appSettings.dropDownOutputLanguage);
+    const [outputLanguage, setOutputLanguage] = React.useState(appSettings.userSettings.defaultOutputLanguage);
 
     //Get in game activity indicator
 
@@ -78,7 +82,7 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
             return
         } else {
 
-            const resultArray = await UserContent.getProjectEntries(currentUser, currentProjectSelection);
+            const resultArray = await UserContent.getProjectEntries(currentUser.userId, currentProjectSelection);
 
             props.navigation.navigate("project view", {
 
@@ -151,17 +155,18 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                 initialValues={{projectName: ""}}
                 onSubmit={async(values, actions)=>{
 
-                    const projectObject: types.ProjectDetails = {
+                    const projectDetails: types.ProjectDetails = {
 
                         projectName: values.projectName,
                         targetLanguage: targetLanguage,
-                        outputLanguage: outputLanguage
+                        outputLanguage: outputLanguage,
+                        dataType: "project"
                     }
 
 
                     //Check whether max project no has been reached
 
-                    const projectLength = appSettings.projects?.length;
+                    const projectLength = appSettings.projects.length;
 
                     if(projectLength >= 20){
 
@@ -183,10 +188,10 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                         try{
 
                             setActivityIndicator(true);
-                            await UserContent.addProject(currentUser, projectObject);
+                            await UserContent.addProject(currentUser.userId, projectDetails);
                             setActivityIndicator(false);
 
-                            setAppSettingsHandler(projectObject, "addProject");
+                            setAppSettingsHandler(projectDetails, "addProject");
 
                             showMessage({
                                 type: "info",
@@ -196,35 +201,15 @@ const ChooseProject: React.FC<types.CustomDropDownProps> = props=>{
                            
                             //Send project details to backend or retain here.
                             //Handle backend communication errors seperately here
-                            UserContent.getUserId(currentUser)
-                            .then((userId: string)=>{
-
-                                projectObject.userId = userId
-
-                                const newProjectDetailsObject: types.APIProjectObject = {
-
-                                    projectDetails: projectObject,
-                                    updateType: "create"
-                                }
-
-                                BackendAPI.sendProjectInfo(newProjectDetailsObject)
-                                .then((projectAPIResponseObject)=>{
-
-                                    console.log(projectAPIResponseObject)
-
-                                })
-                                .catch((projectAPIResponseObject)=>{
-
-                                    console.log(projectAPIResponseObject) 
-
-                                });
-
-                            })
-                            .catch((e)=>{
-
-                                console.log(e, "Unable to get user id");
-                                
-                            })
+                            if(bufferFlushState){
+                                //If buffer currently being flushed, then add to secondary queue
+                                await BufferManager.storeRequestSecondaryQueue(currentUser.userId, projectDetails, "create");
+            
+                            }else if(!bufferFlushState){
+                                //If buffer not currently being flushed, then add to main queue
+                                await BufferManager.storeRequestMainQueue(currentUser.userId, projectDetails, "create");
+            
+                            }
 
                         }catch(e){
                             setActivityIndicator(false)

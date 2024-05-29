@@ -24,7 +24,8 @@ import { showMessage } from "react-native-flash-message"
 import CurrentUserContext from "app/context/current_user"
 import LoadingStatusInGame from "app/context/loadingInGame"
 import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
- 
+import * as types from '@customTypes/types.d'
+import BackendAPI from "app/api/backend"
 
 
 const LoginScreen: React.FC = props=>{
@@ -69,16 +70,23 @@ const LoginScreen: React.FC = props=>{
                                     message: "Login success",
                                     type: "success"
                                 });
+
+                                //Set username and user id at top level in app 
+                                const currentUserObject: types.CurrentUser = {
+                                    username: resultObject.username, 
+                                    userId: resultObject.userId
+                                }
                                 
-                                setCurrentUser(resultObject.username);
+                                setCurrentUser(currentUserObject);
                                 setIsLoadingInGame(true);// Needs to be set first before setting logged in
-                                setIsLoggedIn(true);
                                 
 
                                 /* Trigger login syncing cycle*/
+                                await BackendAPI.loginSync(resultObject);
                             
                             } else if (!resultObject.loginSuccess){
 
+                                //If user did not log in
                                 showMessage({
                                     message: "Login failed",
                                     type: "warning"
@@ -87,7 +95,8 @@ const LoginScreen: React.FC = props=>{
 
 
                         }catch(e){
-                            console.log(e);
+                            //If sign in fails, then error thrown here
+                            console.log(e, "Login screen");
 
                             showMessage({
                                 message: "Error occurred while logging in.",
@@ -95,7 +104,9 @@ const LoginScreen: React.FC = props=>{
                             });
 
                         }finally{
+                            //Once all sign in activity complete
                             setActivityIndicator(false);
+                            setIsLoggedIn(true);
                             actions.resetForm();
 
                         }

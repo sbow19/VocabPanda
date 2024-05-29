@@ -19,7 +19,8 @@ import EditTextContext from "app/context/edit_text_context"
 
 import UserContent from "app/database/user_content";
 import { showMessage } from "react-native-flash-message";
-import BackendAPI from "app/api/backend";
+import BufferFlushingContext from 'app/context/buffer_flushing';
+import BufferManager from "app/api/buffer";
 
 import * as types from '@customTypes/types.d'
 
@@ -27,6 +28,9 @@ const OptionsOverlay: React.FC = props=>{
 
     //Options overlay object 
     const optionsOverlayObject = React.useContext(OptionsOverlayContext);
+
+    /* Buffer flush state */
+    const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
 
     //Edit entries overlay object
 
@@ -58,27 +62,23 @@ const OptionsOverlay: React.FC = props=>{
 
                             try{
 
-                                await UserContent.deleteEntry(currentUser, currentEntryId); //Delete entry locally
-                                
-                                const deleteEntryDetailsObject: types.APIEntryObject = {
+                                await UserContent.deleteEntry(currentUser.userId, currentEntryId); //Delete entry locally
 
-                                    entryDetails: {
-                                        entryId: currentEntryId
-                                    },
-                                    updateType: "remove"
+                                const deletedEntry: types.EntryDetails = {
+                                    dataType: "entry",
+                                    entryId: currentEntryId
                                 }
-            
-                                BackendAPI.sendEntryInfo(deleteEntryDetailsObject)
-                                .then((deleteAPIResponseObject)=>{
-            
-                                    console.log(deleteAPIResponseObject)
-            
-                                })
-                                .catch((deleteAPIResponseObject)=>{
-            
-                                    console.log(deleteAPIResponseObject) 
-            
-                                });
+                                
+                                if(bufferFlushState){
+                                    //If buffer currently being flushed, then add to secondary queue
+                                    await BufferManager.storeRequestSecondaryQueue(currentUser.userId, deletedEntry, "remove");
+                
+                                }else if(!bufferFlushState){
+                                    //If buffer not currently being flushed, then add to main queue
+                                    await BufferManager.storeRequestMainQueue(currentUser.userId, deletedEntry, "remove");
+                
+                                }
+                                
 
                                 props.setDeletedRowId(currentEntryId); //Current entry id set as deleted row id
 

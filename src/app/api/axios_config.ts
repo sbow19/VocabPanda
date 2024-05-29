@@ -27,8 +27,8 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
     // Set base URL if your API endpoints share a common base URL
     axios.defaults.baseURL = 'http://192.168.1.171:3000';
     axios.defaults.headers.common['Content-Type'] = 'application/json';
-    axios.defaults.bufferStatus = bufferFlushingStatus;
-    axios.defaults.userId = ""
+    axios.defaults.bufferStatus = bufferFlushingStatus; //When buffers are being flushed, then any buffer info is added to the secondary queue
+    axios.defaults.userId = "" //Set user id here so we don't have to kee passing it around
 
 
     //Set default timeout to 10 seconds
@@ -41,7 +41,7 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
         //Add "app" type operation type to request
         const requestData: types.APICallBase = config.data;
 
-        //Check if additional details not ther 
+        //Check if additional details not there
         if(!requestData.deviceType && !requestData.requestId && !requestData.requestTimeStamp){
 
             requestData.deviceType = "app";

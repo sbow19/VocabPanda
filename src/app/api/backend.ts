@@ -11,6 +11,7 @@ import axiosConfig from './axios_config';
 
 import LocalDatabase from 'app/database/local_database';
 import BufferManager from './buffer';
+import EncryptedStorage from 'react-native-encrypted-storage/lib/typescript/EncryptedStorage';
 
 class BackendAPI {
 
@@ -37,43 +38,56 @@ class BackendAPI {
 
     //Set global headers
 
-    static setGlobalHeaders(bufferFlushingStatus: boolean):Promise<boolean>{
+    static setGlobalHeaders(bufferFlushingStatus: boolean):Promise<types.LocalOperationResponse>{
         return new Promise(async(resolve, reject)=>{
+
+            const setGlobalHeaders: types.LocalOperationResponse = {
+                success: false,
+                message: "operation unsuccessful",
+                customResponse: ""
+            }
 
             try{
 
-                //Configure axios 
-
+                //Configure axios headers, interceptors etc.
                 axiosConfig(bufferFlushingStatus);
 
                 //Check for API key in local storage. If does not exist, then authorization header not added.
+                const {customResponse} = await LocalDatabase.getAPIKey();
 
-                const resultObject = await LocalDatabase.getAPIKey();
+                if (customResponse.message === "API key exists"){
+                    //If API key exists, then we set authorisation header
+                    const uniqueDeviceId = await DeviceInfo.getUniqueId(); //Gets unique device id;
+                    axios.defaults.headers.common["Authorization"] = "Basic " + Buffer.from(uniqueDeviceId + ":" + customResponse.APIKey).toString("base64");
 
-                if (resultObject.message === "API key exists"){
+                    setGlobalHeaders.success = true;
+                    resolve(setGlobalHeaders);
+
+                }else if (customResponse.message  === "No API key exists"){
+                    //If no API key exists then request new one here and save in encrypted storage
+                    const apiKeyResponse = await this.requestAPIKey();
 
                     const uniqueDeviceId = await DeviceInfo.getUniqueId(); //Gets unique device id;
+                    axios.defaults.headers.common["Authorization"] = "Basic " + Buffer.from(uniqueDeviceId + ":" + apiKeyResponse.APIKey).toString("base64");
 
-                    axios.defaults.headers.common["Authorization"] = "Basic " + Buffer.from(uniqueDeviceId + ":" + resultObject.APIKey).toString("base64");
-
+                    setGlobalHeaders.success = true;
+                    resolve(setGlobalHeaders);
                 }
-
-                resolve(true);
-
             }catch(err){
 
                 //Some error fetching the api key. 
+                setGlobalHeaders.error = err;
 
                 console.log("Failed to set global headers");
                 console.trace();
-                reject(err);
+                reject(setGlobalHeaders);
 
             }
            
         })
     };
     
-    //Request API key for device when first opened
+    //Request API key for device when first opened and set in storage
     static requestAPIKey():Promise<types.APIKeyOperationResponse>{
         return new Promise(async(resolve, reject)=>{
 
@@ -94,14 +108,17 @@ class BackendAPI {
                 }
 
                 let res = await axios.post("/generateapikey", keyRequest);
-
                 const apiKeyResponse: types.APIKeyOperationResponse = res.data;
 
+                //Store the api key locally in encrypted storage
+                await EncryptedStorage.setItem("api-key",
+                    apiKeyResponse.APIKey
+                )
+               
+                //If successfully stored, then we resolve the promise
                 resolve(apiKeyResponse);
 
             }catch(err){
-
-                apiKeyResponse.error = err;
 
                 //Trigger error status for creating app --> monitor error
                 console.log(err.message)
@@ -113,45 +130,42 @@ class BackendAPI {
     };
 
     //Account logic
-    static sendAccountInfo(accountObject: types.APIAccountObject<types.AccountOperationDetails>): Promise<types.APIAccountOperationResponse>{
+    static sendAccountInfo(accountObject: types.APIAccountObject<types.AccountOperationDetails>): Promise<types.BackendOperationResponse<string>>{
         return new Promise(async (resolve, reject)=>{
 
-            let accountOperationResponse: types.APIAccountOperationResponse = {
+            let accountOperationResponse: types.BackendOperationResponse<string> = {
                 message: "operation unsuccessful",
                 success: false,
-                contentType: "account",
-                accountOperation: accountObject.updateType
-                
+                operationType: accountObject.operationType,
+                userId: "" //User id from backend
+
             };
 
             try{
 
                 const internetStatus = await this.checkInternetStatus();
-            
-                //Add operation type to account Object to indicate to backend the type of request type
-                accountObject.accountOperationDetails.operationType = "account";
-
+        
                 if(internetStatus){
 
                     let res; // initiate response object
 
-                    switch(accountObject.updateType){
+                    switch(accountObject.operationType){
                         case "create account":
-                            res = await axios.post("/account/createaccount", accountObject.accountOperationDetails);
+                            res = await axios.post("/account/createaccount", accountObject);
                             break
                         case "delete account":
                             
-                            res = await axios.post("/account/deleteaccount", accountObject.accountOperationDetails);
+                            res = await axios.post("/account/deleteaccount", accountObject);
                             break
                         case "upgrade":
-                            res = await axios.post("/account/upgrade", accountObject.accountOperationDetails);
+                            res = await axios.post("/account/upgrade", accountObject);
                             break
                         case "downgrade":
-                            res = await axios.post("/account/downgrade", accountObject.accountOperationDetails);
+                            res = await axios.post("/account/downgrade", accountObject);
                             break
                         case "change password":
                             
-                            res = await axios.post("/account/updatepassword", accountObject.accountOperationDetails);
+                            res = await axios.post("/account/updatepassword", accountObject);
                             break
 
                     }
@@ -161,7 +175,6 @@ class BackendAPI {
                     accountOperationResponse = res.data; //Replace response with response object from backend
 
                     //Response object
-
                     if(accountOperationResponse.success){
                         //If the operatoin was successful
                         resolve(accountOperationResponse)
@@ -170,7 +183,6 @@ class BackendAPI {
 
                         //If the operation failed
                         reject(accountOperationResponse)
-
                         //Add details to buffer
                     }
 
@@ -288,31 +300,29 @@ class BackendAPI {
         return [target_language_id, output_language_id]
     }
 
-    static translate(searchTerms: types.APITranslateCall): Promise<types.APITranslateResponse>{
-
-        const responseObject: types.APITranslateResponse = {
-
-            success: false,
-            translations: [],
-            translationRefreshTime: 0,
-            translationsLeft: 0,
-            message: "no internet"
-
-        };
+    static translate = (searchTerms: types.APITranslateCall): Promise<types.APITranslateResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
+
+            const responseObject: types.APITranslateResponse = {
+
+                success: false,
+                translations: [],
+                translationRefreshTime: 0,
+                translationsLeft: 0,
+                message: "no internet"
+    
+            };
 
             const [target_language_id, output_language_id] = this.#changeLanguageValue(searchTerms.targetLanguage, searchTerms.outputLanguage);
 
             try{
-
-
                 const internetStatus = await this.checkInternetStatus();
 
                 if(internetStatus){
 
                     const res = await axios.post('/translate', {
-                        username: searchTerms.username,
+                        userId: searchTerms.userId,
                         targetText: searchTerms.targetText,
                         targetLanguage: target_language_id,
                         outputLanguage: output_language_id,
@@ -321,7 +331,6 @@ class BackendAPI {
     
                     const translationResponse: types.APITranslateResponse = res.data;
                     
-    
                     responseObject.translations = translationResponse.translations[0];
                     responseObject.success = true;
                     responseObject.translationsLeft = translationResponse.translationsLeft;
@@ -333,12 +342,8 @@ class BackendAPI {
                 }else if(!internetStatus){
                     
                     responseObject.message = "no internet"
-
                     reject(responseObject)
-                }
-
-
-                
+                };                
         
             }catch (error) {
                 console.error({...error});

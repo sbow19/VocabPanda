@@ -43,29 +43,27 @@ const MainAppContainer = createNativeStackNavigator()
 const VocabPandaApp: React.FC = () => { 
 
     /* loading screen --> sign in screen or main app */
-
     const [isLoggedIn,] = React.useContext(LoggedInStatus);
-
     const [isLoadingInitial, setIsLoadingInitial] = React.useContext(LoadingStatusInitial);
 
     /* Internet Status */
-
     const [isOnline, setIsOnline] = React.useState();
-
     const isOnlineSet = [isOnline, setIsOnline];
 
     /* Current user state */
+    const currentUserObject: types.CurrentUser = {
+        username: "",
+        userId:  ""
+    
+    }
 
-    const [currentUser, setCurrentUser] = React.useState("")
-
+    const [currentUser, setCurrentUser] = React.useState(currentUserObject)
     const currentUserSet = [currentUser, setCurrentUser];
 
     /* Buffer flush state */
-
     const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
 
     //Get in game activity indicator
-
     const [activityIndicator, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
     
 
@@ -77,7 +75,6 @@ const VocabPandaApp: React.FC = () => {
                 try{
 
                     /* FOR DEVELOPMENT: reset local database code here to prompt user*/
-
                     await LocalDatabase.resetDatabase();
 
                     /*
@@ -91,11 +88,7 @@ const VocabPandaApp: React.FC = () => {
                     await LocalDatabase.createDatabaseSchema();
 
                     //Set global headers in database
-
                     await BackendAPI.setGlobalHeaders(bufferFlushState);
-
-                    /* Set API key in local storage / request new API key on first startup*/
-                    await LocalDatabase.setAPIKey();
 
                     /*
                         Check for internet connection
@@ -105,33 +98,37 @@ const VocabPandaApp: React.FC = () => {
 
                     setIsOnline(isUserOnline.isInternetReachable);
 
-                   
-            
-                    //If all loading actions completed successfully, then no issues.
+                
+                    //If all startup loading actions completed successfully.
                     setIsLoadingInitial(false);
 
 
                 }catch(err){
 
-                    //Error while loading application
+                    //Error thrown up but any of the promises here
                     console.log(err);
+
+                    //Later on, we should handle these errors with more granularity --> TODO.
 
                     //Show error depending on type of error which occured.
                     showMessage({
                         type: "warning",
-                        message: "Error while loading"
+                        message: "Error while loading. Restart app."
                     })
             
                 }
             }
         }
+        //Trigger start up logic. TODO add other functions here on start up
         onStartUpLoad()
         
     }, [isLoggedIn]);
 
     React.useEffect(()=>{
+        //When buffer flushing state change in the app, then axios default is changed here.
 
         axios.defaults.bufferStatus = bufferFlushState;
+        console.log("Buffer flush state changed")
 
     }, [bufferFlushState])
 
@@ -187,60 +184,46 @@ const VocabPandaApp: React.FC = () => {
 const MainApp: React.FC = ()=>{
     
     /* Setting current user */
-
-    const [currentUser,] = React.useContext(CurrentUserContext);
+    const [currentUser] = React.useContext(CurrentUserContext);
 
     /* Getting last activity data on sign in */
-
-    const [lastActivityObject, setLastActivityData] = React.useState({});
+    const [lastActivityObject, setLastActivityData] = React.useState<types.LastActivityObject>({});
 
     //Get in game loading handler
-
     const [isLoadingInGame, setIsLoadingInGame] = React.useContext(LoadingStatusInGame);
 
     //Get in game activity indicator
-
-    const [activityIndicator, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
+    const [, setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
 
     /* Code for handling default game settings globally  */
-
     const [appSettings, setAppSettings] = React.useState<types.AppSettingsObject>({});
 
     /* Get buffer flushing context */
-
     const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
 
     /*is user online status */
-
     const [isOnline, setIsOnline] = React.useContext(InternetStatus);
 
-    const sendSettingsInfoTimeout = React.useRef("");
+    const saveSettingsInfoTimeout = React.useRef<NodeJS.Timeout>("");
 
     const sendUserSettings = ()=>{
 
-        clearTimeout(sendSettingsInfoTimeout.current);
+        clearTimeout(saveSettingsInfoTimeout.current); //Clear timeout if triggered before timeout function fired
 
-        sendSettingsInfoTimeout.current = setTimeout(async()=>{
+        saveSettingsInfoTimeout.current = setTimeout(async()=>{
 
             try{
-
-                //Get user id 
-                const userId = await LocalDatabase.getUserId(currentUser);
-
                 //Get user settings
-                const userSettingsRaw = await UserDetails.getUserSettings(userId);
+                const userSettings = await UserDetails.getUserSettings(currentUser.userId);
 
-                //Get user settings object
-                const userSettings = UserDetails.convertUserSettingsObject(userSettingsRaw);
-
-                //
-                BackendAPI.sendSettingsInfo(userSettings)
-                .then((settingsAPIResponse)=>{
-                    console.log(settingsAPIResponse);
-                })
-                .catch((settingsAPIResponse)=>{
-                    console.log(settingsAPIResponse);
-                })
+                //Save user settings in Buffer
+                if(bufferFlushState){
+                    //If main queue being flushed
+                    await BufferManager.storeRequestSecondaryQueue(currentUser.userId, userSettings, "update");
+                } else if (!bufferFlushState){
+                    //If main queue available
+                    await BufferManager.storeRequestMainQueue(currentUser.userId, userSettings, "update");
+                }
 
             }catch(e){
 
@@ -253,28 +236,26 @@ const MainApp: React.FC = ()=>{
 
     }
     
-    const setAppSettingsHandler = async(value, valueType: string) =>{
+    const setAppSettingsHandler = async(value, valueType: types.ValueTypes)=>{
         
-
-        console.log(value, valueType)
-
-        const newSettings = { ...appSettings}
+        const newSettings = { ...appSettings}; //New object to trigger re render.
 
         //User settings fields 
         if(valueType === "timerOn"){
 
-            clearTimeout(sendSettingsInfoTimeout.current);
+            clearTimeout(saveSettingsInfoTimeout.current);
 
             //Update database
-            UserDetails.updateTimerValue(currentUser, value)
-            .then(()=>{
+            UserDetails.updateTimerValue(currentUser.userId, value)
+            .then((resultObject: types.LocalOperationResponse)=>{
 
                 console.log("Timer val update successfully.");
-                //send to backend
+                //Trigger backend sync
                 sendUserSettings();
             })
             .catch((e)=>{
 
+                //Timer failed to update
                 console.log(e);
                 showMessage({
                     message: "Unable to update timer value.",
@@ -282,19 +263,20 @@ const MainApp: React.FC = ()=>{
                 })
             });
 
-            //Update app settings
-
-            newSettings.userSettings.timerOn = value;
+            //Update app settings state
+            newSettings.userSettings.gameTimerOn = value;
         };
 
         if(valueType === "noOfTurns"){
 
-            clearTimeout(sendSettingsInfoTimeout.current);
+            clearTimeout(saveSettingsInfoTimeout.current);
 
             //Update database
-            UserDetails.updateTurnsValue(currentUser, value)
-            .then(()=>{
+            UserDetails.updateTurnsValue(currentUser.userId, value)
+            .then((resultObject: types.LocalOperationResponse)=>{
 
+
+                console.log("Turns val update successfully.");
                 //send to backend
                 sendUserSettings();
 
@@ -310,7 +292,7 @@ const MainApp: React.FC = ()=>{
 
             //UPdate app settings
 
-            newSettings.userSettings.noOfTurns = value;
+            newSettings.userSettings.gameNoOfTurns = value;
         };
 
         if(valueType === "defaultProject"){
@@ -319,12 +301,13 @@ const MainApp: React.FC = ()=>{
 
         if(valueType === "defaultTargetLang"){
 
-            clearTimeout(sendSettingsInfoTimeout.current);
+            clearTimeout(saveSettingsInfoTimeout.current);
 
             //Update database
-            UserDetails.updateTargetLangDefault(currentUser, value)
-            .then(()=>{
+            UserDetails.updateTargetLangDefault(currentUser.userId, value)
+            .then((resultObject: types.LocalOperationResponse)=>{
 
+                console.log("Default target lang updated")
                 //send to backend
                 sendUserSettings();
                 
@@ -340,16 +323,16 @@ const MainApp: React.FC = ()=>{
 
 
             //Update app settings
-            newSettings.userSettings.targetLanguage = value;
+            newSettings.userSettings.defaultTargetLanguage = value;
         };
 
         if(valueType === "defaultOutputLang"){
 
-            clearTimeout(sendSettingsInfoTimeout.current);
+            clearTimeout(saveSettingsInfoTimeout.current);
 
             //update database
-            UserDetails.updateOutputLangDefault(currentUser, value)
-            .then(()=>{
+            UserDetails.updateOutputLangDefault(currentUser.userId, value)
+            .then((resultObject: types.LocalOperationResponse)=>{
 
                 //send to backend
                 sendUserSettings();
@@ -366,7 +349,7 @@ const MainApp: React.FC = ()=>{
 
 
             //Update app settings
-            newSettings.userSettings.outputLanguage = value; 
+            newSettings.userSettings.defaultOutputLanguage = value; 
         };
 
         //User content fields
@@ -389,14 +372,31 @@ const MainApp: React.FC = ()=>{
         //User game details fields
         if(valueType === "subtractTranslation"){
 
+            //NOTE, no need to send details to bqckend, as translation info is processed
+            //In the backend anyway.
+
             try{
 
-                await UserDetails.setTranslationsLeft(currentUser, value.translationsLeft);
-                await UserDetails.setTranslationsRefreshTimeLeft(currentUser, value.translationsRefreshTime);
+                await UserDetails.setTranslationsLeft(currentUser.userId, value.translationsLeft);
+
+            }catch(e){
+                console.log(e);
+                showMessage({
+                    message: "Unable to update translations left.",
+                    type: "warning"
+                })
+            }
+               
+            try{
+                await UserDetails.setTranslationsRefreshTimeLeft(currentUser.userId, value.translationsRefreshTime);
 
             }catch(e){
 
                 console.log(e);
+                showMessage({
+                    message: "Unable to update translations refresh.",
+                    type: "warning"
+                })
 
             }
 
@@ -411,20 +411,21 @@ const MainApp: React.FC = ()=>{
             try{
                 const playsLeft = value - 1;
 
-                await UserDetails.setPlaysLeft(currentUser, playsLeft);
-                const playsRefreshTime = await UserDetails.setPlaysRefreshTimeLeft(currentUser);
+                await UserDetails.setPlaysLeft(currentUser.userId, playsLeft);
+                const {customResponse: playsRefreshTime} = await UserDetails.setPlaysRefreshTimeLeft(currentUser.userId);
 
 
                 //Update app settings
                 newSettings.playsLeft = playsLeft; 
-
                 newSettings.playsRefreshTime = playsRefreshTime;
 
-                //Send info to backend
+                const playsDetails: types.PlaysDetails = {
+                    playsLeft: playsLeft,
+                    playsRefreshTime: playsRefreshTime
+                }
 
-                const userId = await LocalDatabase.getUserId(currentUser);
-
-                BackendAPI.updatePlaysLeft(userId, playsLeft, playsRefreshTime);
+                //Store update in buffer for next refresh
+                await BufferManager.storeRequestMainQueue(currentUser.userId, playsDetails, "plays");
 
             }catch(e){
 
@@ -437,16 +438,16 @@ const MainApp: React.FC = ()=>{
         setAppSettings(newSettings)
     };
 
-    const myDefaultAppSettings:types.StateHandlerList<types.AppSettingsObject, Function> = [appSettings, setAppSettingsHandler];
+    const myDefaultAppSettings = [appSettings, setAppSettingsHandler];
 
     // Loads global variables such as datrabase objects and app settings once on sign in
     React.useEffect(()=>{
 
-        if(isLoadingInGame && currentUser){
+        if(isLoadingInGame && currentUser.username){
             //Set activity indicator while loading
             setActivityIndicator(true);
 
-            const appSettingsLoad = async ()=>{
+            const signInLoad = async ()=>{
 
                 /* 
                 - if no connection, skip this step, and render an alert to inform user of lack of connection
@@ -459,10 +460,7 @@ const MainApp: React.FC = ()=>{
 
                 /* Set axios current suer header*/
 
-                const userId = await UserDetails.getUserId(currentUser);
-
-                axios.defaults.userId = userId;
-                
+                axios.defaults.userId = currentUser.userId;
 
                 /*
                     Set event listener for internet connection
@@ -491,10 +489,8 @@ const MainApp: React.FC = ()=>{
                     }
                 });
 
-                
-
+            
                 /* Check for premium update */
-
                 const upgradeToPremium = false  //REPLACE WITH SCRIPT WHICH LOOKS FOR UPGRADE INDICATOR __ BACKEND?
 
                 if(upgradeToPremium){
@@ -511,20 +507,16 @@ const MainApp: React.FC = ()=>{
 
 
                 //Fetch app settings
-                
-                const appSettings: types.AppSettingsObject = await UserDetails.getDefaultAppSettings(currentUser)// Fetch default app settings for user
+                const appSettings: types.AppSettingsObject = await UserDetails.getDefaultAppSettings(currentUser.userId)// Fetch default app settings for user
             
                 setAppSettings(appSettings);
 
                 
                 /* Last activity determiner */
-
-                const lastActivityResultArray = await UserDetails.getLastActivity(currentUser);
+                const lastActivityResultArray = await UserDetails.getLastActivity(currentUser.userId);
 
                 /* Setting last activity object */
-
                 const lastActivityObject = {
-
                     lastActivity: false,
                     lastActivityResultArray: lastActivityResultArray
                     
@@ -536,60 +528,55 @@ const MainApp: React.FC = ()=>{
 
                 setLastActivityData(lastActivityObject);
 
-                //Update user login time, occurs after every other operation is successful.
-
+                //Update user login time, occurs after every other operation is successful
                 await UserDetails.updateUserLoginTime(currentUser);
 
                 //Set is loading to false brings up login screen.
-
                 setIsLoadingInGame(false);
                 setActivityIndicator(false);
             }
-            appSettingsLoad()    
+
+            //Trigger loading events on sign in
+            signInLoad();    
         }
 
     }, [currentUser])
 
 
-    const gamesLeftInterval = React.useRef("");
-    const translationsLeftInterval = React.useRef("");
-    const flushBufferInterval = React.useRef("");
+    const gamesLeftInterval = React.useRef<NodeJS.Timeout>("");
+    const translationsLeftInterval = React.useRef<NodeJS.Timeout>("");
+    const flushBufferInterval = React.useRef<NodeJS.Timeout>("");
 
     /* Interval timer to check countdowns for refreshes across the app -- TODO REFACTOR OUT*/
     React.useEffect(()=>{
-
-        console.log("Hello world, use effect")
-
+        
         const setCronJobs = async ()=>{
 
             clearInterval(gamesLeftInterval.current);
             clearInterval(translationsLeftInterval.current);
             clearInterval(flushBufferInterval.current);
-
-            const userId: string = await LocalDatabase.getUserId(currentUser);
             
             /* Checking plays refresh */
+            const premium = await UserDetails.checkPremiumStatus(currentUser.userId);
 
-            const premium = await UserDetails.checkPremiumStatus(currentUser);
-
-            if(premium){
+            if(premium === 1){
 
                 console.log("User is premium, no plays refresh necessary");
 
-            } else if (!premium){
+            } else if (premium === 0){
 
                 gamesLeftInterval.current = setInterval(async()=>{
 
                     //Check every 100 seconds whether the current time is greater than the refresh time indicated in the plays refresh table
 
-                    const playsRefreshTimeLeft = await UserDetails.getPlaysRefreshTimeLeft(userId);
+                    const playsRefreshTimeLeft = await UserDetails.getPlaysRefreshTimeLeft(currentUser.userId);
 
                     const currentTime = new Date();
-                    const refreshTime = new Date(playsRefreshTimeLeft["games_refresh"]);
+                    const refreshTime = new Date(playsRefreshTimeLeft);
                     
                     if(currentTime > refreshTime && playsRefreshTimeLeft !== null){
 
-                        await UserDetails.refreshGamesLeft(userId);
+                        await UserDetails.refreshGamesLeft(currentUser.userId);
 
                         const newAppSettings = {...appSettings}
 
@@ -606,14 +593,14 @@ const MainApp: React.FC = ()=>{
 
                 //Check every 100 seconds whether the current time is greater than the refresh time indicated in the translations refresh table;
 
-                const refreshTimeRaw = await UserDetails.getTranslationsRefreshTimeLeft(userId);
+                const refreshTimeRaw = await UserDetails.getTranslationsRefreshTimeLeft(currentUser.userId);
 
                 let currentTime = new Date();
-                let refreshTime = new Date(refreshTimeRaw["translations_refresh"]);
+                let refreshTime = new Date(refreshTimeRaw);
 
                 if(currentTime > refreshTime && premium && refreshTimeRaw !== null){
                     
-                    await UserDetails.refreshTranslationsLeftPremium(userId);
+                    await UserDetails.refreshTranslationsLeftPremium(currentUser.userId);
 
                     const newAppSettings = {...appSettings};
 
@@ -623,7 +610,7 @@ const MainApp: React.FC = ()=>{
 
                 } else if (currentTime > refreshTime && !premium && refreshTimeRaw !== null){
 
-                    await UserDetails.refreshTranslationsLeftFree(userId);
+                    await UserDetails.refreshTranslationsLeftFree(currentUser.userId);
 
                     const newAppSettings = {...appSettings}
 
@@ -639,14 +626,13 @@ const MainApp: React.FC = ()=>{
                 console.log("Flush interval triggered", bufferFlushState)
 
                 //Check every 180 seconds whether the current time is greater than the refresh time indicated in the translations refresh table;
-
                 const isUserOnline = await NetInfo.fetch();
 
                 //If the internet is on but the buffer is not currently being flushed, then trigger flush.
                 if(isUserOnline.isInternetReachable && !bufferFlushState){
 
                     try{
-                        await BufferManager.flushRequests(userId);
+                        await BufferManager.flushRequests(currentUser.userId);
                     }catch(e){
                         //Some error with flushing requests
                     }

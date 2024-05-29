@@ -25,7 +25,8 @@ import UserContent from 'app/database/user_content';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
 
 import ResultTable from "./project_table_template"
-import BackendAPI from 'app/api/backend';
+import BufferFlushingContext from 'app/context/buffer_flushing';
+import BufferManager from 'app/api/buffer';
 import { showMessage } from 'react-native-flash-message';
 
 const ProjectView: React.FC = props=>{
@@ -41,6 +42,10 @@ const ProjectView: React.FC = props=>{
     /* Options Overlay state */
 
     const [optionsVisible, setOptionsVisible] = React.useState(false)
+
+    /* Buffer flush state */
+    const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
+
 
     /* Get project name */
 
@@ -102,11 +107,10 @@ const ProjectView: React.FC = props=>{
                         try{
 
                             //Delete project from database - CHECK IF CASCADES TO ENTRIES CORRECTLY
-                            await UserContent.deleteProject(currentUser, project)
+                            await UserContent.deleteProject(currentUser.userId, project)
 
                             /*Remove project from default settings - all dropdowns*/
-
-                            setAppSettingsHandler(project, "deleteProject")
+                            setAppSettingsHandler(project, "deleteProject");
 
                             props.navigation.reset(({
                                 index:0,
@@ -114,43 +118,23 @@ const ProjectView: React.FC = props=>{
                                 key: null
                             }));
 
-                            
-                            //Send project details to backend or retain here.
-                            //Handle backend communication errors seperately here
-                            UserContent.getUserId(currentUser)
-                            .then((userId: string)=>{
 
-                                const projectDetails: types.ProjectDetails = {
-                                    projectName: project,
-                                    userId: userId,
-                                    targetLanguage: "",
-                                    outputLanguage: ""
-                                }
+                            const projectDetails: types.ProjectDetails = {
+                                projectName: project,
+                                dataType: "project"
+                            }
+                        
+                            //Save new project details to buffer
+                            if(bufferFlushState){
+                                //If buffer currently being flushed, then add to secondary queue
+                                await BufferManager.storeRequestSecondaryQueue(currentUser.userId, projectDetails, "remove");
+            
+                            }else if(!bufferFlushState){
+                                //If buffer not currently being flushed, then add to main queue
+                                await BufferManager.storeRequestMainQueue(currentUser.userId, projectDetails, "remove");
+            
+                            }
 
-                                const deleteProjectObject: types.APIProjectObject = {
-
-                                    projectDetails: projectDetails,
-                                    updateType: "remove"
-                                }
-
-                                BackendAPI.sendProjectInfo(deleteProjectObject)
-                                .then((projectAPIResponseObject)=>{
-
-                                    console.log(projectAPIResponseObject)
-
-                                })
-                                .catch((projectAPIResponseObject)=>{
-
-                                    console.log(projectAPIResponseObject) 
-
-                                });
-
-                            })
-                            .catch((e)=>{
-
-                                console.log(e, "Unable to get user id");
-                                
-                            })
 
 
                         }catch(e){
@@ -161,9 +145,6 @@ const ProjectView: React.FC = props=>{
                             })
 
                         }
-                        
-                        
-
                     }
                 }
             ],

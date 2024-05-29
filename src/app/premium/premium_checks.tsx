@@ -6,20 +6,20 @@ import UserContent from "app/database/user_content"
 
 class PremiumChecks extends LocalDatabase {
 
-    static checkProjectLength = (username: string, projectName:string , appSettings: types.AppSettingsObject) : Promise<types.ProjectLengthResponseObject>=>{
+    static checkProjectLength = (userId: string, projectName:string , appSettings: types.AppSettingsObject) : Promise<types.ProjectLengthResponseObject>=>{
 
-        const responseObject = {
-            upgradeNeeded: false,
-            reason: "",
-        }
+        return new Promise(async(resolve, reject)=>{
 
-        return new Promise(async(resolve)=>{
+            const responseObject: types.ProjectLengthResponseObject = {
+                upgradeNeeded: false,
+                reason: "",
+            }
 
             try{
 
-                const resultArray = await UserContent.getProjectEntries(username, projectName);
+                const resultArray = await UserContent.getProjectEntries(userId, projectName);
 
-                const resultArrayLength = resultArray.length
+                const resultArrayLength = resultArray.length;
     
                 if(resultArrayLength >= 50){
                     responseObject.reason = "50 Limit"
@@ -34,7 +34,10 @@ class PremiumChecks extends LocalDatabase {
                     resolve(responseObject)
                 }
 
-            }catch(e){}
+            }catch(e){
+                //Some error while checking project length
+                reject(e);
+            }
 
  
         })

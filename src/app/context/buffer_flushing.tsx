@@ -2,7 +2,11 @@
 
 import { createContext } from "react";
 
-const BufferFlushingContext = createContext("");
+type BufferFlushingStatusArray = [boolean, React.Dispatch<React.SetStateAction<boolean>>]
+
+const bufferFlushingStatusArray: BufferFlushingStatusArray = []
+
+const BufferFlushingContext = createContext(bufferFlushingStatusArray);
 
 
 export default BufferFlushingContext;

@@ -4,11 +4,10 @@ import {
     createContext
 } from 'react'
 
-const internetStatusObject = {
-    visible: false,
-    setEditTextVisible: ()=>{}
-}
+type InternetStatusArray = [boolean, React.Dispatch<React.SetStateAction<boolean>>]
 
-const InternetStatus = createContext(internetStatusObject);
+const internetStatusArray: internetStatusArray = []
+
+const InternetStatus = createContext(internetStatusArray);
 
 export default InternetStatus;

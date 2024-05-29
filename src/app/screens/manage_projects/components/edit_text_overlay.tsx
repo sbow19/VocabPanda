@@ -22,8 +22,8 @@ import UserContent from "app/database/user_content"
 import CurrentUserContext from "app/context/current_user"
 import ActivityIndicatorStatus from "app/context/activity_indicator_context"
 import { showMessage } from "react-native-flash-message"
-import BackendAPI from "app/api/backend"
-
+import BufferFlushingContext from 'app/context/buffer_flushing';
+import BufferManager from "app/api/buffer"
 import * as types from '@customTypes/types.d'
 
 
@@ -33,6 +33,10 @@ const EditTextView: React.FC  = props=>{
     const editTextOverlayObject = React.useContext(EditTextContext);
     const [currentUser] = React.useContext(CurrentUserContext) ;
     const [,setActivityIndicator] = React.useContext(ActivityIndicatorStatus);
+
+    /* Buffer flush state */
+    const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
+
 
     const entryToEdit = editTextOverlayObject.entryToEdit;
 
@@ -47,8 +51,8 @@ const EditTextView: React.FC  = props=>{
             <Formik
                 initialValues={
                     {
-                        targetText: entryToEdit["target_language_text"], 
-                        outputText: entryToEdit["output_language_text"] 
+                        targetText: entryToEdit["targetLanguageText"], 
+                        outputText: entryToEdit["outputLanguageText"] 
                     }
                 }
                 onSubmit={()=>{
@@ -71,7 +75,7 @@ const EditTextView: React.FC  = props=>{
                                     {fontSize: 18}
                                 ]}
                         >
-                            Target Language: {entryToEdit["target_language"]}
+                            Target Language: {entryToEdit["targetLanguage"]}
                         </Text>
                     </View>
                     <View
@@ -110,7 +114,7 @@ const EditTextView: React.FC  = props=>{
                                     {fontSize: 18}
                                 ]}
                         >
-                            Output Language: {entryToEdit["output_language"]}
+                            Output Language: {entryToEdit["outputLanguage"]}
                         </Text>
                     </View>
                     <View
@@ -177,27 +181,24 @@ const EditTextView: React.FC  = props=>{
 
                                 //Update user entry
                                 await UserContent.updateEntry(
-                                    currentUser,
-                                    entryToEdit["entry_id"],
+                                    currentUser.userId,
+                                    entryToEdit["entryId"],
                                     values.targetText,
-                                    entryToEdit["target_language"],
+                                    entryToEdit["targetLanguage"],
                                     values.outputText,
-                                    entryToEdit["output_language"]
+                                    entryToEdit["outputLanguage"]
                                 );
 
                                 //Refetch details of entry
 
                                 const updatedEntry = await UserContent.getEntryById(
-                                    currentUser,
-                                    entryToEdit["entry_id"]
+                                    currentUser.userId,
+                                    entryToEdit["entryId"]
                                 );
 
                                 //Set entry to edit 
 
-                                editTextOverlayObject.setEntryToEdit(updatedEntry[0]);
-
-                                const parsedUpdatedEntry = UserContent.convertEntryArrayToObject(updatedEntry[0])
-
+                                editTextOverlayObject.setEntryToEdit(updatedEntry);
 
                                 showMessage({
                                     type: "success",
@@ -206,25 +207,15 @@ const EditTextView: React.FC  = props=>{
 
                                 //Send new entry details to backend or retain here.
                                 //Handle backend communication errors seperately here
-
-                                
-                                const newEntryDetailsObject: types.APIEntryObject = {
-
-                                    entryDetails: parsedUpdatedEntry,
-                                    updateType: "update"
+                                if(bufferFlushState){
+                                    //If buffer currently being flushed, then add to secondary queue
+                                    await BufferManager.storeRequestSecondaryQueue(currentUser.userId, updatedEntry, "update");
+                
+                                }else if(!bufferFlushState){
+                                    //If buffer not currently being flushed, then add to main queue
+                                    await BufferManager.storeRequestMainQueue(currentUser.userId, updatedEntry, "update");
+                
                                 }
-
-                                BackendAPI.sendEntryInfo(newEntryDetailsObject)
-                                .then((entryAPIResponseObject)=>{
-
-                                    console.log(entryAPIResponseObject)
-
-                                })
-                                .catch((entryAPIResponseObject)=>{
-
-                                    console.log(entryAPIResponseObject) 
-
-                                });
 
 
                             }catch(e){

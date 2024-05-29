@@ -83,11 +83,9 @@ const CreateAccount: React.FC = props=>{
                             return
                         }
 
-                        //CReate secure message with password in message
-
                         try{
 
-                            setActivityIndicator(true);
+                            setActivityIndicator(true); //Set activity indicator
 
                             const createAccountObject: types.APIAccountObject<types.APICreateAccount> = {
 
@@ -96,9 +94,10 @@ const CreateAccount: React.FC = props=>{
                                     password: values.password,
                                     email: values.email
                                 },
-                                updateType: "create account"
+                                operationType: "create account"
                             };
 
+                            //We must get a success response from backend to create user locally
                             const backendResponse = await BackendAPI.sendAccountInfo(createAccountObject);
 
                             //Set login details for account locally (to replace with SQL storage)
@@ -115,30 +114,29 @@ const CreateAccount: React.FC = props=>{
                                 message: "Account created successfully",
                             })
 
-
                             /* Go back to sign in screen */
                             props.navigation.pop()
     
-
                         }catch(e){
 
-                            const accountOperationResponse = e as types.APIAccountOperationResponse
+                            const accountOperationResponse = e as types.BackendOperationResponse<string>
 
                             if(accountOperationResponse.customResponse === "user exists"){
-
+                                //If user exists, then user is alerted
                                 showMessage({
                                     type: "warning",
                                     message: "Account exists."
                                 })
 
-                            }
+                            }else {
 
-                            console.log(e);
-                            console.trace();
-                            showMessage({
-                                type: "warning",
-                                message: "Some error creating account."
-                            })
+                                console.log(e);
+                                console.trace();
+                                showMessage({
+                                    type: "warning",
+                                    message: "Some error creating account."
+                                })
+                            }
 
                         } finally{
                             actions.resetForm();

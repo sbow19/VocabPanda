@@ -2,9 +2,7 @@
 
 import SQLite, { SQLiteDatabase } from 'react-native-sqlite-storage';
 import { Alert } from 'react-native';
-import NetInfo from "@react-native-community/netinfo";
 import EncryptedStorage from "react-native-encrypted-storage";
-import BackendAPI from 'app/api/backend';
 import SQLStatements from './prepared_statements';
 
 import moment from 'moment';
@@ -15,41 +13,31 @@ import db from './db_util';
 class LocalDatabase{
 
     static transactionPromiseWrapper = (sqlStatement: string, args: string[], successMessage = null): Promise<SQLite.ResultSet>=>{
-        return new Promise(async(resolve, reject)=>{
+        return new Promise((resolve, reject)=>{
 
-
-            try{
-
-                let resultArray;
-                
-                db.transaction((transaction)=>{
-                
-                    transaction.executeSql(sqlStatement, args, 
-                
-                        (tx, result)=>{
-                            resultArray = result
-                        });        
-                },
-                (error)=>{
-
-                    console.log("Error occured", error)
-                    reject(error)
-
-                },
-                (success)=>{
-                    console.log("Transaction successful: ", successMessage)
-                    resolve(resultArray)
-                    
-                });
-
-            }catch(e){
-                console.log("Hello")
-                reject(e)
-            }
+            let resultArray: SQLite.ResultSet;
             
+            db.transaction((transaction)=>{
+            
+                transaction.executeSql(sqlStatement, args, 
+            
+                    (tx, result)=>{
+                        resultArray = result
+                    });        
+            },
+            (error)=>{
 
+                console.log("Error occurred in transaction wrapper", error);
+                reject(error);
+
+            },
+            (success)=>{
+                console.log("Transaction successful: ", successMessage);
+                resolve(resultArray);
+                
+            });
         })
-    }
+    };
 
     static parseRowResults = (resultArrayRaw)=>{
 
@@ -65,30 +53,44 @@ class LocalDatabase{
         return resultArray
     }
 
-    static createDatabaseSchema = () =>{
+    static createDatabaseSchema = (): Promise<types.LocalOperationResponse> =>{
 
-        return new Promise(async (resolve, reject)=>{
+        return new Promise((resolve, reject)=>{
 
-                try{
+            const createDatabaseResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "create",
+                contentType: "account"
+            }
 
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.USERS, [], "users table created or exists");
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_DETAILS, [], "user details table created or exists");
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_SETTINGS, [], "user settings created or exists");
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.PROJECTS, [], "projects created or exists");
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.TRANSLATIONS_LEFT, [], "translations left table created or exists");
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.PLAYS_LEFT, [], "plays left table created or exists");
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.NEXT_PLAYS_REFRESH, [], "next plays refresh table created or exists");
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.NEXT_TRANSLATIONS_REFRESH, [], "next translations refresh table created or exists");
-                    await this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_ENTRIES, [], "user entries table created or exists");
+            const promiseArray = [];
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.USERS, [], "users table created or exists"));
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_DETAILS, [], "user details table created or exists"));
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_SETTINGS, [], "user settings created or exists"));
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.PROJECTS, [], "projects created or exists"));
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.TRANSLATIONS_LEFT, [], "translations left table created or exists"));
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.PLAYS_LEFT, [], "plays left table created or exists"));
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.NEXT_PLAYS_REFRESH, [], "next plays refresh table created or exists"));
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.NEXT_TRANSLATIONS_REFRESH, [], "next translations refresh table created or exists"));
+            promiseArray.push(this.transactionPromiseWrapper(SQLStatements.databaseSchema.USER_ENTRIES, [], "user entries table created or exists"));
 
-                    resolve(null);
+            Promise.all(promiseArray)
+            .then(()=>{
+
+                //When all the promises have resolved
+                createDatabaseResponse.success = true;
+                resolve(createDatabaseResponse);
+            })
+            .catch((error)=>{
+
+                //Some error thrown up by the db transaction wrapper
+                createDatabaseResponse.error = error;
+                reject(createDatabaseResponse);
+
+            })
+                   
                     
-                }catch(e){
-
-                    reject(e)
-                }finally{
-                    resolve(null)
-                }
+               
 
         })
     }
@@ -160,78 +162,19 @@ class LocalDatabase{
 
     }
 
-    static setAPIKey = ()=>{
 
-        return new Promise(async(resolve, reject)=>{
 
-            try{
-
-                const APIKey = await EncryptedStorage.getItem('api-key');
-
-                //Check for internet connection
-
-                const isOnline = await NetInfo.fetch().then(state=>{
-
-                    return state.isConnected;
-                });
-
-                //Testing backend API key generatio
-    
-                if(!APIKey && isOnline){
-
-                    //Where user device has no data and is connected to internet, api key requewst made,
-            
-                    const backendResponse = await BackendAPI.requestAPIKey();
-
-                    if(!backendResponse.APIKey){
-                        const error = "Backend error generating API key."
-                        throw error;
-                    };
-
-                    await EncryptedStorage.setItem("api-key",
-                        backendResponse.APIKey
-                    );
-
-                    //Once API key set in local storage  we need to re add the global headers
-
-                    await BackendAPI.setGlobalHeaders();
-
-                    resolve(null);
-                    return
-
-                } else if (!APIKey && !isOnline){
-
-                    const error = "User must be online before starting app.";
-                    throw error
-
-                } else if (APIKey){
-
-                    //Once API key set in local storage  we need to re add the global headers
-                    await BackendAPI.setGlobalHeaders();
-
-                    resolve(null);
-                    return
-                }
-            
-            
-            }catch(e){
-                console.log(e);
-                const AddLocalUserDetailsError = new Error(
-                    "Error creating local storage for API Key."
-                ).stack;
-                
-                reject(AddLocalUserDetailsError);
-            }
-        })       
-    };
-
-    static getAPIKey = ()=>{
+    static getAPIKey = (): Promise<types.LocalOperationResponse<types.GetAPIKey>>=>{
 
         return new Promise(async(resolve)=>{
 
-            const resultObject = {
-                APIKey: "",
-                message: ""
+            const resultObject: types.LocalOperationResponse<types.GetAPIKey> = {
+                success: false,
+                message: "operation unsuccessful",
+                customResponse: {
+                    APIKey: "",
+                    message: "No API key exists"
+                }
             };
 
             try{

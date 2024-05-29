@@ -4,15 +4,16 @@ import * as types from '@customTypes/types.d'
 import LocalDatabase from "app/database/local_database";
 import SQLStatements from "app/database/prepared_statements";
 import BufferManager from 'app/api/buffer';
+import UserContent from "app/database/user_content"
 
 class UserDetails extends LocalDatabase{
 
     //Login events
 
-    static signIn = (user:string, password:string):Promise<types.APILoginResult>=>{
+    static signIn = (user:string, password:string):Promise<types.LoginResult>=>{
         return new Promise(async(resolve, reject)=>{
 
-            const resultObject: types.APILoginResult = {
+            const resultObject: types.LoginResult = {
                 
                 loginSuccess: false,
                 username: "",
@@ -21,70 +22,74 @@ class UserDetails extends LocalDatabase{
                 userId: ""
             };
 
-                try{
+            try{
+                //Try completing login with username
 
-                    const resultArrayRawUser = await super.transactionPromiseWrapper(SQLStatements.generalStatements.getUserLoginByUsername, [user], "User logins fetched");
+                const resultArrayRawUser = await super.transactionPromiseWrapper(SQLStatements.generalStatements.getUserLoginByUsername, [user], "User logins fetched");
 
-                    const resultArrayUsername = super.parseRowResults(resultArrayRawUser);
+                const resultArrayUsername = super.parseRowResults(resultArrayRawUser);
 
-                    if(resultArrayUsername.length === 0){
-                        //If username  or email does not match any entries, then login failed
-                        
+                if(resultArrayUsername.length === 0){
+                    //If username  or email does not match any entries, then try comparing with emails
                     
-                    }else if(resultArrayUsername.length === 1){
-                        //If username matches one user, then attempt password match
-                        const userPassword = resultArrayUsername[0].password_hash;
-
-                        if(userPassword === password){
-                            resultObject.loginSuccess = true
-                            resultObject.username = resultArrayUsername[0].username
-                            resultObject.userId = resultArrayUsername[0].id
-                            resolve(resultObject);
-                            return // Break from event loop here
-                        }
-                    }   
-
-                    const resultArrayRawEmail = await super.transactionPromiseWrapper(SQLStatements.generalStatements.getUserLoginByEmail, [user], "User emails fetched");
-            
-                    const resultArrayEmail = super.parseRowResults(resultArrayRawEmail);
-
-                    if(resultArrayEmail.length === 0){
-                        //If username  or email does not match any entries, then login failed
-                        resolve(resultObject)
-                    
-                    }else if(resultArrayEmail.length === 1){
-                        //If Email matches one user, then attempt password match
-                        const userPassword = resultArrayEmail[0].password_hash;
-
-                        if(userPassword === password){
-                            resultObject.loginSuccess = true
-                            resultObject.username = resultArrayEmail[0].username
-                            resultObject.userId = resultArrayEmail[0].id
-                            resolve(resultObject);
-                        }
-                    }
                 
-                }catch(e){
+                }else if(resultArrayUsername.length === 1){
+                    //If username matches one user, then attempt password match
+                    const userPassword = resultArrayUsername[0].password_hash;
 
-                    const signInError = new Error("Error occurred while signing in");
+                    if(userPassword === password){
+                        resultObject.loginSuccess = true
+                        resultObject.username = resultArrayUsername[0].username
+                        resultObject.userId = resultArrayUsername[0].id
+                        resolve(resultObject);
+                        return // Break from event loop here
+                    }
+                }   
 
-                    reject(signInError);
+                const resultArrayRawEmail = await super.transactionPromiseWrapper(SQLStatements.generalStatements.getUserLoginByEmail, [user], "User emails fetched");
+        
+                const resultArrayEmail = super.parseRowResults(resultArrayRawEmail);
 
+                if(resultArrayEmail.length === 0){
+                    //If username  or email does not match any entries, then login failed
+                    resolve(resultObject)
+                
+                }else if(resultArrayEmail.length === 1){
+                    //If Email matches one user, then attempt password match
+                    const userPassword = resultArrayEmail[0].password_hash;
+
+                    if(userPassword === password){
+                        resultObject.loginSuccess = true
+                        resultObject.username = resultArrayEmail[0].username
+                        resultObject.userId = resultArrayEmail[0].id
+                        resolve(resultObject);
+                    }
                 }
-            })
+            
+            }catch(e){
+                //Some error occured while signing in
+                resultObject.error = e;
+                reject(resultObject);
+
+            }
+        })
     };
 
-    static getLastLoggedIn = (username: string) =>{
+    static getLastLoggedIn = (userId: string): Promise<string | null> =>{
         return new Promise(async(resolve, reject)=>{
-
-
-            //Create transaction
-
             try{
 
                 const resultArrayRaw = await super.transactionPromiseWrapper(SQLStatements.generalStatements.getLastLoggedIn, [
-                    username
+                    userId
                 ], "fetch last logged in");
+
+
+                if(resultArrayRaw.rowsAffected === 0){
+                    //Failure to identify user, throws error
+                    reject(null);
+                    return
+                }
+                    
 
                 const resultArray = super.parseRowResults(resultArrayRaw);
 
@@ -95,7 +100,7 @@ class UserDetails extends LocalDatabase{
                     
                 } else if(resultArray.length === 1){
 
-                    const lastLoggedInTime = resultArray[0]["last_logged_in"];
+                    const lastLoggedInTime: string = resultArray[0]["last_logged_in"];
 
                     resolve(lastLoggedInTime);
                 }
@@ -106,29 +111,40 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static getLastActivity = (username: string) =>{
+    static getLastActivity = (userId: string): Promise<Array<null | types.EntryDetails>>=>{
 
         return new Promise(async(resolve, reject)=>{
 
-
             //Get last logged in time
-
-            const lastLoggedInTime = await this.getLastLoggedIn(username);
-
-            console.log(lastLoggedInTime)
+            const lastLoggedInTime = await this.getLastLoggedIn(userId);
 
             //start transaction, returns array  of user entries entered since last logged in time.
 
             try{
                 const resultArrayRaw = await super.transactionPromiseWrapper(SQLStatements.generalStatements.getLastActivity, [
                     lastLoggedInTime, 
-                    username
+                    userId
                 ],
                 "Fetched last activity");
 
-                const resultArray = this.parseRowResults(resultArrayRaw);
 
-                resolve(resultArray);
+                const resultArray: Array<types.SQLDBResult<types.SQLUserEntries> | null> = this.parseRowResults(resultArrayRaw); //Returns empty array or list of entries
+
+                if(resultArray.length === 0){
+                    resolve([])
+                }else if(resultArray.length > 0){
+
+                    const convertedResultArray = resultArray.map((storedEntry: types.SQLUserEntries)=>{
+
+                        const convertedEntry = UserContent.convertSQLEntry(storedEntry);
+                        convertedEntry.dataType = "entry";
+                        return convertedEntry
+    
+                    })
+                    resolve(convertedResultArray);
+
+                }
+               
 
             }catch(e){
                 console.log("Error fetching last activity data");
@@ -139,80 +155,39 @@ class UserDetails extends LocalDatabase{
 
     };
     
-    static getDefaultAppSettings(username: string): Promise<types.AppSettingsObject>{
+    static getDefaultAppSettings(userId: string): Promise<types.AppSettingsObject>{
         return new Promise(async(resolve, reject)=>{
 
+            const defaultAppSettings: types.AppSettingsObject = {};
+
             try{
-
-                console.log("hello")
-                //get user ID 
-
-                const userId = await super.getUserId(username);
-
                 //Get user settings
+                const userSettings = await this.getUserSettings(userId);
 
-                const userSettingsRaw = await this.getUserSettings(userId);
-
-
-                const defaultAppSettings = {
-                    userSettings: {
-                      targetLanguage: userSettingsRaw["target_lang"],
-                      outputLanguage: userSettingsRaw["output_lang"],
-                      timerOn: userSettingsRaw["timer_on"],
-                      noOfTurns: userSettingsRaw["slider_val"]
-                    },
-                    premium:{
-                        premium: 0,
-                        endTime: null
-                    }
-                };
+                defaultAppSettings.userSettings = userSettings;
+                   
 
                 //Get user projects
-
                 defaultAppSettings.projects = await this.getUserProjects(userId);
-
-
             
                 //Get last logged in
-
-                const lastLoggedIn = await this.getLastLoggedIn(username);
-
-                defaultAppSettings.lastLoggedIn = lastLoggedIn;
+                defaultAppSettings.lastLoggedIn = await this.getLastLoggedIn(userId);
 
                 //get premium
-
-                const premium = await this.checkPremiumStatus(username);
-
-                defaultAppSettings.premium.premium = premium;
-
+                defaultAppSettings.premium.premium= await this.checkPremiumStatus(userId);
 
                 //Get plays left
-
-                const playsLeft = await this.getPlaysLeft(userId);
-
-                defaultAppSettings.playsLeft = playsLeft;
+                defaultAppSettings.playsLeft = await this.getPlaysLeft(userId);
 
                 //Get playsr efresh time left
+                defaultAppSettings.playsRefreshTime = await UserDetails.getPlaysRefreshTimeLeft(userId);
 
-                const playsRefreshTimeRaw = await UserDetails.getPlaysRefreshTimeLeft(userId);
-
-                defaultAppSettings.playsRefreshTime = playsRefreshTimeRaw["games_refresh"];
-
-
+            
                 //Get translations left
-
-                const translationsLeft = await this.getTranslationsLeft(userId);
-
-                defaultAppSettings.translationsLeft = translationsLeft;
+                defaultAppSettings.translationsLeft = await this.getTranslationsLeft(userId);
 
                 //Get translations refresh time left
-
-                const translationsRefreshTimeRaw = await UserDetails.getTranslationsRefreshTimeLeft(userId);
-
-                console.log(translationsRefreshTimeRaw);
-
-                defaultAppSettings.translationsRefreshTime = translationsRefreshTimeRaw["translations_refresh"]
-
+                defaultAppSettings.translationsRefreshTime = await UserDetails.getTranslationsRefreshTimeLeft(userId);
 
                 resolve(defaultAppSettings);
 
@@ -227,7 +202,7 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static getUserSettings(userId: string){
+    static getUserSettings = (userId: string): Promise<types.UserSettings>=>{
         return new Promise(async(resolve, reject)=>{
 
 
@@ -237,19 +212,37 @@ class UserDetails extends LocalDatabase{
                     userId
                 ], "User settings fetched");
 
+                if(resultArrayRawSettings.rowsAffected === 0){
+                    //Failure to identify user, throws error
+                    reject(null);
+                    return
+                }
 
-                const resultArraySettings = super.parseRowResults(resultArrayRawSettings);
+
+                const resultArraySettings: Array<types.SQLDBResult<types.SQLUserSettings> | null> = super.parseRowResults(resultArrayRawSettings);
 
                 if(resultArraySettings.length === 0){
 
-                    resolve("Error: no user settings found")
+                    //There should be a user in the db. This triggers an error.
+                    reject("Error: no user settings found")
 
                 }else if (resultArraySettings.length === 1){
 
-                    const rawUserSettings = resultArraySettings[0];
+                    const rawUserSettings: types.SQLDBResult<types.SQLUserSettings> = resultArraySettings[0];
+
+                    const userSettings: types.UserSettings = {
+
+                        gameTimerOn: rawUserSettings.timer_on,
+                        gameNoOfTurns: rawUserSettings.slider_val,
+                        defaultTargetLanguage: rawUserSettings.target_lang,
+                        defaultOutputLanguage: rawUserSettings.output_lang,
+                        defaultProject: rawUserSettings.default_project,
+                        dataType: "settings"
+
+                    }
 
                     //Return user settings
-                    resolve(rawUserSettings);
+                    resolve(userSettings);
 
                 }
 
@@ -264,13 +257,8 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-
-    static getUserProjects(userId: string){
+    static getUserProjects = (userId: string): Promise<Array<types.ProjectDetails | null>>=>{
         return new Promise(async(resolve, reject)=>{
-
-            //Start transaction --
-
-            //Get user projects
 
             try{
                 
@@ -279,7 +267,13 @@ class UserDetails extends LocalDatabase{
                 ],
                 "User projects fetched");
 
-                const resultArrayProjects = super.parseRowResults(resultArrayRawProjects);
+                if(resultArrayRawProjects.rowsAffected === 0){
+                    //Failure to identify user, throws error
+                    reject(null);
+                    return
+                }
+
+                const resultArrayProjects: Array<types.SQLDBResult<types.SQLUserProjects> | null> = super.parseRowResults(resultArrayRawProjects);
 
                 if(resultArrayProjects.length === 0){
 
@@ -292,14 +286,13 @@ class UserDetails extends LocalDatabase{
                     const projectArray: Array<types.ProjectDetails> = [];
 
                     //Cycle through projects identified in projects table and add details to app setting object.
-
                     for(let project of resultArrayProjects){
 
                         let projectObject: types.ProjectDetails = {
-                            projectName: project["project"],
-                            targetLanguage: project["target_lang"],
-                            outputLanguage: project["outputLang"]
-                        
+                            projectName: project.project,
+                            targetLanguage: project.target_lang,
+                            outputLanguage: project.output_lang,
+                            dataType: "project"
                         };
 
                         projectArray.push(projectObject);
@@ -357,32 +350,41 @@ class UserDetails extends LocalDatabase{
         username:string, 
         password: string,
         id: string
-    )=>{
+    ): Promise<types.LocalOperationResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
 
+            const createNewUser: types.LocalOperationResponse = {
+                success: false,
+                message: "operation unsuccessful"
+            }
+
             try{
 
-            //Hash password
+                //Hash password
 
-            //Get SQL formatted datetime (move to local database class)
+                //Get SQL formatted datetime (move to local database class)
+                const currentTime = super.getCurrentTime();
 
-            const currentTime = super.getCurrentTime();
+                //Promise array
 
-                await this.transactionPromiseWrapper(SQLStatements.addNewUser.USERS, [id,
+                const promiseArray = [
+                
+                this.transactionPromiseWrapper(SQLStatements.addNewUser.USERS, [id,
                 username,
                     email,
                     password], 
-                "user added to users table");
+                "user added to users table"),
 
-                await this.transactionPromiseWrapper(SQLStatements.addNewUser.USER_DETAILS, [
+                this.transactionPromiseWrapper(SQLStatements.addNewUser.USER_DETAILS, [
                     username,
                     id,
                     currentTime,
                     0  //Not premium
                 ], 
-                "user settings added to user settings table");
-                await this.transactionPromiseWrapper(SQLStatements.addNewUser.USER_SETTINGS, [
+                "user settings added to user settings table"),
+
+                this.transactionPromiseWrapper(SQLStatements.addNewUser.USER_SETTINGS, [
                     id,
                     1, //Timer on
                     10, //Default slider value to 10
@@ -390,44 +392,49 @@ class UserDetails extends LocalDatabase{
                     "EN", //DEfault output lang  TODO: change depend on user pref
                     null //default project
                 ], 
-                "user settings created or exists");
+                "user settings created or exists"),
 
-                await this.transactionPromiseWrapper(SQLStatements.addNewUser.TRANSLATIONS_LEFT, [
+                this.transactionPromiseWrapper(SQLStatements.addNewUser.TRANSLATIONS_LEFT, [
                     id,
                     100
                 ], 
-                "translations left added to table");
+                "translations left added to table"),
 
-                await this.transactionPromiseWrapper(SQLStatements.addNewUser.PLAYS_LEFT, [
+                this.transactionPromiseWrapper(SQLStatements.addNewUser.PLAYS_LEFT, [
                     id,
                     10
                 ], 
-                "plays left added to table");
+                "plays left added to table"),
 
-                await this.transactionPromiseWrapper(SQLStatements.addNewUser.NEXT_PLAYS_REFRESH, [
+                this.transactionPromiseWrapper(SQLStatements.addNewUser.NEXT_PLAYS_REFRESH, [
                     id,
                     null
                 ], 
-                "next plays refresh table created or exists");
+                "next plays refresh table created or exists"),
 
-                await this.transactionPromiseWrapper(SQLStatements.addNewUser.NEXT_TRANSLATIONS_REFRESH, 
+                this.transactionPromiseWrapper(SQLStatements.addNewUser.NEXT_TRANSLATIONS_REFRESH, 
                     [
                         id,
                         null
-                    ], "next translations refresh added to table");
+                    ], "next translations refresh added to table"),
 
-                
+                ];
+
+                //wait for all db transactions to complete
+                await Promise.all(promiseArray);
+
                 //Add new users to buffer queues
                 await BufferManager.addNewUser(id);
 
-                resolve(null);
+                createNewUser.success = true;
+                resolve(createNewUser);
 
                     
             }catch(e){
-                reject(e)
-            }
 
-            /* Prime for account creation online */
+                createNewUser.error = e;
+                reject(createNewUser)
+            }
     })}
 
     static changePassword = async (newPassword:string, username: string ): Promise<types.ChangePasswordResponse>=>{
@@ -562,23 +569,33 @@ class UserDetails extends LocalDatabase{
 
 
 
-    static updateTimerValue(username: string, value: boolean){
+    static updateTimerValue = (userId: string, value: boolean): Promise<types.LocalOperationResponse>=>{
         return new Promise(async(resolve, reject)=>{
+
+            const timerUpdateSuccess: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                message: "operation unsuccessful"
+            }
 
             try{
 
-                //Get userId 
-                const userId = await super.getUserId(username);
-
                 //Get new db transaction, and update time in database.
-
-                await super.transactionPromiseWrapper(SQLStatements.updateStatements.updateTimerOn, [
+                const resultRow = await super.transactionPromiseWrapper(SQLStatements.updateStatements.updateTimerOn, [
                     value,
                     userId
                 ],
                 "Updated timer value");
-                
-                resolve(null);
+
+                if(resultRow.rowsAffected === 0){
+                    reject(timerUpdateSuccess) //Failed to update timer
+                } else if (resultRow.rowsAffected === 1){
+
+                    timerUpdateSuccess.success = true;
+                    timerUpdateSuccess.message = "operation successful";
+                    resolve(timerUpdateSuccess);
+
+                }
             
             } catch(e){
                 console.log("Could not update timer value.")
@@ -589,24 +606,36 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static updateTurnsValue(username: string, value: number){
+    static updateTurnsValue = (userId: string, value: number): Promise<types.LocalOperationResponse> =>{
         return new Promise(async(resolve, reject)=>{
+
+            let updateTurnsResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "account",
+                message: "operation unsuccessful" 
+            }
 
             try{
 
-                //Get userId 
-                const userId = await super.getUserId(username);
         
                 //Get new db transaction, and update time in database.
 
-                await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateNoOfTurns, [
+                const resultRow = await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateNoOfTurns, [
                     value,
                     userId
                 ],
                 "Updated turns value");
 
-                resolve(null);
-               
+                if(resultRow.rowsAffected === 0){
+                    reject(updateTurnsResponse) //Failed to update timer
+                } else if (resultRow.rowsAffected === 1){
+
+                    updateTurnsResponse.success = true;
+                    updateTurnsResponse.message = "operation successful";
+                    resolve(updateTurnsResponse);
+
+                }               
 
             } catch(e){
                 console.log("Could not update no of turns.")
@@ -617,23 +646,35 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static updateTargetLangDefault(username: string, value: string){
+    static updateTargetLangDefault = (userId: string, value: string): Promise<types.LocalOperationResponse> =>{
         return new Promise(async(resolve, reject)=>{
 
-            try{ 
-                //Get userId 
-                const userId = await super.getUserId(username);
-                
+            let updateTargetLangResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful" 
+            }
 
+            try{ 
+    
                 //Get new db transaction, and update time in database.
             
-                await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateDefaultTargetLang, [
+                const resultRow = await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateDefaultTargetLang, [
                     value,
                     userId
                 ], 
                 "Updated target language");
             
-                resolve(null);
+                if(resultRow.rowsAffected === 0){
+                    reject(updateTargetLangResponse) //Failed to update target lang
+                } else if (resultRow.rowsAffected === 1){
+
+                    updateTargetLangResponse.success = true;
+                    updateTargetLangResponse.message = "operation successful";
+                    resolve(updateTargetLangResponse);
+
+                }    
                 
             } catch(e){
                 console.log("Could not update default target lang.")
@@ -644,24 +685,36 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static updateOutputLangDefault(username: string, value: string){
+    static updateOutputLangDefault = (userId: string, value: string): Promise<types.LocalOperationResponse>=>{
         return new Promise(async(resolve, reject)=>{
 
+            let updateOutputLangResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful" 
+            }
+
+
             try{  
-                
-                //Get userId 
-
-                const userId = await this.getUserId(username);
-
+            
                 //Get new db transaction, and update time in database.
             
-                await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateDefaultOutputLang, [
+                const resultRow = await this.transactionPromiseWrapper(SQLStatements.updateStatements.updateDefaultOutputLang, [
                     value,
                     userId
                 ], 
                 "Updated output language");
             
-                resolve(null);
+                if(resultRow.rowsAffected === 0){
+                    reject(updateOutputLangResponse) //Failed to update target lang
+                } else if (resultRow.rowsAffected === 1){
+
+                    updateOutputLangResponse.success = true;
+                    updateOutputLangResponse.message = "operation successful";
+                    resolve(updateOutputLangResponse);
+
+                }  
                 
             } catch(e){
                 console.log("Could not update default target lang.")
@@ -672,23 +725,34 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static setTranslationsLeft(username: string, translationsLeft: number){
+    static setTranslationsLeft = (userId: string, translationsLeft: number): Promise<types.LocalOperationResponse>=>{
         return new Promise(async(resolve, reject)=>{
+
+            let updateTranslationsResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful" 
+            }
 
             try{
     
-                //Get userId 
-                const userId = await super.getUserId(username);
-
-
                 //Get new db transaction, and update time in database
-
-                await super.transactionPromiseWrapper(SQLStatements.updateStatements.updateTranslationsLeft, [
+                const resultRow = await super.transactionPromiseWrapper(SQLStatements.updateStatements.updateTranslationsLeft, [
                     translationsLeft,
                     userId
                 ],
-               "Set translations left");
-                resolve(null);
+                "Set translations left");
+
+            if(resultRow.rowsAffected === 0){
+                reject(updateTranslationsResponse) //Failed to update target lang
+            } else if (resultRow.rowsAffected === 1){
+
+                updateTranslationsResponse.success = true;
+                updateTranslationsResponse.message = "operation successful";
+                resolve(updateTranslationsResponse);
+
+            }    
         
 
             } catch(e){
@@ -700,23 +764,35 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static setPlaysLeft(username: string, playsLeft: number){
+    static setPlaysLeft = (userId: string, playsLeft: number): Promise<types.LocalOperationResponse>=>{
         return new Promise(async(resolve, reject)=>{
 
+            
+            let updatePlaysResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful" 
+            }
+
             try{
-
-                //Get userId 
-
-                const userId = await this.getUserId(username);
-
                 //Get new db transaction, and update time in database.
 
-                await this.transactionPromiseWrapper(SQLStatements.updateStatements.updatePlaysLeft, [
+                const resultRow = await this.transactionPromiseWrapper(SQLStatements.updateStatements.updatePlaysLeft, [
                     playsLeft,
                     userId
                 ],
                 "Updated plays left");
-                resolve(null);
+
+                if(resultRow.rowsAffected === 0){
+                    reject(updatePlaysResponse) //Failed to update target lang
+                } else if (resultRow.rowsAffected === 1){
+
+                    updatePlaysResponse.success = true;
+                    updatePlaysResponse.message = "operation successful";
+                    resolve(updatePlaysResponse);
+
+                } 
                 
             } catch(e){
                 console.log("Could not update plays left.")
@@ -727,20 +803,27 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static setPlaysRefreshTimeLeft(username: string){
+    static setPlaysRefreshTimeLeft = (userId: string):Promise<types.LocalOperationResponse<number|null>>=>{
         return new Promise(async(resolve, reject)=>{
 
+            let updatePlaysRefreshResponse: types.LocalOperationResponse<number| null> = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful",
+                customResponse: 0
+            }
+
             try{
-
-                //Get userId 
-                const userId = await this.getUserId(username);
-
                 //Check whether time exists
                 const checkValue = await this.getPlaysRefreshTimeLeft(userId);
 
-                if(checkValue["game_refresh"] !== null){
+                if(checkValue !== null){
                     //If there is already a time set, don't refresh it
-                    resolve(checkValue["game_refresh"])
+                    updatePlaysRefreshResponse.success = true;
+                    updatePlaysRefreshResponse.message = "operation successful";
+                    updatePlaysRefreshResponse.customResponse = checkValue;
+                    resolve(updatePlaysRefreshResponse);
                     return 
                 };
 
@@ -759,12 +842,23 @@ class UserDetails extends LocalDatabase{
                 const formattedTime = newTime.toISOString();
 
                 //Get new db transaction, and update time in database.
-                await this.transactionPromiseWrapper(SQLStatements.refreshStatements.setPlaysRefreshTime, [
+                const resultRow = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.setPlaysRefreshTime, [
                     formattedTime,
                     userId
                 ],
                 "Updated plays refresh time");
-                resolve(newTime); //Resolves plays refresh time
+
+
+                if(resultRow.rowsAffected === 0){
+                    reject(updatePlaysRefreshResponse) //Failed to update target lang
+                } else if (resultRow.rowsAffected === 1){
+
+                    updatePlaysRefreshResponse.customResponse = newTime;
+                    updatePlaysRefreshResponse.success = true;
+                    updatePlaysRefreshResponse.message = "operation successful";
+                    resolve(updatePlaysRefreshResponse);
+
+                }   
                 
             } catch(e){
                 console.log("Could not update plays refresh time left.")
@@ -775,21 +869,33 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static setTranslationsRefreshTimeLeft(username: string, translationRefreshTime){
+    static setTranslationsRefreshTimeLeft = (userId: string, translationRefreshTime): Promise<types.LocalOperationResponse>=>{
         return new Promise(async(resolve, reject)=>{
+
+            let updateTranslationsRefreshResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful" 
+            }
 
             try{
 
-                //Get userId 
-                const userId = await this.getUserId(username);
-
-                await this.transactionPromiseWrapper(SQLStatements.refreshStatements.setTranslationRefreshTime, [
+                const resultRow = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.setTranslationRefreshTime, [
                     translationRefreshTime,
                     userId
                 ],
                 "Updated translations refresh time");
 
-                resolve(translationRefreshTime); // Resolves to new time
+                if(resultRow.rowsAffected === 0){
+                    reject(updateTranslationsRefreshResponse) //Failed to update target lang
+                } else if (resultRow.rowsAffected === 1){
+    
+                    updateTranslationsRefreshResponse.success = true;
+                    updateTranslationsRefreshResponse.message = "operation successful";
+                    resolve(updateTranslationsRefreshResponse);
+    
+                } 
                 
             } catch(e){
                 console.log("Could not update translations refresh time left.")
@@ -802,28 +908,41 @@ class UserDetails extends LocalDatabase{
 
     //Refreshing user plays and translations
 
-    static refreshGamesLeft(userId: string){
+    static refreshGamesLeft = (userId: string):Promise<types.LocalOperationResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
 
-
+            let refreshPlaysRefreshResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful",
+                
+            }
             try{
 
-
                 //Start transaction
+                const resultRowRefresh = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updatePlaysRefresh, [
+                    userId
+                ],
+                "Updated plays refresh time");
+                
+                const resultRowPlays = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updatePlaysRemaining, [
+                    userId
+                ],
+                "updated plays left");
+
+                if(resultRowRefresh.rowsAffected === 0 || resultRowPlays.rowsAffected === 0 ){
+                    reject(refreshPlaysRefreshResponse) //Failed to update rows 
+
+                } else if (resultRowRefresh.rowsAffected === 1 && resultRowPlays.rowsAffected === 1){
 
 
-                    await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updatePlaysRefresh, [
-                        userId
-                    ],
-                    "Updated plays refresh time");
-                    
-                    await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updatePlaysRemaining, [
-                        userId
-                    ],
-                    "updated plays left");
+                    refreshPlaysRefreshResponse.success = true;
+                    refreshPlaysRefreshResponse.message = "operation successful";
+                    resolve(refreshPlaysRefreshResponse);
 
-                    resolve(null);
+                }  
           
 
             } catch(e){
@@ -835,27 +954,41 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static refreshTranslationsLeftPremium(userId: string){
+    static refreshTranslationsLeftPremium = (userId: string): Promise<types.LocalOperationResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
 
+            let translationsLeftPremResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful",
+            }
+
             try{
 
-
-                //Start transaction
-
-          
-                await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updateTranslationsRemainingPremium, [
+                const resultRowRefresh = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updateTranslationsRemainingPremium, [
                     userId
                 ],
                 "updated translations refresh premium");
-                await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updateTranslationsRefreshPremium, [
+
+                const resultRowTrans = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updateTranslationsRefreshPremium, [
                     userId
                 ],
                 "Updated refresh premium");
 
             
-                    resolve(null);
+                if(resultRowRefresh.rowsAffected === 0 || resultRowTrans.rowsAffected === 0 ){
+                    reject(translationsLeftPremResponse) //Failed to update rows 
+
+                } else if (resultRowRefresh.rowsAffected === 1 && resultRowTrans.rowsAffected === 1){
+
+
+                    translationsLeftPremResponse.success = true;
+                    translationsLeftPremResponse.message = "operation successful";
+                    resolve(translationsLeftPremResponse);
+
+                }  
                
 
                 
@@ -868,24 +1001,41 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static refreshTranslationsLeftFree(userId: string){
+    static refreshTranslationsLeftFree = (userId: string): Promise<types.LocalOperationResponse>=>{
 
         return new Promise(async(resolve, reject)=>{
+
+            let translationsLeftFreeResponse: types.LocalOperationResponse = {
+                success: false,
+                operationType: "update",
+                contentType: "settings",
+                message: "operation unsuccessful",
+            }
 
             try{
 
                 //Start transaction
 
-                await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updateTranslationsRemainingFree, [
+                const resultRowRefresh = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updateTranslationsRemainingFree, [
                     userId
                 ],
                 "Updated translations remaining free");
-                await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updateTranslationsRefreshFree, [
+                const resultRowTrans = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.updateTranslationsRefreshFree, [
                     userId
                 ],
                 "Updated translations refresh");
         
-                resolve(null);
+                if(resultRowRefresh.rowsAffected === 0 || resultRowTrans.rowsAffected === 0 ){
+                    reject(translationsLeftFreeResponse) //Failed to update rows 
+
+                } else if (resultRowRefresh.rowsAffected === 1 && resultRowTrans.rowsAffected === 1){
+
+
+                    translationsLeftFreeResponse.success = true;
+                    translationsLeftFreeResponse.message = "operation successful";
+                    resolve(translationsLeftFreeResponse);
+
+                }  
 
 
             } catch(e){
@@ -899,23 +1049,32 @@ class UserDetails extends LocalDatabase{
 
 
     //Get information events
-
-    static getPlaysRefreshTimeLeft(userId: string){
-
+    static getPlaysRefreshTimeLeft = (userId: string): Promise<number| null>=>{
         return new Promise(async(resolve, reject)=>{
 
             try{
-
-                //Start transaction
-
                 const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.refreshStatements.getPlaysRefreshTimeLeft, [
                     userId
                 ],
                 "Fetched plays refresh time");
 
+                if(resultArrayRaw.rowsAffected === 0){
+                    reject(null) //Failed to identify User
+                    return
+                }
 
+                const resultArray = super.parseRowResults(resultArrayRaw);
 
-                resolve(resultArrayRaw);
+                if(resultArray.length === 0){
+                    //If username  or email does not match any entries, then fetch failed
+                    throw ""
+                
+                }else if(resultArray.length === 1){
+                    //If Email matches one user, then attempt password match
+                    const playsRefreshTime: number| null = resultArray[0]["games_refresh"]
+
+                    resolve(playsRefreshTime);
+                }
 
                 
 
@@ -926,7 +1085,7 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static getTranslationsRefreshTimeLeft(userId: string){
+    static getTranslationsRefreshTimeLeft = (userId: string): Promise<number | null>=>{
 
         return new Promise(async(resolve, reject)=>{
             try{
@@ -936,6 +1095,11 @@ class UserDetails extends LocalDatabase{
                 ],
                 "Fetched translations refresh time");
 
+                if(resultArrayRaw.rowsAffected === 0){
+                    reject(null) //Failed to identify user
+                    return
+                }
+
                 const resultArray = super.parseRowResults(resultArrayRaw);
 
                 if(resultArray.length === 0){
@@ -944,7 +1108,7 @@ class UserDetails extends LocalDatabase{
 
                 }else if (resultArray.length === 1){
 
-                    const nextTranslationsRefreshTime = resultArray[0];
+                    const nextTranslationsRefreshTime = resultArray[0]["translations_refresh"];
 
                     resolve(nextTranslationsRefreshTime);
                 };
@@ -971,6 +1135,11 @@ class UserDetails extends LocalDatabase{
                 ],
                 "Fetched plays left");
 
+                if(resultArrayRaw.rowsAffected === 0){
+                    reject(null) //Failed to idetnify user
+                    return
+                }
+
                 const resultArray = super.parseRowResults(resultArrayRaw);
 
                 if(resultArray.length === 0){
@@ -992,19 +1161,20 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static getTranslationsLeft(userId: string){
+    static getTranslationsLeft=(userId: string) : Promise<number>=>{
 
         return new Promise(async(resolve, reject)=>{
 
             try{
-
-
-                //Start transaction
-
                 const resultArrayRaw = await super.transactionPromiseWrapper(SQLStatements.generalStatements.getTranslationsLeft, [
                     userId
                 ],
                 "Fetched translations left");
+
+                if(resultArrayRaw.rowsAffected === 0){
+                    reject(null) //Failed to identify user
+                    return
+                }
 
                 const resultArray = super.parseRowResults(resultArrayRaw);
 
@@ -1014,7 +1184,7 @@ class UserDetails extends LocalDatabase{
 
                 }else if (resultArray.length === 1){
 
-                    const translationsLeft = resultArray[0]["translations_left"];
+                    const translationsLeft: number = resultArray[0]["translations_left"];
 
                     resolve(translationsLeft);
                 };
@@ -1028,17 +1198,15 @@ class UserDetails extends LocalDatabase{
         })
     };
 
-    static checkPremiumStatus(username:string): Promise<boolean>{
+    static checkPremiumStatus = (userId:string): Promise<boolean | 0 | 1> => {
 
         return new Promise(async(resolve, reject)=>{
 
             try{
-
-
                 //Start transaction
             
                 const resultArrayRaw = await super.transactionPromiseWrapper(SQLStatements.generalStatements.getPremiumStatus, [
-                    username
+                    userId
                 ],
                 "Fetched premium status");
 

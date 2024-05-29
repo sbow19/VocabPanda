@@ -4,7 +4,8 @@ import SQLite from 'react-native-sqlite-storage';
 
 const db = SQLite.openDatabase(
   { name: "vocabpanda.db",
-  location: "default" },
+    location: "default"
+  },
   () => {
     console.log('Database opened successfully');
   },

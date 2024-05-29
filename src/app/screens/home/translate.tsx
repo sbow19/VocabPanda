@@ -27,18 +27,18 @@ import { Overlay } from '@rneui/base';
 import { Formik } from 'formik';
 
 import BackendAPI from 'app/api/backend';
+import BufferManager from './buffer';
 
 import * as yup from 'yup'
 import UpgradeBanner from 'app/shared/upgrade_banner';
 
 import CurrentUserContext from 'app/context/current_user';
 import DefaultAppSettingsContext from 'app/context/default_app_settings_context';
-import LoadingStatusInGame from "../../context/loadingInGame";
 import ActivityIndicatorStatus from 'app/context/activity_indicator_context';
 
 import UserDetails from 'app/database/user_profile_details';
 import UserContent from 'app/database/user_content';
-import LocalDatabase from 'app/database/local_database';
+import BufferFlushingContext from 'app/context/buffer_flushing';
 
 import UpgradePrompt from 'app/premium/upgrade_overlay';
 import PremiumChecks from 'app/premium/premium_checks';
@@ -56,7 +56,10 @@ const TranslateVocab: React.FC = props=>{
 
     /* Set upgrade prompt  */
 
-    const [upgradePrompt, setUpgradePrompt] = React.useState(false)
+    const [upgradePrompt, setUpgradePrompt] = React.useState(false);
+
+    /* Buffer flush state */
+    const [bufferFlushState, setBufferFlushingState] = React.useContext(BufferFlushingContext);
 
     /* Language selections stored in local state but also set as default language */
     const [inputLangSelection, setInputLangSelection] = useState("");
@@ -107,21 +110,21 @@ const TranslateVocab: React.FC = props=>{
         try{
 
             //Check whether max number of entries exceeded
-            const responseObject: types.ProjectLengthResponseObject = await PremiumChecks.checkProjectLength(currentUser, projectSelection, appSettings);
+            const responseObject: types.ProjectLengthResponseObject = await PremiumChecks.checkProjectLength(currentUser.userId, projectSelection, appSettings);
 
             if(responseObject.upgradeNeeded){
 
                 setUpgradePrompt(true)
 
-            } else 
-            if(!responseObject.upgradeNeeded && responseObject.reason === "50 Limit"){
+            } 
+            else if(!responseObject.upgradeNeeded && responseObject.reason === "50 Limit"){
 
                 showMessage({
                     type: "warning",
                     message: "50 entry limit reached"
                 })
-            } else 
-            if(!responseObject.upgradeNeeded && responseObject.reason === ""){
+            } 
+            else if(!responseObject.upgradeNeeded && responseObject.reason === ""){
 
                 const entryObject: types.EntryDetails = {
                     targetLanguageText: input,
@@ -131,49 +134,26 @@ const TranslateVocab: React.FC = props=>{
                     project: projectSelection 
                 };
         
-                const entryId = await UserContent.addNewEntry(currentUser, entryObject);
+                const {customResponse: entryId} = await UserContent.addNewEntry(currentUser, entryObject);
 
                 showMessage({
                     type: "success",
                     message: "Entry added successfully!"
-                })
-
+                });
 
                 //Send new entry details to backend or retain here.
                 //Handle backend communication errors seperately here
-                UserContent.getEntryById(currentUser, entryId)
-                .then((newEntryDetailsRaw: Array[])=>{
+                const newEntryDetails = await UserContent.getEntryById(currentUser.userId, entryId)        
 
-                    const newEntryDetails = UserContent.convertEntryArrayToObject(newEntryDetailsRaw[0]);
+                if(bufferFlushState){
+                    //If buffer currently being flushed, then add to secondary queue
+                    await BufferManager.storeRequestSecondaryQueue(currentUser.userId, newEntryDetails, "entries");
 
-                    const newEntryDetailsObject: types.APIEntryObject = {
+                }else if(!bufferFlushState){
+                    //If buffer not currently being flushed, then add to main queue
+                    await BufferManager.storeRequestMainQueue(currentUser.userId, newEntryDetails, "entries");
 
-                        entryDetails: newEntryDetails,
-                        updateType: "create"
-                    }
-
-                    BackendAPI.sendEntryInfo(newEntryDetailsObject)
-                    .then((entryAPIResponseObject)=>{
-
-                        console.log(entryAPIResponseObject)
-
-                    })
-                    .catch((entryAPIResponseObject)=>{
-
-                        console.log(entryAPIResponseObject) 
-
-                    });
-
-                })
-                .catch((e)=>{
-
-                    console.log(e);
-                    showMessage({
-                        type: "warning",
-                        message: "Error retrieving new entry!"
-                    })
-                })
-        
+                }
             }
 
         }catch(e){
@@ -196,9 +176,9 @@ const TranslateVocab: React.FC = props=>{
 
             console.log(appSettings, "Translate ")
 
-            setInputLangSelection(appSettings.userSettings.targetLanguage);
+            setInputLangSelection(appSettings.userSettings.defaultTargetLanguage);
 
-            setOutputLangSelection(appSettings.userSettings.outputLanguage);
+            setOutputLangSelection(appSettings.userSettings.defaultOutputLanguage);
         }
 
         getLanguageSettings()
@@ -217,7 +197,7 @@ const TranslateVocab: React.FC = props=>{
                     onSubmit={()=>{
 
                         /* add to project */
-                        setOverlayVisible(false)
+                        setOverlayVisible(false);
                     
                     }}
                     validationSchema={inputValidationSchema}
@@ -276,7 +256,7 @@ const TranslateVocab: React.FC = props=>{
                                                 setActivityIndicator(true);
 
                                                 const translationsResponse: types.APITranslateResponse = await BackendAPI.translate({
-                                                    username: currentUser,
+                                                    userId: currentUser.userId,
                                                     targetText: values.input,
                                                     outputLanguage: outputLangSelection,
                                                     targetLanguage: inputLangSelection
