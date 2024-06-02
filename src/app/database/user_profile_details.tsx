@@ -370,10 +370,13 @@ class UserDetails extends LocalDatabase{
 
                 const promiseArray = [
                 
-                this.transactionPromiseWrapper(SQLStatements.addNewUser.USERS, [id,
-                username,
+                this.transactionPromiseWrapper(SQLStatements.addNewUser.USERS, [
+                    id,
+                    username,
                     email,
-                    password], 
+                    password,
+                    0 //Not verified
+                ], 
                 "user added to users table"),
 
                 this.transactionPromiseWrapper(SQLStatements.addNewUser.USER_DETAILS, [
@@ -478,7 +481,7 @@ class UserDetails extends LocalDatabase{
            
     };
 
-    static deleteAccount = (username: string, password: string) : Promise<types.LocalOperationResponse> =>{
+    static deleteAccount = (userId: string, password: string) : Promise<types.LocalOperationResponse> =>{
 
         return new Promise(async (resolve, reject)=>{
 
@@ -492,9 +495,8 @@ class UserDetails extends LocalDatabase{
             try{
 
                 //Start fetch
-
-                const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.generalStatements.getUserLoginByUsername,[
-                    username
+                const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.generalStatements.getUserLoginById,[
+                    userId
                 ],
                 "Retrieved login details.");
 
@@ -514,17 +516,23 @@ class UserDetails extends LocalDatabase{
 
                     if(userPassword === password){
 
-                        await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteUser, [
-                            username
+                        const result = await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteUser, [
+                            userId
                         ],
                         "User deleted successfully");
 
-                        //Delete buffer storage 
+                        if(result.rowsAffected === 0){
+                            //User deletion failed //TODO: ensure that if user tries to login again, then it fails.
+                            reject(deleteAccountResponse);
 
-                        await BufferManager.deleteStorage(userId)
+                        }else if (result.rowsAffected){
+                            //Delete buffer storage 
+                            await BufferManager.deleteUser(userId);
 
-                        deleteAccountResponse.success = true;
-                        resolve(deleteAccountResponse);
+                            deleteAccountResponse.success = true;
+                            resolve(deleteAccountResponse);
+                        }
+                        
                     }
                         
                     }else{
@@ -533,7 +541,8 @@ class UserDetails extends LocalDatabase{
                     }
             }catch(deleteAccountResponse){
 
-                reject(deleteAccountResponse)
+                //Some error occured when deleting the account
+                reject(deleteAccountResponse);
 
             }
         })
@@ -553,19 +562,25 @@ class UserDetails extends LocalDatabase{
             try{
 
                 //Delete account
-                const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteUserById,[
+                const resultArrayRaw = await this.transactionPromiseWrapper(SQLStatements.deleteStatements.deleteUser,[
                     userId
                 ],
                 "Deleted user");
 
-                
-                deleteAccountResponse.message = "operation successful";
-                deleteAccountResponse.success = true;
+                if(resultArrayRaw.rowsAffected === 0){
+                    //Local delete failed.
 
-                await BufferManager.deleteStorage(userId)
+                    reject(deleteAccountResponse)
+                }else if (resultArrayRaw.rowsAffected === 1){
+                    //Local delete successful
+                    deleteAccountResponse.message = "operation successful";
+                    deleteAccountResponse.success = true;
 
-                resolve(deleteAccountResponse);
-                
+                    await BufferManager.deleteUser(userId);
+
+                    resolve(deleteAccountResponse);
+                }
+
             }catch(deleteAccountResponse){
 
                 reject(deleteAccountResponse)

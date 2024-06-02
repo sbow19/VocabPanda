@@ -41,8 +41,15 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
         //Add "app" type operation type to request
         const requestData: types.APICallBase = config.data;
 
-        //Check if additional details not there
-        if(!requestData.deviceType && !requestData.requestId && !requestData.requestTimeStamp){
+        const urls = [
+            "/account/createaccount",
+            "/account/deleteaccount",
+            "/account/updatepassword",
+            "/generateapikey"
+        ];
+
+        //Check if additional details not there. Local sync request will have request id already appended
+        if(urls.includes(config.url) && !requestData.deviceType && !requestData.requestId && !requestData.requestTimeStamp){
 
             requestData.deviceType = "app";
             requestData.requestId = uuid.v4();
@@ -115,18 +122,23 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
                     switch(config.url){
                         case "/app/synclocalchanges":
 
-                            const syncRequestDetails: types.LocalSyncContents = config.data;
+                            /* Buffer operations */
+                            await BufferManager.flushRequests(axios.defaults.userId);
 
-                            const syncLocalChangesRequest: types.LocalSyncRequest<types.LocalSyncContents> = {
+                            const localBufferOperation: types.LocalBufferOperation<Array<types.LocalSyncRequest<types.SyncBufferUserContent>>> = await BufferManager.wrapSyncRequest(axios.defaults.userId);
+                           
+                            const syncRequestDetails = localBufferOperation.customResponse;
+                           
+                            const syncLocalChangesRequest: types.LocalSyncRequestWrapper = {
 
-                                requestDetails: syncRequestDetails,
-                                userId: syncRequestDetails.userId,
-                                syncType: "local changes",
-                                operationType: "sync request"
+                                requests: syncRequestDetails,
+                                userId: axios.defaults.userId,
+                                operationType: "sync request",
+                                loginContents: null
                             }
 
-                             //Generate time stamp and request id
-                             if(!config.data.requestId && !config.data.requestTimeStamp){
+                            //Generate time stamp and request id
+                            if(!config.data.requestId && !config.data.requestTimeStamp){
                                 //If request id no already on object, then add here
 
                                 const requestId = generateId();
@@ -142,30 +154,26 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
                             config.data = syncLocalChangesRequest;
                             config.__loginSyncWrapped = true;
 
-                            
-                            //Save request in sync buffer storage with id 
-                            try{
-                                await BufferManager.storeRequestSyncQueue(syncRequestDetails.userId, syncLocalChangesRequest);
-
-                                return config
-                            }catch(e){
-
-                                //Error with storing request in buffer
-                                const bufferError = e as types.LocalBufferOperation;
-
-                                //Cancel sync request with backend here
-                                throw bufferError
-                            }
+                            return config
                             
                         case "/app/login":
-                            const loginRequestDetails: types.LoginResult = config.data;
+                            const loginResult: types.LoginResult = config.data;
 
-                            const syncLoginRequest: types.LocalSyncRequest<types.LoginResult> = {
+                            /* Buffer operations */
+                            await BufferManager.flushRequests(axios.defaults.userId);
 
-                                requestDetails: loginRequestDetails,
-                                userId: loginRequestDetails.userId,
-                                syncType: "login",
-                                operationType: "sync request"
+                            const localBufferOperation: types.LocalBufferOperation<Array<types.LocalSyncRequest<types.SyncBufferUserContent>>> = await BufferManager.wrapSyncRequest(axios.defaults.userId);
+                            
+                            const localSyncRequests = localBufferOperation.customResponse;
+
+                            /*Login request wrapper */
+                            const syncLoginRequest: types.LocalSyncRequestWrapper  = {
+
+                                requests: localSyncRequests,
+                                userId: axios.defaults.userId,
+                                operationType: "login",
+                                loginContents: loginResult
+                            
                             }
 
                              //Generate time stamp and request id
@@ -185,29 +193,12 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
                             config.data = syncLoginRequest;
                             config.__loginSyncWrapped = true;
 
-                            //Save request in sync buffer storage before sending to backend
-                            try{
-                                await BufferManager.storeRequestSyncQueue(syncLoginRequest.userId, syncLoginRequest);
-
-                                return config
-
-                            }catch(e){
-
-                                //Error with storing request in buffer
-                                const bufferError = e as types.LocalBufferOperation;
-
-                                //Cancel sync request with backend here
-                                throw bufferError
-                                
-                            }
-
+                            return config
                             
                     }
 
                 }else{
-
                     //If not correct endpoint, then continue with request.
-
                     return config
 
                 }
@@ -227,98 +218,17 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
         }
     );
 
-    //Intercept FE request for total sync (phase 1)
-    axios.interceptors.request.use(
-        async (config)=>{
-            
-            if(config.url === "/app/fullsync"){
-                //Wrap request details in a request object. Return new config data
-
-                //Test if login sync has already been wrapped.
-                if(!config.__totalSyncWrapped){
-                    
-                    const requestDetails: types.TotalSyncContents = config.data;
-
-                     //Wrap request contents
-                     const totalSyncRequest: types.LocalSyncRequest<types.TotalSyncContents> = {
-
-                        requestDetails: requestDetails,
-                        userId: requestDetails.userId,
-                        syncType: "total sync",
-                        operationType: "sync request"
-                    };
-
-                    //Generate time stamp and request id
-                    if(!config.data.requestId && !config.data.requestTimeStamp){
-                        //If request id no already on object, then add here
-
-                        const requestId = generateId();
-                        const timeStamp = getTimeStamp();
-
-                        totalSyncRequest.deviceType = "app";
-                        totalSyncRequest.requestId = requestId;
-                        totalSyncRequest.requestTimeStamp = timeStamp;
-
-                    }
-
-                   
-
-                    //Assign API data call with wrapped request contents
-                    config.data = totalSyncRequest;
-                    config.__loginSyncWrapped = true;
-
-                    //Save request in sync buffer storage with id 
-                    try{
-                        await BufferManager.storeRequestSyncQueue(totalSyncRequest.userId, totalSyncRequest);
-
-                        return config
-
-                    }catch(e){
-
-                        //Error with storing request in buffer
-                        const bufferError = e as types.LocalBufferOperation;
-
-                        //Cancel sync request with backend here
-                        throw bufferError
-                        
-                    }
-
-                }else{
-
-                    //If not correct endpoint, then continue with request.
-
-                    return config
-
-                }
-                
-
-            }
-
-        },
-        (error)=>{
-            //If some error occurs pre-flight, then we simply continue with the rest of the application
-            //The queues will be attempted to be flushed on next triggering event
-           
-            //LOG ERROR FOR PRE FLIGHT TOTAL SYNC RESULT
-
-            console.log(error, "interceptor")
-            return Promise.reject(error);
-        
-        }
-    );
-
-    //Intercept FE sync result response here (phase 2)
+    //Intercept FE sync result response here (including full sync requests) (phase 2)
     axios.interceptors.request.use(
         async(config)=>{
 
-            
             if(config.url === "/app/syncresult"){
 
                 //Test if login sync has already been wrapped.
                 if(!config.__responseWrapped){
 
 
-                    const requestDetails: types.LocalBackendSyncResult = config.data;
+                    const requestDetails: types.LocalBackendSyncResult = config.data; 
                     requestDetails.operationType = "sync result"
                     
 
@@ -335,13 +245,13 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
                     }
                 
                     //Assign API data call with wrapped request contents
-                    config.data = syncResultResponse;
+                    config.data = requestDetails;
                     config.__responseWrapped = true;
 
                     try{
 
                         /* Save result response to sync queue to be deleted by acknowledgement*/
-                        await BufferManager.storeResponseResponseQueue(requestDetails.userId, requestDetails);
+                        await BufferManager.storeResponseResponseQueue(axios.defaults.userId, requestDetails);
 
                         return config
 
@@ -410,129 +320,139 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
             if(backendResponse.syncType === "login"){
 
                 //Status 200 response received re buffer syncing in back end. 
-                const backendBufferResponse = backendResponse as types.BackendLocalSyncResult;
+                const backendSyncResponse = backendResponse as types.BackendLocalSyncResult;
 
-                if(backendBufferResponse.success){
-                    //If the backend syncing result was a success
+                /*Clear local request sync queue */
+                try{
+                    //Clear local sync request buffer
+                    await BufferManager.clearWholeSyncQueue(axios.defaults.userId)
 
-                    /* Clear sync queue corresponding with request id */
-                    try{
+                }catch(e){
 
-                        await BufferManager.clearAllBufferQueues(backendResponse.userId); //At login, no more changes could possibly have occured
+                    //Some error clearing buffer - TODO --> LOG
+                    const bufferError = e as types.LocalBufferOperation;
 
-                        //Send acknowledgement of sync success to BE
-                        const acknowledgement: types.FEAcknowledgement = {
-                            requestId: backendBufferResponse.requestId,
-                            userId: backendBufferResponse.userId,
-                            operationType: "acknowledgement",
-                            requestTimeStamp: backendBufferResponse.requestTimeStamp
-                        }
+                    //Continue with operations.
 
-                        await axios.post("/app/syncresult", acknowledgement);
-
-                    }catch(e){
-
-                        //Some error clearing buffer - TODO --> LOG
-                        const bufferError = e as types.LocalBufferOperation;
-
-                        //Continue with operations.
-
-                    }
-
-                    /* Process any buffer content sent to the front end*/
-                    if(backendBufferResponse.syncContent){
-                        
-                        SyncManager.processSyncContent(backendBufferResponse)
-                        .then(async(localSyncResult)=>{
-
-                            /* If successfully processed, then send result response */
-                            try{
-
-                                //If result sent successfully, then wait for ack
-                                await axios.post("/app/syncresult", localSyncResult);
-
-                            }catch(e){
-                                //If result failed to be sent for some reason, the continue with application until next flush
-
-                            }
-    
-                        })
-                        .catch((e)=>{
-
-                            //If FE fails to process backend buffer, then we make a total sync request.
-                            const localSyncError =  e as types.LocalBackendSyncResult;
-
-                            //Throw error to error callback in this interceptor
-                            throw localSyncError;
-
-                        });   
-                    }
                 }
-                
+
+                /* Process account deletion */
+                try{
+
+                    if(backendSyncResponse.userAccountDetails.userDeleted){
+
+                        const deleteResult = await SyncManager.processAccountDeletion(backendSyncResponse);
+
+                        await axios.post("/app/syncresult", deleteResult); //Send delete result to backend
+
+                    }
+
+                }catch(e){
+
+                    const deleteResult = e as types.LocalBackendSyncResult
+                    //Some error deleting account
+                    if(e.deletedAccount){
+
+                        await axios.post("/app/syncresult", deleteResult);
+
+                    }else if (!e.deletedAccount){
+
+                        await axios.post("/app/syncresult", deleteResult);
+
+                    }
+
+                }
+
+                /* Process any buffer content sent to the front end*/
+                try{
+                    if(backendSyncResponse.partialSyncRequired){
+
+                        const syncResult = await SyncManager.processSyncContent(backendSyncResponse);
+
+                        syncResult.requestId = backendResponse.requestId; 
+                        syncResult.syncType = "partial sync"
+
+                        await axios.post("/app/syncresult", syncResult); //Send sync result to backend
+                    }
+                }catch(e){
+
+                    //Some error syncing content or posting to backend
+                    
+                }
+
+                /* Full syncs are dealt with in handling error responses from backend */
+                                      
             }
 
             /* Periodic while app is open */
             if(backendResponse.syncType === "local changes"){
 
                 //Status 200 response received re buffer syncing in back end. 
-                const backendBufferResponse = backendResponse as types.BackendLocalSyncResult;
+                const backendSyncResponse = backendResponse as types.BackendLocalSyncResult;
 
-                if(backendBufferResponse.success){
-                    //If the backend syncing result was a success
+                /*Clear local request sync queue */
+                try{
+                    //Clear local sync request buffer
+                    await BufferManager.clearSyncQueueItems(axios.defaults.userId, backendSyncResponse.requestIds)
 
-                    /* Clear sync queues, move secondary queues to main queue */
-                    try{
+                }catch(e){
 
-                        await BufferManager.clearAllBufferQueues(backendResponse.userId); //At login, no more changes could possibly have occured
+                    //Some error clearing buffer - TODO --> LOG
+                    const bufferError = e as types.LocalBufferOperation;
 
-                        //Send acknowledgement of sync success to BE
-                        const acknowledgement: types.FEAcknowledgement = {
-                            requestId: backendBufferResponse.requestId, 
-                            userId: backendBufferResponse.userId,
-                            operationType: "acknowledgement",
-                            requestTimeStamp: backendBufferResponse.requestTimeStamp
-                        }
+                    //Continue with operations.
 
-                        await axios.post("/app/syncresult", acknowledgement);
-
-                    }catch(e){
-
-                        //Some error clearing buffer - TODO --> LOG
-                        const bufferError = e as types.LocalBufferOperation;
-
-                        //Continue with operations.
-
-                    }
-
-                    /* Process any buffer content sent to the front end*/
-                    if(backendBufferResponse.partialSyncRequired){
-                        
-                        SyncManager.processSyncContent(backendBufferResponse)
-                        .then(async(localSyncResult)=>{
-
-                            /* If successfully processed, then send result response */
-                            try{
-
-                                //If result sent successfully, then wait for ack
-                                await axios.post("/app/syncresult", localSyncResult);
-
-                            }catch(e){
-                                //If result failed to be sent for some reason, the continue with application until next flush
-
-                            }
-    
-                        })
-                        .catch((e)=>{
-
-                            //If FE fails to process backend buffer, then we make a total sync request.
-                            const localSyncError =  e as types.LocalBackendSyncResult;
-
-                            //Throw error to error callback in this interceptor
-                            throw localSyncError;
-
-                        });   
-                    }
                 }
+
+                /* Process account deletion */
+                try{
+
+                    if(backendSyncResponse.userAccountDetails.userDeleted){
+
+                        const deleteResult = await SyncManager.processAccountDeletion(backendSyncResponse);
+
+                        await axios.post("/app/syncresult", deleteResult); //Send delete result to backend
+
+                    }
+
+                }catch(e){
+
+                    const deleteResult = e as types.LocalBackendSyncResult
+                    //Some error deleting account
+                    if(e.deletedAccount){
+
+                        deleteResult.syncType = "account deletion"
+
+                        await axios.post("/app/syncresult", deleteResult);
+
+                    }else if (!e.deletedAccount){
+
+                        deleteResult.syncType = "account deletion"
+
+                        await axios.post("/app/syncresult", deleteResult);
+
+                    }
+
+                }
+
+                /* Process any buffer content sent to the front end*/
+                try{
+                    if(backendSyncResponse.partialSyncRequired){
+
+                        const syncResult = await SyncManager.processSyncContent(backendSyncResponse);
+
+                        syncResult.requestId = backendResponse.requestId; 
+                        syncResult.syncType = "partial sync"
+
+                        await axios.post("/app/syncresult", syncResult); //Send sync result to backend
+                    }
+                }catch(e){
+
+                    //Some error syncing content or posting to backend
+                    
+                }
+
+                /* Full syncs are dealt with in handling error responses from backend */
                 
             }
         },
@@ -542,20 +462,12 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
 
                 const localSyncError = error as types.LocalBackendSyncResult;
 
-                const totalSyncRequest: types.LocalSyncRequest<types.TotalSyncContents> = {
-                    
-                    syncType: "total sync",
-                    requestDetails: {
-                        errorMessage: error,
-                        offendingRequestId: localSyncError.requestId,
-                        userId: localSyncError.userId
-                    }
-                }
-
                 try{
+
+                    localSyncError.syncType = "total sync";
                     
                     //Send sync request to backend. Await user content
-                    await axios.post("/app/fullsync", totalSyncRequest); 
+                    await axios.post("/app/syncresult", localSyncError); 
 
                 }catch(e){
                     //If some error here, then we carry on, as the request is saved in the sync request buffer
@@ -581,22 +493,20 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
                 //A full sync might be triggered here if there was a total sync request inside the sync buffer, for example
                 const backendResponse: types.BackendLocalSyncResult = error.response;
 
-                if(backendResponse.syncType === "local changes"){
-                    //We determined that the backend error was related to a local sync request
-
+                if(backendResponse.syncType === "local changes" || backendResponse.syncType === "login"){
+                    //We determined that the backend error was related to processing a local sync request
                     const backendLocalChangesSyncResult = backendResponse as types.BackendLocalSyncResult;
 
-                    //First we remove the original login request id 
+                    //First we remove the original local sync request id(s) in sync buffer.
                     try{
 
-                        await BufferManager.clearRequestSyncQueue(backendResponse.userId, backendLocalChangesSyncResult.requestId)
+                        await BufferManager.clearWholeSyncQueue(backendResponse.userId)
 
                     }catch(e){
                         //Carry on with code 
 
                     }
                     
-
                     switch(backendLocalChangesSyncResult.fullSyncRequired){
 
                         case true:
@@ -609,8 +519,13 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
                                 //Attempt to complete total sync --> send total sync result
                                 const localSyncResult = await SyncManager.processTotalSyncContent(backendLocalChangesSyncResult.userId, backendLocalChangesSyncResult);
 
+                                localSyncResult.requestId = backendResponse.requestId; // Assign request id to match full sync flag 
+                                localSyncResult.syncType = "total sync"
+
                                 //Send sync result to backend --> intercept sync result and save in buffer --> await ack flag
                                 await axios.post("/app/syncresult", localSyncResult); //Request and response intercepted
+
+                                //Full sync flag will stay raised in the backend until it receives a result response. It will send ack to frontend.
 
 
                             }catch(e){
@@ -620,6 +535,9 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
 
                                 const totalSyncError = e as types.LocalBackendSyncResult;
 
+                                totalSyncError.requestId = backendResponse.requestId; // Assign request id to match full sync flag
+                                localSyncResult.syncType = "total sync"
+
                                 await axios.post("/app/syncresult", totalSyncError); //Request and response intercepted
 
                                 return Promise.reject(totalSyncError);
@@ -627,9 +545,9 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
                             }
     
                         case false:
-                            //Where backend ingestion of local changes fails for reasons other than db conflict, then persist sync request in storage
-                            //Until next cycle
-    
+                            //Where backend ingestion of local changes fails for reasons other than db conflict,
+                            //Or error processing sync result, then persist sync request in storage Until next cycle
+
                             return Promise.reject(null);
     
                     }
@@ -660,11 +578,10 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
 
                 try{
                     //Remove the response from the buffer
-                    await BufferManager.clearResponses(backendBufferResponse.userId, backendBufferResponse.requestId);
+                    await BufferManager.clearIndividualResponse(backendBufferResponse.userId, backendBufferResponse.requestId);
                 }catch(e){
                     //Failure to remove response from buffer. UNKNOWN HOW TO HANDLE. SHOULD BE CLEARED ON NEXT FLUSH
                     /* Carry on with application */
-
                 }
             }
         }
@@ -730,6 +647,7 @@ const axiosConfig = (bufferFlushingStatus: boolean)=>{
                     operationType: "acknowledgement"
                 }
 
+                /* Needs to be a flags to ensure that local account operations are acknowledged locally. */
                 await axios.post("/account/acknowledgment", accountOperationResponse);
                 
             }

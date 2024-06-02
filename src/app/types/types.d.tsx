@@ -323,27 +323,7 @@ export type FullTextObject = {
 
 
 
-//BUFFER OPERATIONS 
 
-export type LocalBufferOperation<T = null> = {
-    location: "main queue" | "secondary queue" | "sync queue" | "acknowledgement queue" | "response queue" |"all"
-    operationType: "store" | "remove" | "get" | "flush" | "transfer"
-    success: boolean
-    customResponse?: T  
-}
-
-export type BufferStorageObject = {
-    queue_1: { [userId: string]: Array<UserData> }
-    queue_2: { [userId: string]: Array<UserData> }
-    sync_buffer: { [userId: string]: SyncRequestObject}
-}
-
-export type SyncRequestObject = {
-
-    content: Array<UserData>,
-    responses: Array<LocalBackendSyncResult | null>,
-    acknowledgements: Array<FEAcknowledgement | null>
-}
 
 
 //API Calls
@@ -387,7 +367,7 @@ export type BaseUserDetails = {
 }
 
 //When determining the operation type being sent to backend
-export type DataTypes = "project" | "entry" | "settings" | "plays" | "login" | "password"
+export type DataTypes = "project" | "entry" | "settings" | "plays" | "login" | "password" | "account"
 
 //When changing setting values in app
 export type ValueTypes = "timerOn" | 
@@ -403,7 +383,7 @@ export type ValueTypes = "timerOn" |
 
 /* Changes wrapper */
 
-export type UserData = ProjectDetails | EntryDetails | UserSettings | PlaysDetails | null | string
+export type UserData = ProjectDetails | EntryDetails | UserSettings | PlaysDetails | LoginResult
 
 
 export interface ProjectDetails extends BaseUserDetails {
@@ -448,7 +428,8 @@ export interface PlaysDetails extends BaseUserDetails {
 
 export type OperationWrapper ={
     operationType: OperationTypes
-    userData?: UserData | string //Can be ids
+    userData: UserData 
+    dataType: DataTypes
 }
 
 export type OperationTypes= "create" | "update" | "remove" | "get" | "sync"
@@ -482,6 +463,7 @@ export type APICreateAccount = {
     username: string
     password: string
     email: string
+    deviceType: "app" | "extension"
 
 }
 
@@ -502,33 +484,59 @@ export interface LoginResult extends BaseUserDetails {
     username: string | ""
     identifierType: "email" | "username" | ""
     password: string| ""
-    buffers: LocalSyncContents
+    
+}
+
+export type SyncBufferContents = {
+
+    contentQueue: Array<OperationWrapper | null>
+    acknowledgements: Array<FEAcknowledgement | null>
+    responseQueue: Array<LocalBackendSyncResult | null>
+    syncQueue:Array<LocalSyncRequest<APIContentCallDetails>>
+
+}
+
+export type SyncBufferUserContent = {
+
+    contentQueue: Array<OperationWrapper | null>
+    acknowledgements: Array<FEAcknowledgement | null>
+    responseQueue: Array<LocalBackendSyncResult | null>
+
 }
 
 
-export interface LocalSyncContents extends BaseUserDetails {
 
-    syncRequests?: any
-    bufferQueue?: any
-    acknowledgements?: any
-    responseQueue?: any
+                            
+export type APIContentCallDetails = SyncBufferUserContent  |    LocalBackendSyncResult                         
 
-}
-
-export interface TotalSyncContents extends BaseUserDetails {
-    errorMessage: Object
-    offendingRequestId: string
-}
-
-
-export type APIContentCallDetails =  LocalSyncContents | TotalSyncContents | LoginResult
 
 
 /* Details to frontend of changes to send to the backend */
 export interface LocalSyncRequest<T extends APIContentCallDetails> extends APICallBase {
-    requestDetails: T //Includes content, settings, buffers, sync results etc
+    requestDetails: T //Local sync contents (settings, acks, response queue) & login results
     syncType: "total sync" | "local changes" | "login"
-    
+
+}
+
+export interface LocalSyncRequestWrapper<T=null> extends APICallBase{
+
+    requests: Array<LocalSyncRequest<APIContentCallDetails>>
+    operationType: "sync request" | "login"
+    loginContents: LoginResult | null
+}
+
+//BUFFER OPERATIONS 
+export type LocalBufferOperation<T = null> = {
+    location: "main queue" | "secondary queue" | "sync queue" | "acknowledgement queue" | "response queue" |"all"
+    operationType: "store" | "remove" | "get" | "flush" | "transfer"
+    success: boolean
+    customResponse?: T  
+}
+
+export type BufferStorageObject = {
+    queue_1: { [userId: string]: Array<OperationWrapper> }
+    queue_2: { [userId: string]: Array<OperationWrapper> }
+    sync_buffer: { [userId: string]: SyncBufferContents } 
 }
 
 
@@ -553,16 +561,15 @@ export interface APITranslateCall extends APICallBase {
     properties set to null mean that that operation did not take place
 */
 export interface LocalBackendSyncResult extends APICallBase {
-    deleteAccount: boolean | null
+    deletedAccount: boolean | null
     userSettingsSync: boolean | null
     premiumStatusSync: boolean | null
     userContentSync: {
         valid: boolean
         failedContent?: Array<any>
         failedContentIndex?: number
-        failedMessage?: TotalSyncContents
     } | null
-    
+    syncType: "total sync" | "partial sync" | "account deletion" | "premium sync"
 }
 
 
@@ -571,9 +578,13 @@ export interface LocalBackendSyncResult extends APICallBase {
 /* ALL backend responses will follow this structure */
 export interface BackendOperationResponse<T = null> extends APICallBase {
     success: Boolean
-    message: "no internet" | "operation successful" | "misc error" | "operation unsuccessful" 
-    error?: Error
-    customResponse?: T
+    requestIds: Array<string> | null
+    errorType?: 
+    "User exists"
+    | "Miscellaneous error"
+    | "Verification token expired"
+    | "Invalid token"
+    | "Password incorrect"
 }
 
 export interface APITranslateResponse extends BackendOperationResponse {
@@ -603,7 +614,7 @@ export interface BackendLocalSyncResult<T=null> extends BackendOperationResponse
 
     //Only if buffer content needs to be synced
     partialSyncRequired: boolean
-    syncContent: Array<UserContentExtensionBuffer | null> //Chronological list of user entry and project operations
+    syncContent: Array<OperationWrapper | null> //Chronological list of user entry and project operations
 
     //If full sync required
     databaseContents?: BackendContent
@@ -617,18 +628,12 @@ export type BackendContent = {
 }
 
 
-export type APIAccountChanges = {
+export type AccountDetails = {
     //When user logs in, front end is updated with any changes that have occurred with the account elsewhere
     userSettings: UserSettings
-    userPremiumStatus: boolean
-    userDeleted:  boolean
-}
-
-/* Entries from backend extension buffer */
-export type UserContentExtensionBuffer = {
-    operationType: "add" | "update" | "get" | "delete"
-    contentType: "tags" | "entry" | "project"
-    userContent: EntryDetails | ProjectDetails
+    userPremiumStatus: boolean | null
+    userDeleted:  boolean |null
+    userVerified: boolean | null
 }
 
 

@@ -279,8 +279,7 @@ const Account: React.FC = props=>{
                                     }
                                 }                         
 
-                                      
-
+                        
                             }catch(e){
 
                                 showMessage({
@@ -289,7 +288,6 @@ const Account: React.FC = props=>{
                                 });
 
                             }
-                            
 
                             setPasswordOverlay(false);
                         }}
@@ -394,60 +392,61 @@ const Account: React.FC = props=>{
                     initialValues={{password: ""}}
                     onSubmit={async (values, actions)=>{
 
+                        try{
 
                             //Send project details to backend or retain here.
                             //Handle backend communication errors seperately here
-                            UserContent.getUserId(currentUser)
-                            .then((userId: string)=>{
+                    
+                            const deleteAccountObject: types.APIAccountObject<types.APIDeleteAccount> = {
 
-                                const deleteAccountObject: types.APIAccountObject<types.APIDeleteAccount> = {
+                                accountOperationDetails: {
+                                    userId: currentUser.userId,
+                                    password: values.password,
+                                    dataType: "account"
+                                },
+                                operationType: "delete account"
+                            };
+                            
 
-                                    accountOperationDetails: {
-                                        userId: userId,
-                                        password: values.password
-                                    },
-                                    updateType: "delete account"
-                                };
+                            const accountAPIResponse = await BackendAPI.sendAccountInfo(deleteAccountObject);
+                            
+                            if(accountAPIResponse.success && accountAPIResponse.operationType === "delete account"){
 
-                                BackendAPI.sendAccountInfo(deleteAccountObject)
-                                .then(async(accountAPIResponse)=>{
+                                await UserDetails.deleteAccount(currentUser.userId, values.password);
 
-                                    console.log(accountAPIResponse);
-
-                                    await UserDetails.deleteAccount(currentUser, values.password);
-
-                                    showMessage({
-                                        message: "account successfully deleted",
-                                        type: "info"
-                                    });
-                           
-                                    setIsLoggedIn(false);
-                                    setCurrentUser("");
-
-                                })
-                                .catch((accountAPIResponse)=>{
-
-                                    console.log(accountAPIResponse);
-                                    showMessage({
-                                     type: "warning",
-                                     message: "Could not delete account."
-                                    })
-
-                                });
-
-                            })
-                            .catch((e)=>{
-
-                                console.log(e, "Unable to get user id");
                                 showMessage({
-                                    message: "Could not delete account",
+                                    message: "account successfully deleted",
                                     type: "info"
                                 });
+
+                                setIsLoggedIn(false);
+                                setCurrentUser("");
+
+                            }else if(!accountAPIResponse.success && accountAPIResponse.operationType === "delete account"){
+
+                                //Some error with sending or receiving delete operation
+                                throw accountAPIResponse
+
+                            }
+                            
+
+                        }catch(e){
+
+                            //Handle errors properly
+
+                            showMessage({
+                                type: "warning",
+                                message: "Delete account failed"
+                            })
+
+                        }finally{
+
+                            actions.resetForm();
+                        }
+
+                           
                                 
-                            })
-                            .finally(()=>{
-                                actions.resetForm();
-                            })
+                            
 
                             
                         

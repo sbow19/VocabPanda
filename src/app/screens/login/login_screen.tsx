@@ -34,7 +34,7 @@ const LoginScreen: React.FC = props=>{
 
     const [ , setIsLoggedIn] = React.useContext(LoggedInStatus);
 
-    const [ , setCurrentUser] = React.useContext(CurrentUserContext);
+    const [currentUser , setCurrentUser] = React.useContext(CurrentUserContext);
 
     //Set is in game loading 
     const [, setIsLoadingInGame] = React.useContext(LoadingStatusInGame);
@@ -82,7 +82,7 @@ const LoginScreen: React.FC = props=>{
                                 
 
                                 /* Trigger login syncing cycle*/
-                                await BackendAPI.loginSync(resultObject);
+                                await BackendAPI.loginSync(currentUser.userId, resultObject);
                             
                             } else if (!resultObject.loginSuccess){
 

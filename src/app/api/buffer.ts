@@ -5,14 +5,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as types from '@customTypes/types.d';
+import uuid from 'react-native-uuid';
+import UserDatabaseContext from "app/context/current_user_database";
 
 class BufferManager {
 
     /* 
         - Content changes is stored in the main and secondary buffer.
 
-        - When a user makes a local change, the buffer is updated. The operation type is checked against the  data
-        types of the data packets in the buffer, to ensure there are no duplicates of paricular data types.
+        - When a user makes a local change, the user data is wrapper in an operation wrapper indicating whether the operation is an update, removal, add etc
+        - User data always has a data type property associated with them too indicating if the data is an entry, project, settings etc. 
     */
 
     //Create buffer Storage
@@ -72,6 +74,8 @@ class BufferManager {
     static storeRequestMainQueue = (userId:string, requestDetails: types.UserData, operationType: types.OperationTypes): Promise<types.LocalBufferOperation>=>{
         return new Promise(async(resolve, reject)=>{
 
+
+
             const mainQueueOperation: types.LocalBufferOperation = {
                 success: false,
                 operationType: "store",
@@ -103,7 +107,9 @@ class BufferManager {
 
                 const operationWrapper: types.OperationWrapper = {
                     userData: requestDetails,
-                    operationType: operationType                }
+                    operationType: operationType,
+                    dataType: requestDetails.dataType         
+                }
 
                 existingRequestsMapped.push(operationWrapper);
 
@@ -229,6 +235,8 @@ class BufferManager {
     static storeRequestSyncQueue = (userId: string, requestDetails: types.LocalSyncRequest<types.APIContentCallDetails>): Promise<types.LocalBufferOperation<types.LocalSyncRequest<types.APIContentCallDetails>>>=>{
         return new Promise(async(resolve, reject)=>{
 
+            //This is queue which stores all outgoing content, wrapped up in a sync wrapper. Each outgoing content packet includes acknowledgements, results, and user content.
+
             const localBufferOperation: types.LocalBufferOperation<types.LocalSyncRequest<types.APIContentCallDetails>> = {
                 location: "sync queue",
                 operationType: "store",
@@ -241,11 +249,11 @@ class BufferManager {
                 //Check if item already in storage
                 const existingRequestsRaw = await AsyncStorage.getItem("buffer");
 
-                const existingRequests = await JSON.parse(existingRequestsRaw);
+                const existingRequests: types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
 
                 const existingRequestsSyncQueue = existingRequests.sync_buffer[userId];
                
-                existingRequestsSyncQueue.push(requestDetails);
+                existingRequestsSyncQueue.syncQueue.push(requestDetails);
 
                 existingRequests.sync_buffer[userId] = existingRequestsSyncQueue;
 
@@ -280,9 +288,9 @@ class BufferManager {
                 //Check if item already in storage
                 const existingRequestsRaw = await AsyncStorage.getItem("buffer");
 
-                const existingRequests = await JSON.parse(existingRequestsRaw);
+                const existingRequests: types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
 
-                const existingRequestsSyncQueue = existingRequests.sync_buffer[userId];
+                const existingRequestsSyncQueue = existingRequests.sync_buffer[userId].syncQueue;
                
                 const filteredQueue = existingRequestsSyncQueue.filter((request: types.LocalSyncRequest)=>{
 
@@ -293,7 +301,7 @@ class BufferManager {
                     }
                 })
 
-                existingRequests.sync_buffer[userId] = filteredQueue;
+                existingRequests.sync_buffer[userId].syncQueue = filteredQueue;
 
                 const stringifiedBuffer = await JSON.stringify(existingRequests);
 
@@ -312,7 +320,93 @@ class BufferManager {
 
     };
 
-    static wipeSyncQueue = (userId: string): Promise<types.LocalBufferOperation>=>{
+    static clearSyncQueueItems = (userId: string, requestIds: Array<string>): Promise<types.LocalBufferOperation>=>{
+        return new Promise(async(resolve, reject)=>{
+
+            const localBufferOperation: types.LocalBufferOperation = {
+                location: "sync queue",
+                operationType: "remove",
+                success: false
+            }
+
+            try{
+
+                //Check if item already in storage
+                const existingRequestsRaw = await AsyncStorage.getItem("buffer");
+
+                const existingRequests: types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
+
+                const existingRequestsSyncQueue = existingRequests.sync_buffer[userId].syncQueue;
+               
+                const filteredQueue = existingRequestsSyncQueue.filter((request: types.LocalSyncRequest)=>{
+
+                    for(let requestId of requestIds){
+
+                        if(request.requestId === requestId){
+                            return false
+                        }else{
+                            return true
+                        }
+
+                    }
+                    
+                })
+
+                existingRequests.sync_buffer[userId].syncQueue = filteredQueue;
+
+                const stringifiedBuffer = await JSON.stringify(existingRequests);
+
+                await AsyncStorage.setItem("buffer", stringifiedBuffer);
+
+                localBufferOperation.success =  true;
+
+                resolve(localBufferOperation);
+
+            }catch(e){
+                console.log(e);
+                reject(localBufferOperation)
+            }
+
+        })
+
+    };
+
+    static clearWholeSyncQueue = (userId: string): Promise<types.LocalBufferOperation>=>{
+        return new Promise(async(resolve, reject)=>{
+
+            const localBufferOperation: types.LocalBufferOperation = {
+                location: "sync queue",
+                operationType: "remove",
+                success: false
+            }
+
+            try{
+
+                //Check if item already in storage
+                const existingRequestsRaw = await AsyncStorage.getItem("buffer");
+
+                const existingRequests: types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
+
+                existingRequests.sync_buffer[userId].syncQueue = [];
+            
+                const stringifiedBuffer = await JSON.stringify(existingRequests);
+
+                await AsyncStorage.setItem("buffer", stringifiedBuffer);
+
+                localBufferOperation.success =  true;
+
+                resolve(localBufferOperation);
+
+            }catch(e){
+                console.log(e);
+                reject(localBufferOperation)
+            }
+
+        })
+
+    };
+
+    static clearQueues = (userId: string): Promise<types.LocalBufferOperation>=>{
         return new Promise(async(resolve, reject)=>{
 
             const localBufferOperation: types.LocalBufferOperation = {
@@ -328,10 +422,10 @@ class BufferManager {
 
                 const existingRequests = await JSON.parse(existingRequestsRaw);
 
-                const existingRequestsSyncQueue: types.SyncRequestObject = existingRequests.sync_buffer[userId];
+                const existingRequestsSyncQueue: types.LocalSyncContents = existingRequests.sync_buffer[userId];
             
-                existingRequestsSyncQueue.content = [];
-                existingRequestsSyncQueue.responses = [];
+                existingRequestsSyncQueue.contentQueue = [];
+                existingRequestsSyncQueue.responseQueue = [];
                 existingRequestsSyncQueue.acknowledgements = [];
 
                 existingRequests.sync_buffer[userId] = existingRequestsSyncQueue;
@@ -371,13 +465,13 @@ class BufferManager {
                 //Check if item already in storage
                 const existingRequestsRaw = await AsyncStorage.getItem("buffer");
 
-                const existingRequests = await JSON.parse(existingRequestsRaw);
+                const existingRequests:types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
 
-                const existingRequestsSyncQueue = existingRequests.response_buffer[userId];
+                const existingRequestsSyncQueue = existingRequests.sync_buffer[userId].responseQueue;
                
                 existingRequestsSyncQueue.push(requestDetails);
 
-                existingRequests.response_buffer[userId] = existingRequestsSyncQueue;
+                existingRequests.sync_buffer[userId].responseQueue = existingRequestsSyncQueue;
 
                 const stringifiedBuffer = await JSON.stringify(existingRequests);
 
@@ -396,7 +490,7 @@ class BufferManager {
 
     };
 
-    static clearResponses = (userId: string, requestId: string): Promise<types.LocalBufferOperation>=>{
+    static clearResponses = (userId: string): Promise<types.LocalBufferOperation>=>{
         return new Promise(async(resolve, reject)=>{
 
             const localBufferOperation: types.LocalBufferOperation = {
@@ -410,11 +504,46 @@ class BufferManager {
                 //Check if item already in storage
                 const existingResponsesRaw = await AsyncStorage.getItem("buffer");
 
-                const existingResponses = await JSON.parse(existingResponsesRaw);
+                const existingResponses: types.BufferStorageObject = await JSON.parse(existingResponsesRaw);
 
-                const existingResponsesSyncQueue = existingResponses.response_buffer[userId];
+                existingResponses.sync_buffer[userId].responseQueue = [];
                
-                const filteredQueue = existingResponsesSyncQueue.filter((response: types.LocalBackendSyncResult)=>{
+                const stringifiedBuffer = await JSON.stringify(existingResponses);
+
+                await AsyncStorage.setItem("buffer", stringifiedBuffer);
+
+                localBufferOperation.success =  true;
+
+                resolve(localBufferOperation);
+
+            }catch(e){
+                console.log(e);
+                reject(localBufferOperation)
+            }
+
+        })
+
+    };
+
+    static clearIndividualResponse = (userId: string, requestId: string): Promise<types.LocalBufferOperation>=>{
+        return new Promise(async(resolve, reject)=>{
+
+            const localBufferOperation: types.LocalBufferOperation = {
+                location: "response queue",
+                operationType: "store",
+                success: false,
+            }
+
+            try{
+
+                //Check if item already in storage
+                const existingResponsesRaw = await AsyncStorage.getItem("buffer");
+
+                const existingResponses: types.BufferStorageObject = await JSON.parse(existingResponsesRaw);
+
+                const existingResponsesUser = existingResponses.sync_buffer[userId].responseQueue;
+
+                const existingResponsesUserFiltered = existingResponsesUser.filter((response: types.LocalBackendSyncResult)=>{
 
                     if(response.requestId === requestId){
                         return false
@@ -423,8 +552,8 @@ class BufferManager {
                     }
                 })
 
-                existingResponses.response_buffer[userId] = filteredQueue;
-
+                existingResponses.sync_buffer[userId].responseQueue = existingResponsesUserFiltered;
+               
                 const stringifiedBuffer = await JSON.stringify(existingResponses);
 
                 await AsyncStorage.setItem("buffer", stringifiedBuffer);
@@ -461,11 +590,11 @@ class BufferManager {
 
                 const existingRequests: types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
 
-                const existingRequestsAcksQueue = existingRequests.acknowledgements[userId]; //Acknowledgements queue for paritcular user
+                const existingRequestsAcksQueue = existingRequests.sync_buffer[userId].acknowledgements; //Acknowledgements queue for paritcular user
 
                 existingRequestsAcksQueue.push(acknowledgement);
 
-                existingRequests.acknowledgements[userId] = existingRequestsAcksQueue;
+                existingRequests.sync_buffer[userId].acknowledgements = existingRequestsAcksQueue;
 
                 const stringifiedBuffer = await JSON.stringify(existingRequests);
 
@@ -485,7 +614,7 @@ class BufferManager {
 
     }
 
-    static clearAcknowledgement = (userId:string, acknowledgementId: string): Promise<types.LocalBufferOperation>=>{
+    static clearAcknowledgements = (userId:string): Promise<types.LocalBufferOperation>=>{
         return new Promise(async(resolve, reject)=>{
 
             const removeAckResponse: types.LocalBufferOperation = {
@@ -502,20 +631,7 @@ class BufferManager {
 
                 const existingRequests: types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
 
-                const existingRequestsAcksQueue = existingRequests.acknowledgements[userId]; //Acknowledgements queue for paritcular user
-
-                const existingRequestsAcksQueueMapped = existingRequestsAcksQueue.filter((localRequest:types.FEAcknowledgement)=>{
-
-                    if(localRequest.requestId === acknowledgementId){
-
-                        return false
-
-                    }else{
-                        return true
-                    }
-                })
-
-                existingRequests.acknowledgements[userId] = existingRequestsAcksQueueMapped;
+                existingRequests.sync_buffer[userId].acknowledgements = []; //Acknowledgements queue for paritcular user
 
                 const stringifiedBuffer = await JSON.stringify(existingRequests);
 
@@ -534,6 +650,53 @@ class BufferManager {
         })
 
     }
+
+    static clearIndividualAcknowledgement = (userId: string, requestId: string): Promise<types.LocalBufferOperation>=>{
+        return new Promise(async(resolve, reject)=>{
+
+            const localBufferOperation: types.LocalBufferOperation = {
+                location: "response queue",
+                operationType: "store",
+                success: false,
+            }
+
+            try{
+
+                //Check if item already in storage
+                const existingResponsesRaw = await AsyncStorage.getItem("buffer");
+
+                const existingResponses: types.BufferStorageObject = await JSON.parse(existingResponsesRaw);
+
+                const existingResponsesUser = existingResponses.sync_buffer[userId].acknowledgements;
+
+                const existingResponsesUserFiltered = existingResponsesUser.filter((response: types.LocalBackendSyncResult)=>{
+
+                    if(response.requestId === requestId){
+                        return false
+                    }else{
+                        return true
+                    }
+                })
+
+                existingResponses.sync_buffer[userId].acknowledgements = existingResponsesUserFiltered;
+               
+                const stringifiedBuffer = await JSON.stringify(existingResponses);
+
+                await AsyncStorage.setItem("buffer", stringifiedBuffer);
+
+                localBufferOperation.success =  true;
+
+                resolve(localBufferOperation);
+
+            }catch(e){
+                console.log(e);
+                reject(localBufferOperation)
+            }
+
+        })
+
+    };
+
 
     //Move requests from secondary queue to  first queue
     static transferQueues = (userId: string): Promise<types.LocalBufferOperation>=>{
@@ -555,7 +718,7 @@ class BufferManager {
 
                 const existingRequestsSecondaryQueue = existingRequests.queue_2[userId]; //Get secondary queue array
 
-                const existingRequestsPrimaryQueueMapped = existingRequestsPrimaryQueue.filter((primaryRequest: types.UserData)=>{
+                const existingRequestsPrimaryQueueMapped = existingRequestsPrimaryQueue.filter((primaryRequest: types.OperationWrapper)=>{
 
                     const primaryRequestOperation = primaryRequest.dataType;
 
@@ -633,11 +796,11 @@ class BufferManager {
 
                 //Get main queue and sync queue, and merge main queue with sync queue
 
-                const existingRequestsMainQueue: Array<types.UserData | null> = existingRequests.queue_1[userId];
+                const existingRequestsMainQueue: Array<types.OperationWrapper | null> = existingRequests.queue_1[userId];
 
-                const existingRequestsSyncQueue: types.SyncRequestObject= existingRequests.sync_buffer[userId]; 
+                const existingRequestsSyncQueue: types.SyncBufferContents= existingRequests.sync_buffer[userId]; 
 
-                existingRequestsSyncQueue.content.push(...existingRequestsMainQueue);
+                existingRequestsSyncQueue.contentQueue.push(...existingRequestsMainQueue);
 
                 //Update the buffers and save
                 existingRequests.queue_1[userId] = []; //Clear main queue
@@ -646,34 +809,21 @@ class BufferManager {
                 const stringifiedBuffer = await JSON.stringify(existingRequests);
                 await AsyncStorage.setItem("buffer", stringifiedBuffer);
 
-                //Determine if any content needs to be synced
+                //Determine if any content needs to be synced. Array of sync requests returned
+                const {customResponse} = await this.wrapSyncRequest(userId);
 
-                const contentLength = existingRequestsSyncQueue.content.length;
+                if(customResponse.length === 0){
+                    //No sync requests.
 
-                const responseLength = existingRequestsSyncQueue.responses.length
-
-                const acknowledgementsLength = existingRequestsSyncQueue.acknowledgements.length
-
-                if(responseLength === 0 || contentLength === 0 || acknowledgementsLength === 0){
-                    //No information in the buffer to send to backend
                     bufferResponse.success = true;
                     resolve(bufferResponse)
-                } else if (responseLength > 0 || contentLength > 0 || acknowledgementsLength > 0){
+                }else if (customResponse.length > 0 ){
+                    //Send sync request array to backend
+                    await axios.post("/app/synclocalchanges", existingRequestsSyncQueue.syncQueue); //Array of change objects
 
-                    try{
+                }                        
 
-                        //Make local requests to backend
-                        await axios.post("/app/synclocalchanges", existingRequestsSyncQueue); //Array of change objects
-
-                        await this.wipeSyncQueue(userId);
-
-                    }catch(e){
-                        //Some error with syncing to backend. Sync request is saved in sync buffer
-                        /* Carry on with application */
-
-                        reject(bufferResponse);
-                    }
-                };
+                
 
             }catch(e){
 
@@ -704,9 +854,10 @@ class BufferManager {
                 existingRequests.queue_1[userId] = [];
                 existingRequests.queue_2[userId] = [];
                 existingRequests.sync_buffer[userId] = {
-                    content: [],
-                    responses: [],
-                    acknowledgements: []
+                    contentQueue: [],
+                    responseQueue: [],
+                    acknowledgements: [],
+                    syncQueue: []
                 };
 
                 const stringifiedBuffer = await JSON.stringify(existingRequests);
@@ -747,8 +898,6 @@ class BufferManager {
                 delete existingRequests.queue_1[userId];
                 delete existingRequests.queue_2[userId];
                 delete existingRequests.sync_buffer[userId];
-                delete existingRequests.response_buffer[userId];
-                delete existingRequests.acknowledgements[userId];
 
                 const stringifiedBuffer = await JSON.stringify(existingRequests);
 
@@ -770,12 +919,11 @@ class BufferManager {
     }
 
 
-    //Get main queue, sync results queue, results queue, acknowledgements queue. Pull together to sync object and sen
-    //Check sync buffer
-    static retrieveBuffers = (userId: string): Promise<types.LocalBufferOperation<types.BufferStorageObject>>=>{
+    //Get content queue, responses queue, and acks queue, package into a sync request object, and save in sync queue. 
+    static wrapSyncRequest = (userId: string): Promise<types.LocalBufferOperation<Array<types.LocalSyncRequest<types.SyncBufferUserContent>>>>=>{
         return new Promise(async(resolve, reject)=>{
 
-            const retrieveBuffers: types.LocalBufferOperation<types.BufferStorageObject> = {
+            const retrieveBuffers: types.LocalBufferOperation<Array<types.LocalSyncRequest<types.SyncBufferUserContent>>> = {
 
                 location: "all",
                 operationType: "get",
@@ -788,11 +936,29 @@ class BufferManager {
 
                 const existingRequests: types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
 
-                retrieveBuffers.customResponse.queue_1 = existingRequests.queue_1[userId];
-                retrieveBuffers.customResponse.sync_buffer = existingRequests.sync_buffer[userId];  
-                retrieveBuffers.customResponse.response_buffer = existingRequests.response_buffer[userId];
-                retrieveBuffers.customResponse.acknowledgements = existingRequests.acknowledgements[userId];
+                const id = uuid.v4();
 
+                //Create new local sync  request object
+                const localSyncRequest: types.LocalSyncRequest<types.SyncBufferUserContent> ={
+                    requestDetails: {
+                        contentQueue: existingRequests.sync_buffer[userId].contentQueue,
+                        acknowledgements: existingRequests.sync_buffer[userId].acknowledgements,
+                        responseQueue: existingRequests.sync_buffer[userId].responseQueue,
+                    },
+                    requestId: id,
+                    syncType: "local changes"
+                };
+
+                //Push new local sync request to sync queue and save buffer
+                existingRequests.sync_buffer[userId].syncQueue.push(localSyncRequest);
+                const stringifiedBuffer = await JSON.stringify(existingRequests);
+                await AsyncStorage.setItem("buffer", stringifiedBuffer);
+
+                //Clear all other queues
+                await this.clearQueues(userId);
+
+                //Add all local sync requests to response oibject
+                retrieveBuffers.customResponse = existingRequests.sync_buffer[userId].syncQueue;
                 retrieveBuffers.success = true;
 
                 resolve(retrieveBuffers);
@@ -807,47 +973,6 @@ class BufferManager {
         })
 
     }
-
-    //Clear all buffers
-
-    static clearAllBufferQueues = (userId: string): Promise<types.LocalBufferOperation>=>{
-        return new Promise(async(resolve, reject)=>{
-
-            const clearBuffers: types.LocalBufferOperation = {
-
-                location: "all",
-                operationType: "remove",
-                success: false                
-            }
-
-           try{
-
-                const existingRequestsRaw = await AsyncStorage.getItem("buffer");
-
-                const existingRequests: types.BufferStorageObject = await JSON.parse(existingRequestsRaw);
-
-                existingRequests.queue_1[userId] = [];
-                existingRequests.sync_buffer[userId] = [];
-                existingRequests.response_buffer[userId] = [];
-                existingRequests.acknowledgements[userId] = [];
-
-
-                clearBuffers.success = true;
-
-                resolve(clearBuffers);
-
-           }catch(e){
-
-                clearBuffers.error = e;
-                reject(clearBuffers);
-
-           }
-
-        })
-
-    }
-
-
 
 }
 

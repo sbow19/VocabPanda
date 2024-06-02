@@ -212,7 +212,7 @@ class BackendAPI {
     };
 
     //Logged in account call
-    static loginSync(logInResultObject: types.LoginResult):Promise<types.LocalBufferOperation>{
+    static loginSync(logInResultObject: types.LoginResult):Promise<types.LocalOperationResponse>{
         return new Promise(async(resolve, reject)=>{
 
             //First --> Attempt to send buffers altogether
@@ -222,31 +222,37 @@ class BackendAPI {
             //Fifth --> process backend content
             //Sixth --> Proceed with app
 
-            const userId = logInResultObject.userId
+            const loginOperationResponse: types.LocalOperationResponse = {
+                success: false,
+                contentType: "account",
+                operationType: "sync",
+                message: "operation unsuccessful"
 
+            }
             try{
-                //Fetch buffers
-
-                const buffers = await BufferManager.retrieveBuffers(userId);
-
-                //Assign buffer content to login object
-                logInResultObject.buffers.bufferQueue = buffers.customResponse.queue_1; //Main content buffer queue
-                logInResultObject.buffers.syncRequests = buffers.customResponse.sync_buffer; //Sync requests
-                logInResultObject.buffers.responseQueue = buffers.customResponse.response_buffer; //Sync results responses
-                logInResultObject.buffers.acknowledgements = buffers.customResponse.acknowledgements; //Acknowledgement of BE operations
-
                 //Send login result object to backend
                 await axios.post("/app/login", logInResultObject);
+                /* 
+                    there are several event permutations: 
+                        - 1) login successful. No content to sync in backend. Backend has no content to send. FE acknowledges.
+                        - 2) login successful. Content to sync with backend. Backend successfully syncs, and sends result. FE acknoiwledges
+                        - 3) login successful.  Content to sync with backend. Backend unsuccessful. Sends result and raises full sync flag. FE syuccessfully syncs, and sends result. BE acknowledges
+                        - 4) login successful. Content to sync with backend. Backend successfully syncs, sneds content to FE. FE syncs success, and sends result to BE. BE acknowledges
+                        - 5) login successful. Content to sync with backend. Backend successful suncs, sends content to FE. FE fails, sends result. BE raises full sync flag and sends content to FE. BE waits until positive result before lowering flag. BE acknowledges
+                        - 6) login unsuccessful. No event sent to backend.
+                    
+                    All these operations handled by interceptor. 
+                */
 
-                //If FE successfully syncs with backend, then we continue with the app. Buffer will be cleared if successfully cleared or not
-                //From buffer storage if positive response received from backend. 
-
-                resolve()
+                loginOperationResponse.success = true;
+                loginOperationResponse.message = "operation successful";
+                resolve(loginOperationResponse)
 
             }catch(e){
                 //Failure means that: buffers may remain in storage, depending on the type of error, or total sync, in which case buffers will be deleted
 
-                reject()
+                loginOperationResponse.error = e;
+                reject(loginOperationResponse)
 
             }
 

@@ -8,11 +8,56 @@ import * as types from '@customTypes/types.d'
 
 class SyncManager {
 
+    static processAccountDeletion = (backendSyncResult: types.BackendLocalSyncResult): Promise<types.LocalBackendSyncResult>=>{
+        return new Promise(async(resolve, reject)=>{
+
+            const loginSyncResult: types.LocalBackendSyncResult = {
+            deletedAccount: null,
+            userSettingsSync: null,
+            premiumStatusSync: null,
+            userContentSync: {
+                valid: null,
+                failedContent: [],
+                failedContentIndex: 0
+            },
+
+            requestId: backendSyncResult.requestId, 
+            userId: backendSyncResult.userId,
+            requestTimeStamp: backendSyncResult.requestTimeStamp,
+            operationType: "sync result"
+        }
+
+            try{
+                //Delete account
+                const deleteResponse = await UserDetails.deleteAccountBackend(SyncResponse.userId);
+
+                if(deleteResponse.success){
+                    //If account successfully deleted locally
+                    loginSyncResult.deletedAccount = true;
+                    resolve(loginSyncResult);
+                    
+                }else if (!deleteResponse.success){
+                    //Some error occured with deleing db locally
+                    loginSyncResult.deletedAccount = false;
+                    reject(loginSyncResult);
+                    
+                }
+
+            }catch(e){
+
+                loginSyncResult.deletedAccount = false;
+                //Local delete account didn't work
+                reject(loginSyncResult);
+
+            }
+        })
+    }
+
     //Sync object received from backend after signing in 
     static processSyncContent = (SyncResponse: types.BackendLocalSyncResult): Promise<types.LocalBackendSyncResult>=>{
 
         const loginSyncResult: types.LocalBackendSyncResult = {
-            deleteAccount: null,
+            deletedAccount: null,
             userSettingsSync: null,
             premiumStatusSync: null,
             userContentSync: {
@@ -27,37 +72,7 @@ class SyncManager {
             operationType: "sync result"
         }
         
-        return new Promise(async(resolve, reject)=>{
-
-            //Delete user
-            if(SyncResponse.userAccountDetails.userDeleted){
-
-                try{
-                    //Delete account
-                    const deleteResponse = await UserDetails.deleteAccountBackend(SyncResponse.userId);
-
-                    if(deleteResponse.success){
-                        //If account successfully deleted locally
-                        loginSyncResult.deleteAccount = true;
-                        resolve(loginSyncResult);
-                        
-                    }else if (!deleteResponse.success){
-                        //Some error occured with deleing db locally
-                        reject(loginSyncResult);
-                        
-                    }
-
-                }catch(e){
-
-                    loginSyncResult.deleteAccount = false;
-                    //Local delete account didn't work
-                    reject(loginSyncResult);
-
-                }finally{
-                    //Cancel syncing
-                    return 
-                }
-            }
+        return new Promise(async(resolve)=>{
 
             //Set user settings
             try{

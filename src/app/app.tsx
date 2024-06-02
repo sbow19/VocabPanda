@@ -632,11 +632,12 @@ const MainApp: React.FC = ()=>{
                 if(isUserOnline.isInternetReachable && !bufferFlushState){
 
                     try{
-                        await BufferManager.flushRequests(currentUser.userId);
+                        await axios.post("/app/synclocalchanges"); //Call the backend to sync local changes.
                     }catch(e){
-                        //Some error with flushing requests
+                        //Error in sending request to backend or error 500 response from backend.
+                        /* Logic pertaining to syncing is contained in axios interceptors config */
                     }
-                    
+
                 }
                 
             }, 180000);

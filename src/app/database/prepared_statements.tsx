@@ -10,6 +10,7 @@ const SQLStatements = {
             "username" TEXT NOT NULL,
             "email" TEXT NOT NULL,
             "password_hash" TEXT NULL DEFAULT NULL,
+            "verified" TINYINT NOT NULL,
           
             PRIMARY KEY ("id"),
             UNIQUE ("username") ,
@@ -221,11 +222,13 @@ const SQLStatements = {
 
       getUserLoginByEmail: `SELECT * from users WHERE email = ?;`,
 
+      getUserLoginById: `SELECT * from users WHERE id = ?;`,
+
     },
 
     addNewUser: {
 
-      USERS: `INSERT INTO "users" VALUES (?, ?, ?, ?);`, //id, username, email, password_hash
+      USERS: `INSERT INTO "users" VALUES (?, ?, ?, ?, ?);`, //id, username, email, password_hash, veritification
       USER_DETAILS: `INSERT INTO "user_details" VALUES (?, ?, ?, ?);`, //username, user_id, last_logged_in, premium
       USER_SETTINGS: `INSERT INTO "user_settings" VALUES (?, ?, ?, ?, ?, ?);`, //user_id, timer_on, slider_val, target_lang, output_lang, default_project
       TRANSLATIONS_LEFT: `INSERT INTO "translations_left" VALUES (?, ?);`,//user_id, translations_left
@@ -316,9 +319,11 @@ const SQLStatements = {
                       WHERE (user_id = ?) AND
                       (project = ?);`,
       
-      deleteUser: `DELETE FROM users WHERE (username = ?);`,
-      deleteUserById: `DELETE FROM users WHERE (id = ?);`,
-      deleteEntry: `DELETE FROM user_entries WHERE (entry_id = ?) AND (user_id = ?);`
+      deleteUser: `DELETE FROM users WHERE (id = ?);`,
+      deleteEntry: `DELETE FROM user_entries WHERE (entry_id = ?) AND (user_id = ?);`,
+      deleteAllUserEntries: `DELETE FROM user_entries WHERE (user_id = ?);`,
+      deleteAllUserProjects: `DELETE FROM projects WHERE (user_id = ?);`,
+      deleteAllUserTags: `DELETE FROM user_tags WHERE (user_id = ?);`
 
     },
 
