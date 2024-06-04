@@ -31,7 +31,6 @@ class UserDetails extends LocalDatabase{
 
                 if(resultArrayUsername.length === 0){
                     //If username  or email does not match any entries, then try comparing with emails
-                    
                 
                 }else if(resultArrayUsername.length === 1){
                     //If username matches one user, then attempt password match

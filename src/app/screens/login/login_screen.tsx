@@ -80,9 +80,10 @@ const LoginScreen: React.FC = props=>{
                                 setCurrentUser(currentUserObject);
                                 setIsLoadingInGame(true);// Needs to be set first before setting logged in
                                 
-
                                 /* Trigger login syncing cycle*/
-                                await BackendAPI.loginSync(currentUser.userId, resultObject);
+                                await BackendAPI.loginSync(resultObject);
+
+                                setIsLoggedIn(true);
                             
                             } else if (!resultObject.loginSuccess){
 
@@ -98,6 +99,8 @@ const LoginScreen: React.FC = props=>{
                             //If sign in fails, then error thrown here
                             console.log(e, "Login screen");
 
+                            
+
                             showMessage({
                                 message: "Error occurred while logging in.",
                                 type: "warning"
@@ -106,7 +109,6 @@ const LoginScreen: React.FC = props=>{
                         }finally{
                             //Once all sign in activity complete
                             setActivityIndicator(false);
-                            setIsLoggedIn(true);
                             actions.resetForm();
 
                         }

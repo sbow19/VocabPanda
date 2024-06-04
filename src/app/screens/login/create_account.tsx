@@ -100,6 +100,8 @@ const CreateAccount: React.FC = props=>{
                             //We must get a success response from backend to create user locally
                             const backendResponse = await BackendAPI.sendAccountInfo(createAccountObject);
 
+                            console.log(backendResponse,"Send account info")
+
                             //Set login details for account locally (to replace with SQL storage)
                             await UserDetails.createNewUser(
                                 values.email,

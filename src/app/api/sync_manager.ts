@@ -171,6 +171,61 @@ class SyncManager {
 
         })
     }
+
+    //Check if error is sync request error
+    static isLocalSyncError = (error: any, syncType: types.SyncTypes): error is types.LocalBackendSyncResult =>{
+
+        return(   
+            error.syncType === syncType
+        )
+    }
+
+    //Check if error is sync request error
+    static isLocalSyncRequest = (request: any): request is types.LocalSyncRequest<types.APIContentCallDetails> =>{
+
+        return(   
+            request.operationType === "sync request"
+        )
+    }
+
+    //Check if error is sync request error
+    static isLocalSyncResult = (request: any): request is types.LocalBackendSyncResult =>{
+
+        return(   
+            request.operationType === "sync result"
+        )
+    }
+
+    //Check if error is sync request error
+    static isAccountChangeRequest = (request: any): request is types.LocalBackendSyncResult =>{
+
+        const accountOperationTypes = [
+            "change password",
+            "upgrade",
+            "downgrade",
+            "create account",
+            "login"
+        ]
+
+        return(   
+            accountOperationTypes.includes(request.operationType)
+        )
+    }
+
+    static isAccountChangeResponse = (response: any): response is types.LocalBackendSyncResult =>{
+
+        const accountOperationTypes = [
+            "change password",
+            "upgrade",
+            "downgrade",
+            "create account",
+            "login"
+        ]
+
+        return(   
+            accountOperationTypes.includes(response.operationType)
+        )
+    }
 }
 
 export default SyncManager;

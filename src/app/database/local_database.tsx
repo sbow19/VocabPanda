@@ -8,6 +8,7 @@ import SQLStatements from './prepared_statements';
 import moment from 'moment';
 import * as types from '@customTypes/types.d'
 import db from './db_util';
+import BufferManager from 'app/api/buffer';
 
 
 class LocalDatabase{
@@ -124,6 +125,7 @@ class LocalDatabase{
                                     console.log(resultObject);
     
                                     await EncryptedStorage.removeItem("api-key");
+                                    await BufferManager.removeBufferStorage();
                     
                                     resolve(resultObject);
                     
@@ -187,8 +189,8 @@ class LocalDatabase{
                 if(APIKey === null){
                     /* Check if inputted password matches password in database */
 
-                    resultObject.APIKey = "";
-                    resultObject.message = "No API key exists";
+                    resultObject.customResponse.APIKey = "";
+                    resultObject.customResponse.message = "No API key exists";
 
                     resolve(resultObject);
 
@@ -196,8 +198,8 @@ class LocalDatabase{
 
                 } else if (APIKey){
 
-                    resultObject.APIKey = APIKey;
-                    resultObject.message = "API key exists";
+                    resultObject.customResponse.APIKey = APIKey;
+                    resultObject.customResponse.message = "API key exists";
 
                     resolve(resultObject);
 

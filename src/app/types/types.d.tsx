@@ -569,8 +569,10 @@ export interface LocalBackendSyncResult extends APICallBase {
         failedContent?: Array<any>
         failedContentIndex?: number
     } | null
-    syncType: "total sync" | "partial sync" | "account deletion" | "premium sync"
+    syncType: SyncTypes
 }
+
+export type SyncTypes = "total sync" | "partial sync" | "account deletion" | "premium sync"
 
 
 //BACKEND Responses
@@ -610,7 +612,7 @@ export interface BackendLocalSyncResult<T=null> extends BackendOperationResponse
     syncType: "total sync" | "local changes" | "login"
 
     //If user account details needs to be synced
-    userAccountDetails: APIAccountChanges
+    userAccountDetails: AccountDetails
 
     //Only if buffer content needs to be synced
     partialSyncRequired: boolean
@@ -642,7 +644,6 @@ export type AccountDetails = {
 
 export interface FEAcknowledgement extends APICallBase {
 }
-
 export interface BEAcknowledgement extends APICallBase {
 }
 

@@ -27,7 +27,7 @@ import { Overlay } from '@rneui/base';
 import { Formik } from 'formik';
 
 import BackendAPI from 'app/api/backend';
-import BufferManager from './buffer';
+import BufferManager from 'app/api/buffer';
 
 import * as yup from 'yup'
 import UpgradeBanner from 'app/shared/upgrade_banner';
@@ -69,7 +69,7 @@ const TranslateVocab: React.FC = props=>{
         setInputLangSelection(language);
 
         //Update default target language
-        UserDetails.updateTargetLangDefault(currentUser, language);
+        UserDetails.updateTargetLangDefault(currentUser.userId, language);
 
         //App settings handler
         appSettingsHandler(language, "defaultTargetLang")
@@ -82,7 +82,7 @@ const TranslateVocab: React.FC = props=>{
         setOutputLangSelection(language);
 
         //Update default target language
-        UserDetails.updateOutputLangDefault(currentUser, language);
+        UserDetails.updateOutputLangDefault(currentUser.userId, language);
 
         //App settings handler
         appSettingsHandler(language, "defaultOutputLang")

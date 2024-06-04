@@ -2,16 +2,15 @@
     eslint-disable
 */
 
-import axios from 'axios';
+import axios, {AxiosError} from 'axios';
 import DeviceInfo from 'react-native-device-info';
 import {Buffer} from 'buffer'
 import * as types from '@customTypes/types.d'
 import NetInfo from "@react-native-community/netinfo";
 import axiosConfig from './axios_config';
 
-import LocalDatabase from 'app/database/local_database';
-import BufferManager from './buffer';
-import EncryptedStorage from 'react-native-encrypted-storage/lib/typescript/EncryptedStorage';
+import LocalDatabase from 'app/database/local_database'
+import EncryptedStorage from 'react-native-encrypted-storage';
 
 class BackendAPI {
 
@@ -37,7 +36,6 @@ class BackendAPI {
     static internetStatus: boolean | null = false
 
     //Set global headers
-
     static setGlobalHeaders(bufferFlushingStatus: boolean):Promise<types.LocalOperationResponse>{
         return new Promise(async(resolve, reject)=>{
 
@@ -51,7 +49,7 @@ class BackendAPI {
 
                 //Configure axios headers, interceptors etc.
                 axiosConfig(bufferFlushingStatus);
-
+                
                 //Check for API key in local storage. If does not exist, then authorization header not added.
                 const {customResponse} = await LocalDatabase.getAPIKey();
 
@@ -66,7 +64,6 @@ class BackendAPI {
                 }else if (customResponse.message  === "No API key exists"){
                     //If no API key exists then request new one here and save in encrypted storage
                     const apiKeyResponse = await this.requestAPIKey();
-
                     const uniqueDeviceId = await DeviceInfo.getUniqueId(); //Gets unique device id;
                     axios.defaults.headers.common["Authorization"] = "Basic " + Buffer.from(uniqueDeviceId + ":" + apiKeyResponse.APIKey).toString("base64");
 
@@ -76,8 +73,6 @@ class BackendAPI {
             }catch(err){
 
                 //Some error fetching the api key. 
-                setGlobalHeaders.error = err;
-
                 console.log("Failed to set global headers");
                 console.trace();
                 reject(setGlobalHeaders);
@@ -102,12 +97,12 @@ class BackendAPI {
             try{
                 const uniqueDeviceId = await DeviceInfo.getUniqueId(); //Gets unique device id;
 
-                const keyRequest: types.APIGenerateKeyRequest = {
-                    deviceId: uniqueDeviceId,
-                    deviceType: "app"
+                const requestBody = {
+                    deviceId: uniqueDeviceId
                 }
 
-                let res = await axios.post("/generateapikey", keyRequest);
+                let res = await axios.post("/generateapikey", requestBody);
+
                 const apiKeyResponse: types.APIKeyOperationResponse = res.data;
 
                 //Store the api key locally in encrypted storage
@@ -121,9 +116,6 @@ class BackendAPI {
             }catch(err){
 
                 //Trigger error status for creating app --> monitor error
-                console.log(err.message)
-                console.log(err.request);
-                console.log(err.response)
                 reject(apiKeyResponse);
             }
         })
@@ -215,13 +207,6 @@ class BackendAPI {
     static loginSync(logInResultObject: types.LoginResult):Promise<types.LocalOperationResponse>{
         return new Promise(async(resolve, reject)=>{
 
-            //First --> Attempt to send buffers altogether
-            //Second --> If network error, then keep buffers,
-            //Third --> If backend local content sync error, then full sync proceeds
-            //Fourth --> Backend sends sync content from backend, including buffer content
-            //Fifth --> process backend content
-            //Sixth --> Proceed with app
-
             const loginOperationResponse: types.LocalOperationResponse = {
                 success: false,
                 contentType: "account",
@@ -232,40 +217,22 @@ class BackendAPI {
             try{
                 //Send login result object to backend
                 await axios.post("/app/login", logInResultObject);
-                /* 
-                    there are several event permutations: 
-                        - 1) login successful. No content to sync in backend. Backend has no content to send. FE acknowledges.
-                        - 2) login successful. Content to sync with backend. Backend successfully syncs, and sends result. FE acknoiwledges
-                        - 3) login successful.  Content to sync with backend. Backend unsuccessful. Sends result and raises full sync flag. FE syuccessfully syncs, and sends result. BE acknowledges
-                        - 4) login successful. Content to sync with backend. Backend successfully syncs, sneds content to FE. FE syncs success, and sends result to BE. BE acknowledges
-                        - 5) login successful. Content to sync with backend. Backend successful suncs, sends content to FE. FE fails, sends result. BE raises full sync flag and sends content to FE. BE waits until positive result before lowering flag. BE acknowledges
-                        - 6) login unsuccessful. No event sent to backend.
-                    
-                    All these operations handled by interceptor. 
-                */
-
+              
                 loginOperationResponse.success = true;
                 loginOperationResponse.message = "operation successful";
                 resolve(loginOperationResponse)
 
             }catch(e){
-                //Failure means that: buffers may remain in storage, depending on the type of error, or total sync, in which case buffers will be deleted
 
                 loginOperationResponse.error = e;
                 reject(loginOperationResponse)
 
             }
 
-                           
-                    
-    
-            
-          
         })
     }
 
     //Deepl translate
-    
     static #changeLanguageValue(target_lang: string, output_lang:string){
 
         const languageObject: types.languageObject = {
@@ -315,8 +282,7 @@ class BackendAPI {
                 success: false,
                 translations: [],
                 translationRefreshTime: 0,
-                translationsLeft: 0,
-                message: "no internet"
+                translationsLeft: 0
     
             };
 
@@ -357,6 +323,10 @@ class BackendAPI {
                 resolve(responseObject);
             }
         })
+    }
+
+    static isAxiosErrorWithResponse(error: any): error is AxiosError {
+        return axios.isAxiosError(error) && !!error.response;
     }
 };
 

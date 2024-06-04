@@ -52,9 +52,6 @@ class BufferManager {
                 }else if (existingRequests !== null){
                     //If buffer storage exists
 
-                    console.log(existingRequests);
-                    console.log("Buffer storage exists");
-
                     createBufferResponse.success = true;
                     resolve(createBufferResponse);
                 }
@@ -66,6 +63,31 @@ class BufferManager {
                 createBufferResponse.error = e;
                 console.log(e, "Create buffer storage error.");
                 reject(createBufferResponse);
+            }
+        })
+    } 
+
+    static removeBufferStorage = (): Promise<types.LocalBufferOperation>=>{
+        return new Promise(async(resolve, reject)=>{
+
+            const deleteBufferResponse: types.LocalBufferOperation = {
+                success: false,
+                operationType: "remove",
+                location: "all"
+            }
+
+            try{
+
+                //Check if item already in storage
+                await AsyncStorage.removeItem("buffer");
+
+            }catch(e){
+                //Some failure to create buffer storage
+
+
+                deleteBufferResponse.error = e;
+                console.log(e, "Create buffer storage error.");
+                reject(deleteBufferResponse);
             }
         })
     } 
@@ -697,7 +719,6 @@ class BufferManager {
 
     };
 
-
     //Move requests from secondary queue to  first queue
     static transferQueues = (userId: string): Promise<types.LocalBufferOperation>=>{
         return new Promise(async(resolve, reject)=>{
@@ -879,7 +900,6 @@ class BufferManager {
         })
     }
 
-
     //Delete user from buffers
     static deleteUser = (userId: string): Promise<types.LocalBufferOperation> =>{
         return new Promise(async (resolve, reject)=>{
@@ -917,7 +937,6 @@ class BufferManager {
 
         })
     }
-
 
     //Get content queue, responses queue, and acks queue, package into a sync request object, and save in sync queue. 
     static wrapSyncRequest = (userId: string): Promise<types.LocalBufferOperation<Array<types.LocalSyncRequest<types.SyncBufferUserContent>>>>=>{

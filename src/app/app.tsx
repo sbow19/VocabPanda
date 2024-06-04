@@ -372,7 +372,7 @@ const MainApp: React.FC = ()=>{
         //User game details fields
         if(valueType === "subtractTranslation"){
 
-            //NOTE, no need to send details to bqckend, as translation info is processed
+            //NOTE, no need to send details to backend, as translation info is processed
             //In the backend anyway.
 
             try{
@@ -469,11 +469,11 @@ const MainApp: React.FC = ()=>{
                 NetInfo.addEventListener((state)=>{
                     setIsOnline(state.isInternetReachable);
 
-                    if(state.isInternetReachable && !bufferFlushState){
+                    if(state.isInternetReachable && !bufferFlushState && !isLoadingInGame){
 
                         setBufferFlushingState(true); //Set buffer flushing status
                         
-                        BufferManager.flushRequests(userId)
+                        BufferManager.flushRequests(currentUser.userId)
                         .then((bufferFlushResponse)=>{
 
                             //Once flushing has complete, then we set buffer flushing status to false
@@ -490,20 +490,20 @@ const MainApp: React.FC = ()=>{
                 });
 
             
-                /* Check for premium update */
-                const upgradeToPremium = false  //REPLACE WITH SCRIPT WHICH LOOKS FOR UPGRADE INDICATOR __ BACKEND?
+                // /* Check for premium update */
+                // const upgradeToPremium = false  //REPLACE WITH SCRIPT WHICH LOOKS FOR UPGRADE INDICATOR __ BACKEND?
 
-                if(upgradeToPremium){
-                    await UserDetails.upgradeToPremium(currentUser, "15/02/2024")
-                }
+                // if(upgradeToPremium){
+                //     await UserDetails.upgradeToPremium(currentUser, "15/02/2024")
+                // }
 
-                /* Check for downgrade */
+                // /* Check for downgrade */
 
-                const downgradeToFree = false  //REPLACE WITH SCRIPT WHICH LOOKS FOR UPGRADE INDICATOR __ BACKEND?
+                // const downgradeToFree = false  //REPLACE WITH SCRIPT WHICH LOOKS FOR UPGRADE INDICATOR __ BACKEND?
 
-                if(downgradeToFree){
-                    await UserDetails.downgradeToFree(currentUser)
-                }
+                // if(downgradeToFree){
+                //     await UserDetails.downgradeToFree(currentUser)
+                // }
 
 
                 //Fetch app settings
@@ -529,7 +529,7 @@ const MainApp: React.FC = ()=>{
                 setLastActivityData(lastActivityObject);
 
                 //Update user login time, occurs after every other operation is successful
-                await UserDetails.updateUserLoginTime(currentUser);
+                await UserDetails.updateUserLoginTime(currentUser.username);
 
                 //Set is loading to false brings up login screen.
                 setIsLoadingInGame(false);
@@ -636,6 +636,7 @@ const MainApp: React.FC = ()=>{
                     }catch(e){
                         //Error in sending request to backend or error 500 response from backend.
                         /* Logic pertaining to syncing is contained in axios interceptors config */
+                        console.log(e, "Error syncing")
                     }
 
                 }
